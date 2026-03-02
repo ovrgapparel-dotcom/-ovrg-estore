@@ -61,6 +61,12 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"
+        },
+        {
+            "src": "/splash_image.png",
+            "sizes": "1024x500",
+            "type": "image/png",
+            "purpose": "any"
         }
     ],
     "screenshots": [
