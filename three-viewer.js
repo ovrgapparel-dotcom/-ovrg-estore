@@ -206,14 +206,25 @@ function updateDecals() {
   
   const orientation = new THREE.Euler(0, 0, 0);
 
-  if (currentTransform.preset === 'heart') {
-    posX = -0.25;
-    posY = 0.35;
-    w *= 0.4;
-    h *= 0.4;
-  } else if (currentTransform.preset === 'back') {
+  // 9-grid presets mapping
+  // X: left = -0.2, center = 0, right = 0.2
+  // Y: top = 0.45, center = 0.2, bottom = -0.05
+  // Z: front = 0.5, back = -0.5
+  
+  if (currentTransform.preset.includes('left')) posX = -0.2;
+  else if (currentTransform.preset.includes('right')) posX = 0.2;
+  else posX = 0; // center
+
+  if (currentTransform.preset.includes('top')) posY = 0.45;
+  else if (currentTransform.preset.includes('bottom')) posY = -0.05;
+  else posY = 0.2; // mid/center
+
+  // If the preset explicitly says 'back' (for backward compatibility) or if we ever add back placement
+  if (currentTransform.preset.includes('back')) {
     posZ = -0.5;
     orientation.y = Math.PI;
+    // reverse X since we're looking at the back
+    posX = -posX;
   }
   
   // Increase depth to 1.5 to guarantee intersection with the shirt mesh

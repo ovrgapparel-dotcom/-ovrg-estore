@@ -659,40 +659,19 @@ footer .footer-admin {
 
       <div id="adminTabSettings" style="display:none">
         <div class="admin-form">
-          <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">Bases T-shirt (Mockups)</h3>
-          <p style="color:#aaa;font-size:0.85rem;margin-bottom:1rem">Uploadez les images de base du T-shirt (recommandé: t-shirt gris clair avec plis visibles). L'application teintera cette base avec les couleurs disponibles.</p>
-          <div class="admin-grid2">
-            <div>
-              <label>Base Devant (Front)</label>
-              <div class="upload-slot" id="settingsFrontSlot">
-                <div class="upload-slot-icon">👕</div>
-                <div class="upload-progress" id="settingsFrontProgress">⟳ Upload...</div>
-                <input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadBaseImage(event, 'front')">
-              </div>
-            </div>
-            <div>
-              <label>Base Dos (Back)</label>
-              <div class="upload-slot" id="settingsBackSlot">
-                <div class="upload-slot-icon">👕</div>
-                <div class="upload-progress" id="settingsBackProgress">⟳ Upload...</div>
-                <input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadBaseImage(event, 'back')">
-              </div>
-            </div>
-          </div>
-          <br>
-          <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem;margin-top:1rem">Couleurs Globales (Stock)</h3>
-          <p style="color:#aaa;font-size:0.85rem;margin-bottom:1rem">Définissez jusqu'à 7 couleurs de base disponibles. Ces couleurs seront teintes sur la base du t-shirt.</p>
-          <div>
-            <div class="admin-color-row" id="settingsGlobalColors" style="margin-bottom:0.8rem">
-              <!-- Rendered via JS -->
-            </div>
-            <div style="display:flex;gap:0.5rem">
-              <input type="color" id="newGlobalColor" value="#ffffff" style="width:50px;height:40px;padding:0;cursor:pointer;border:none;background:none">
-              <button class="btn-secondary" style="padding:0 1rem" onclick="addGlobalColor()">+ Ajouter une couleur</button>
-            </div>
+          <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">Mockups par Couleur</h3>
+          <p style="color:#aaa;font-size:0.85rem;margin-bottom:1rem">Définissez vos couleurs et uploadez un mockup (devant/dos) spécifique pour chacune.</p>
+          
+          <div id="settingsColorMockupsList">
+            <!-- Rendered via JS -->
           </div>
 
-          <div style="margin-top:1.5rem">
+          <div style="display:flex;gap:0.5rem;margin-top:1rem;align-items:center;">
+            <input type="color" id="newGlobalColor" value="#ffffff" style="width:50px;height:40px;padding:0;cursor:pointer;border:none;background:none">
+            <button class="btn-secondary" style="padding:0 1rem" onclick="addColorMockup()">+ Ajouter une couleur</button>
+          </div>
+
+          <div style="margin-top:2rem">
             <button class="btn-save" onclick="saveSettings()">💾 Sauvegarder les paramètres</button>
           </div>
         </div>
@@ -729,10 +708,9 @@ let pendingPrintImage = '';
 let globalSettings = {
   front_image_url: null,
   back_image_url: null,
-  global_colors: ['#ffffff','#1a1a1a','#e63946','#457b9d','#2a9d8f','#f4a261']
+  global_colors: ['#ffffff','#1a1a1a','#e63946','#457b9d','#2a9d8f','#f4a261'],
+  color_mockups: []
 };
-let pendingFrontBase = '';
-let pendingBackBase = '';
 
 const sides = {
   front: { wrap: document.getElementById('canvas-front'), canvas: document.querySelector('#canvas-front canvas'), img: null },
@@ -811,43 +789,20 @@ function loadShirtImages() {
   });
 }
 
-// Recolor the shirt fabric on the given side's canvas based on selectedColor.
-// Technique: for each pixel, compute luminance (0-1). Fabric pixels are
-// near-white/light-gray (high luminance); background/mannequin/jeans are
-// near-black (low luminance). We tint only pixels above a luminance threshold,
-// scaling the chosen color by that pixel's luminance — this preserves the
-// photo's natural shading, folds and highlights while recoloring the garment.
-// RGB (0-1) -> HSL (h,s,l all 0-1)
-function rgbToHsl(r, g, b) {
-  const max = Math.max(r,g,b), min = Math.min(r,g,b);
-  let h, s, l = (max+min)/2;
-  if (max === min) { h = 0; s = 0; }
-  else {
-    const d = max - min;
-    s = l > 0.5 ? d/(2-max-min) : d/(max+min);
-    switch(max) {
-      case r: h = ((g-b)/d + (g<b?6:0)) / 6; break;
-      case g: h = ((b-r)/d + 2) / 6; break;
-      default: h = ((r-g)/d + 4) / 6;
-    }
-  }
-  return [h, s, l];
-}
+let usingSpecificMockup = false;
 
-// HSL (0-1) -> RGB (0-1)
-function hslToRgb(h, s, l) {
-  if (s === 0) return [l, l, l];
-  const hue2rgb = (p, q, t) => {
-    if (t < 0) t += 1;
-    if (t > 1) t -= 1;
-    if (t < 1/6) return p + (q-p)*6*t;
-    if (t < 1/2) return q;
-    if (t < 2/3) return p + (q-p)*(2/3-t)*6;
-    return p;
-  };
-  const q = l < 0.5 ? l*(1+s) : l + s - l*s;
-  const p = 2*l - q;
-  return [hue2rgb(p,q,h+1/3), hue2rgb(p,q,h), hue2rgb(p,q,h-1/3)];
+function updateShirtImagesForColor(colorHex) {
+  const mockup = (globalSettings.color_mockups || []).find(m => m.hex.toLowerCase() === colorHex.toLowerCase());
+  if (mockup && mockup.front && mockup.back) {
+    SHIRT_IMAGES.front = mockup.front;
+    SHIRT_IMAGES.back = mockup.back;
+    usingSpecificMockup = true;
+  } else {
+    SHIRT_IMAGES.front = globalSettings.front_image_url || 'https://mihpdlhbijlvbdcqvzdw.supabase.co/storage/v1/object/public/product-images/mockups/ovrg-tshirt-front.jpg';
+    SHIRT_IMAGES.back = globalSettings.back_image_url || 'https://mihpdlhbijlvbdcqvzdw.supabase.co/storage/v1/object/public/product-images/mockups/ovrg-tshirt-back.jpg';
+    usingSpecificMockup = false;
+  }
+  loadShirtImages();
 }
 
 function recolorShirt(side) {
@@ -860,50 +815,7 @@ function recolorShirt(side) {
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   ctx.drawImage(img, 0, 0, w, h);
 
-  const isWhite = selectedColor.toLowerCase() === '#ffffff';
-  if (isWhite) return; // original photo already shows white fabric correctly
-
-  // Parse target color and get its hue/saturation/lightness
-  const hex = selectedColor.replace('#','');
-  const tr = parseInt(hex.substring(0,2),16) / 255;
-  const tg = parseInt(hex.substring(2,4),16) / 255;
-  const tb = parseInt(hex.substring(4,6),16) / 255;
-  const [th, ts, tl] = rgbToHsl(tr, tg, tb);
-
-  const imageData = ctx.getImageData(0, 0, w, h);
-  const data = imageData.data;
-
-  // Luminance threshold: pixels brighter than this are considered "fabric".
-  // Background is near-black, mannequin/jeans are dark; shirt fabric
-  // (incl. shadowed folds) sits roughly in the 0.55–0.97 luminance range
-  // for this mockup, with a mean around 0.78.
-  const THRESHOLD = 0.30;
-  const FEATHER = 0.10;     // smooth transition zone to avoid hard edges
-  const SRC_MEAN = 0.78;    // mean fabric luminance in the source photo
-  const SHADE_SCALE = 0.6;  // how strongly source shading affects target lightness
-
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i] / 255, g = data[i+1] / 255, b = data[i+2] / 255;
-    const lum = 0.2126*r + 0.7152*g + 0.0722*b;
-
-    if (lum <= THRESHOLD) continue; // background/mannequin/jeans — untouched
-
-    // Recolor via HSL: keep target hue+saturation, but offset the target's
-    // own lightness by this pixel's relative shading (fold/highlight) —
-    // this is the "colorize" technique and preserves fabric depth.
-    const shadeOffset = lum - SRC_MEAN;
-    let newL = tl + shadeOffset * SHADE_SCALE;
-    newL = Math.max(0.02, Math.min(0.98, newL));
-    const [nr, ng, nb] = hslToRgb(th, ts, newL);
-
-    // Feather the transition near threshold to avoid hard edges
-    const mix = Math.min(1, (lum - THRESHOLD) / FEATHER);
-    data[i]   = (r*(1-mix) + nr*mix) * 255;
-    data[i+1] = (g*(1-mix) + ng*mix) * 255;
-    data[i+2] = (b*(1-mix) + nb*mix) * 255;
-  }
-
-  ctx.putImageData(imageData, 0, 0);
+  scheduleRender();
 }
 
 function recolorBothSides() {
@@ -965,6 +877,9 @@ async function loadSettings() {
       }
       globalSettings.front_image_url = data.front_image_url || null;
       globalSettings.back_image_url = data.back_image_url || null;
+      if (data.color_mockups) {
+        globalSettings.color_mockups = data.color_mockups;
+      }
     }
   } catch(e) {
     console.error('Load settings error:', e);
@@ -1087,7 +1002,7 @@ function renderColorOptions(colors) {
   const row = document.getElementById('colorRow');
   row.innerHTML = colors.map((c,i) => `<button class="color-swatch${i===0?' selected':''}" style="background:${c}" data-color="${c}" title="${COLOR_NAMES[c]||c}"></button>`).join('');
   selectedColor = colors[0];
-  recolorBothSides();
+  updateShirtImagesForColor(selectedColor);
   if (window.setShirtColor) window.setShirtColor(selectedColor);
 }
 
@@ -1105,7 +1020,7 @@ document.getElementById('colorRow').addEventListener('click', e => {
   if (!btn) return;
   selectedColor = btn.dataset.color;
   document.querySelectorAll('.color-swatch').forEach(b => b.classList.toggle('selected', b===btn));
-  recolorBothSides();
+  updateShirtImagesForColor(selectedColor);
   if (window.setShirtColor) window.setShirtColor(selectedColor);
 });
 
@@ -1770,97 +1685,130 @@ function cancelAddPrint() {
 // ============================================================
 //  ADMIN — SETTINGS (MOCKUPS & COLORS)
 // ============================================================
+let pendingColorMockups = [];
+
 function loadAdminSettingsUI() {
-  pendingFrontBase = globalSettings.front_image_url || '';
-  pendingBackBase = globalSettings.back_image_url || '';
-  updateSettingsUploadSlots();
-  renderSettingsColors();
-}
-
-function updateSettingsUploadSlots() {
-  const fSlot = document.getElementById('settingsFrontSlot');
-  const bSlot = document.getElementById('settingsBackSlot');
-  fSlot.innerHTML = pendingFrontBase
-    ? `<img src="${pendingFrontBase}" alt="Front Base"><div class="upload-progress" id="settingsFrontProgress"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadBaseImage(event, 'front')">`
-    : `<div class="upload-slot-icon">👕</div><div class="upload-progress" id="settingsFrontProgress">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadBaseImage(event, 'front')">`;
+  pendingColorMockups = JSON.parse(JSON.stringify(globalSettings.color_mockups || []));
   
-  bSlot.innerHTML = pendingBackBase
-    ? `<img src="${pendingBackBase}" alt="Back Base"><div class="upload-progress" id="settingsBackProgress"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadBaseImage(event, 'back')">`
-    : `<div class="upload-slot-icon">👕</div><div class="upload-progress" id="settingsBackProgress">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadBaseImage(event, 'back')">`;
+  if (pendingColorMockups.length === 0 && globalSettings.global_colors && globalSettings.global_colors.length > 0) {
+    pendingColorMockups = globalSettings.global_colors.map(c => ({
+      hex: c,
+      front: globalSettings.front_image_url || null,
+      back: globalSettings.back_image_url || null
+    }));
+  }
+  
+  renderSettingsColorMockups();
 }
 
-function renderSettingsColors() {
-  const row = document.getElementById('settingsGlobalColors');
-  row.innerHTML = globalSettings.global_colors.map((c, i) => `
-    <div style="display:inline-block; position:relative; margin-right:0.6rem; margin-bottom:0.6rem">
-      <div class="color-swatch" style="background:${c}; width:44px; height:44px" title="${c}"></div>
-      <button onclick="removeGlobalColor(${i})" style="position:absolute; top:-6px; right:-6px; background:#ef4444; color:white; border:none; border-radius:50%; width:20px; height:20px; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center">✕</button>
+function renderSettingsColorMockups() {
+  const container = document.getElementById('settingsColorMockupsList');
+  if (!pendingColorMockups || pendingColorMockups.length === 0) {
+    container.innerHTML = '<p style="color:#666">Aucune couleur définie.</p>';
+    return;
+  }
+  
+  container.innerHTML = pendingColorMockups.map((m, i) => `
+    <div style="background:#111; border:1px solid #333; padding:1rem; border-radius:8px; margin-bottom:1rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <div style="width:30px; height:30px; background:${m.hex}; border-radius:4px; border:1px solid #444;"></div>
+          <strong style="color:#eee; font-family:monospace">${m.hex}</strong>
+        </div>
+        <button class="btn-cancel-login" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="removeColorMockup(${i})">Supprimer</button>
+      </div>
+      
+      <div class="admin-grid2">
+        <div>
+          <label style="font-size:0.8rem">Devant (Front)</label>
+          <div class="upload-slot" id="settingsFrontSlot_${i}" style="height:120px; min-height:120px;">
+            ${m.front 
+              ? \`<img src="\${m.front}" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="settingsFrontProg_\${i}"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, \${i}, 'front')">\`
+              : \`<div class="upload-slot-icon" style="font-size:1.5rem">👕</div><div class="upload-progress" id="settingsFrontProg_\${i}">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, \${i}, 'front')">\`
+            }
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.8rem">Dos (Back)</label>
+          <div class="upload-slot" id="settingsBackSlot_${i}" style="height:120px; min-height:120px;">
+            ${m.back 
+              ? \`<img src="\${m.back}" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="settingsBackProg_\${i}"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, \${i}, 'back')">\`
+              : \`<div class="upload-slot-icon" style="font-size:1.5rem">👕</div><div class="upload-progress" id="settingsBackProg_\${i}">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, \${i}, 'back')">\`
+            }
+          </div>
+        </div>
+      </div>
     </div>
   `).join('');
 }
 
-function addGlobalColor() {
-  if (globalSettings.global_colors.length >= 7) {
-    showToast('Limite atteinte', 'Vous ne pouvez pas avoir plus de 7 couleurs de base.', '#f59e0b');
+function addColorMockup() {
+  const hex = document.getElementById('newGlobalColor').value;
+  if (pendingColorMockups.find(m => m.hex.toLowerCase() === hex.toLowerCase())) {
+    showToast('Erreur', 'Cette couleur existe déjà.', '#ef4444');
     return;
   }
-  const color = document.getElementById('newGlobalColor').value;
-  if (!globalSettings.global_colors.includes(color)) {
-    globalSettings.global_colors.push(color);
-    renderSettingsColors();
-  }
+  pendingColorMockups.push({ hex: hex, front: null, back: null });
+  renderSettingsColorMockups();
 }
 
-function removeGlobalColor(index) {
-  if (globalSettings.global_colors.length <= 1) {
+function removeColorMockup(index) {
+  if (pendingColorMockups.length <= 1) {
     showToast('Erreur', 'Il doit rester au moins une couleur.', '#ef4444');
     return;
   }
-  globalSettings.global_colors.splice(index, 1);
-  renderSettingsColors();
+  pendingColorMockups.splice(index, 1);
+  renderSettingsColorMockups();
 }
 
-async function uploadBaseImage(event, side) {
+async function uploadMockupImage(event, index, side) {
   const file = event.target.files[0];
   if (!file) return;
-  const prog = document.getElementById(side === 'front' ? 'settingsFrontProgress' : 'settingsBackProgress');
+  const prog = document.getElementById(`settings${side === 'front' ? 'Front' : 'Back'}Prog_${index}`);
   prog.classList.add('show');
   try {
     const ext = file.name.split('.').pop();
-    const filename = `base_${side}_${Date.now()}.${ext}`;
-    const path = `mockups/${filename}`;
+    const filename = \`mockup_\${side}_\${Date.now()}.\${ext}\`;
+    const path = \`mockups/\${filename}\`;
     const { error } = await sbClient.storage.from(STORAGE_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
     if (error) throw error;
     
     const { data: urlData } = sbClient.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-    if (side === 'front') pendingFrontBase = urlData.publicUrl;
-    else pendingBackBase = urlData.publicUrl;
+    pendingColorMockups[index][side] = urlData.publicUrl;
     
-    updateSettingsUploadSlots();
-    showToast('Image uploadée ✓', "La base a été chargée. N'oubliez pas de sauvegarder.");
+    renderSettingsColorMockups();
+    showToast('Image uploadée ✓', "N'oubliez pas de sauvegarder.");
   } catch(e) {
-    console.error('Upload base error:', e);
+    console.error('Upload mockup error:', e);
     prog.classList.remove('show');
     showToast('Erreur upload', e.message, '#ef4444');
   }
 }
 
 async function saveSettings() {
+  for (let m of pendingColorMockups) {
+    if (!m.front || !m.back) {
+      showToast('Attention', \`Les mockups (devant et dos) de la couleur \${m.hex} ne sont pas complets.\`, '#f59e0b');
+    }
+  }
+
+  const global_colors = pendingColorMockups.map(m => m.hex);
+
   const payload = {
     id: 1,
-    front_image_url: pendingFrontBase || null,
-    back_image_url: pendingBackBase || null,
-    global_colors: globalSettings.global_colors
+    global_colors: global_colors,
+    color_mockups: pendingColorMockups
   };
+
   try {
     const { error } = await sbClient.from('showcase_settings').upsert(payload, { onConflict: 'id' });
     if (error) throw error;
     
-    if (pendingFrontBase) { SHIRT_IMAGES.front = pendingFrontBase; globalSettings.front_image_url = pendingFrontBase; }
-    if (pendingBackBase) { SHIRT_IMAGES.back = pendingBackBase; globalSettings.back_image_url = pendingBackBase; }
+    globalSettings.color_mockups = JSON.parse(JSON.stringify(pendingColorMockups));
+    globalSettings.global_colors = global_colors;
     
     loadShirtImages();
-    // Update live front-end color selector
+    
     if (typeof renderColorOptions === 'function' && !selectedPrint) {
        renderColorOptions(globalSettings.global_colors);
     }
