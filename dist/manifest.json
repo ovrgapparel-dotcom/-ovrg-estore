@@ -1,106 +1,21 @@
 {
-    "name": "La boutique OVRG",
-    "short_name": "OVRG",
-    "description": "Mode streetwear premium à Abidjan. Livraison rapide, style exclusif.",
-    "start_url": "/",
-    "scope": "/",
-    "display": "standalone",
-    "orientation": "portrait",
-    "theme_color": "#FF6B35",
-    "background_color": "#0d0d0d",
-    "lang": "fr",
-    "categories": [
-        "shopping",
-        "lifestyle"
-    ],
-    "icons": [
-        {
-            "src": "/icons/icon-72.png",
-            "sizes": "72x72",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-96.png",
-            "sizes": "96x96",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-128.png",
-            "sizes": "128x128",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-144.png",
-            "sizes": "144x144",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-152.png",
-            "sizes": "152x152",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-384.png",
-            "sizes": "384x384",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/icons/icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "/splash_image.png",
-            "sizes": "1024x500",
-            "type": "image/png",
-            "purpose": "any"
-        }
-    ],
-    "screenshots": [
-        {
-            "src": "/screenshots/mobile.png",
-            "sizes": "390x844",
-            "type": "image/png",
-            "form_factor": "narrow"
-        }
-    ],
-    "shortcuts": [
-        {
-            "name": "Catalogue",
-            "short_name": "Catalogue",
-            "description": "Voir nos produits",
-            "url": "/#catalogue",
-            "icons": [
-                {
-                    "src": "/icons/icon-96.png",
-                    "sizes": "96x96"
-                }
-            ]
-        },
-        {
-            "name": "Contact",
-            "short_name": "Contact",
-            "description": "Nous contacter",
-            "url": "/#contact",
-            "icons": [
-                {
-                    "src": "/icons/icon-96.png",
-                    "sizes": "96x96"
-                }
-            ]
-        }
-    ]
+  "name": "La boutique OVRG",
+  "short_name": "OVRG",
+  "description": "Mode Streetwear Premium à Abidjan",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#FF6B35",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }

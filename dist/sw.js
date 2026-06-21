@@ -1,54 +1,36 @@
-// OVRG E-Store Service Worker
+// OVRG Service Worker — minimal cache-first strategy
 const CACHE_NAME = 'ovrg-v1';
-const SHELL_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
-];
+const PRECACHE = ['/', '/index.html'];
 
-// Install: cache shell assets
-self.addEventListener('install', event => {
+self.addEventListener('install', function(event) {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL_ASSETS))
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.addAll(PRECACHE);
+    })
   );
   self.skipWaiting();
 });
 
-// Activate: clean old caches
-self.addEventListener('activate', event => {
+self.addEventListener('activate', function(event) {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    caches.keys().then(function(keys) {
+      return Promise.all(
+        keys.filter(function(k) { return k !== CACHE_NAME; })
+            .map(function(k) { return caches.delete(k); })
+      );
+    })
   );
   self.clients.claim();
 });
 
-// Fetch: network-first for API calls, cache-first for shell
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-
-  // Always network-first for Supabase / external APIs
-  if (url.hostname.includes('supabase') || url.hostname.includes('formsubmit') ||
-      url.hostname.includes('paypal') || url.hostname.includes('wave') ||
-      url.hostname.includes('googleapis') || url.hostname.includes('jsdelivr')) {
-    event.respondWith(fetch(event.request).catch(() => new Response('', { status: 503 })));
-    return;
-  }
-
-  // Cache-first for same-origin assets
+self.addEventListener('fetch', function(event) {
+  // Only handle GET requests
+  if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        if (response && response.status === 200 && response.type === 'basic') {
-          const toCache = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, toCache));
-        }
-        return response;
+    caches.match(event.request).then(function(cached) {
+      return cached || fetch(event.request).catch(function() {
+        return caches.match('/index.html');
       });
-    }).catch(() => caches.match('/index.html'))
+    })
   );
 });

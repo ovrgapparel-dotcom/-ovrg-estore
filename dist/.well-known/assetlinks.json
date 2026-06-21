@@ -1,14 +1,12 @@
 [
-    {
-        "relation": [
-            "delegate_permission/common.handle_all_urls"
-        ],
-        "target": {
-            "namespace": "android_app",
-            "package_name": "com.ovrg.boutique",
-            "sha256_cert_fingerprints": [
-                "PLACEHOLDER_SHA256_REPLACE_AFTER_BUBBLEWRAP_INIT"
-            ]
-        }
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.ovrg_estore.twa",
+      "sha256_cert_fingerprints": [
+        "83:39:98:05:98:48:AF:1A:0D:B3:3B:D8:14:25:E4:2C:89:85:3B:11:BA:99:A4:4C:3E:9D:FB:16:B6:B9:40:0E"
+      ]
     }
+  }
 ]
