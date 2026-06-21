@@ -402,10 +402,10 @@ footer .footer-admin {
 <header>
   <div class="header-inner">
     <div style="display:flex;align-items:center;gap:0.75rem">
-      <a href="https://laboutiqueovrg.now.site/home" class="logo">OVRG<span>.</span></a>
+      <a href="index.html" class="logo">OVRG<span>.</span></a>
       <span class="header-sub">Showcase</span>
     </div>
-    <a href="https://laboutiqueovrg.now.site/home" class="back-link">← Retour à la boutique</a>
+    <a href="index.html" class="back-link">← Retour à la boutique</a>
   </div>
 </header>
 
@@ -1169,6 +1169,9 @@ function switchView(side) {
   if (side === '3d') {
     btn3d.style.boxShadow = 'inset 0 3px 6px rgba(0,0,0,0.4)';
     btn3d.style.transform = 'scale(0.98)';
+    if (window.trigger3DResize) {
+      setTimeout(() => window.trigger3DResize(), 50);
+    }
   } else {
     btn3d.style.boxShadow = '0 4px 10px rgba(255,107,53,0.3)';
     btn3d.style.transform = 'none';

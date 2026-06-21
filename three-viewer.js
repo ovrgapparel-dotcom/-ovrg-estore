@@ -21,17 +21,18 @@ export function initThreeViewer() {
 
   container.innerHTML = ''; // Clear
 
+  const initWidth = container.clientWidth || 400;
+  const initHeight = container.clientHeight || 500;
+
   scene = new THREE.Scene();
-  // Match the showcase 3D container background (transparent or dark)
-  // The UI is mostly white/grey in the background, let's use a soft studio gradient or color
   scene.background = new THREE.Color('#f0f0f0'); 
 
-  camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+  camera = new THREE.PerspectiveCamera(45, initWidth / initHeight, 0.1, 100);
   camera.position.set(0, 0, 3.5);
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(initWidth, initHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
   container.appendChild(renderer.domElement);
@@ -125,6 +126,10 @@ function onWindowResize() {
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
 }
+
+window.trigger3DResize = function() {
+  onWindowResize();
+};
 
 // ── GLOBAL HOOKS FOR UI ──
 
