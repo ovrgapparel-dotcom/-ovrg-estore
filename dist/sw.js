@@ -1,6 +1,6 @@
-// OVRG Service Worker — minimal cache-first strategy
-const CACHE_NAME = 'ovrg-v1';
-const PRECACHE = ['/', '/index.html'];
+// OVRG Service Worker — Network-First for HTML, Stale-While-Revalidate for Assets
+const CACHE_NAME = 'ovrg-v2';
+const PRECACHE = ['/', '/index.html', '/showcase.html'];
 
 self.addEventListener('install', function(event) {
   event.waitUntil(
@@ -24,13 +24,35 @@ self.addEventListener('activate', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
-  event.respondWith(
-    caches.match(event.request).then(function(cached) {
-      return cached || fetch(event.request).catch(function() {
-        return caches.match('/index.html');
-      });
-    })
-  );
+
+  // Network-first for Navigation / HTML
+  if (event.request.mode === 'navigate' || (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html'))) {
+    event.respondWith(
+      fetch(event.request).then(response => {
+        const resClone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, resClone));
+        return response;
+      }).catch(() => {
+        return caches.match(event.request).then(cached => {
+          return cached || caches.match('/index.html');
+        });
+      })
+    );
+  } else {
+    // Stale-while-revalidate for assets
+    event.respondWith(
+      caches.match(event.request).then(function(cached) {
+        const fetchPromise = fetch(event.request).then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200) {
+            const resClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, resClone));
+          }
+          return networkResponse;
+        }).catch(function() {});
+        
+        return cached || fetchPromise;
+      })
+    );
+  }
 });
