@@ -2156,20 +2156,20 @@ function renderSettingsColorMockups() {
       <div class="admin-grid" style="grid-template-columns: 1fr 1fr 1fr; gap:1rem; margin-bottom:1.5rem">
         <div>
           <label style="font-size:0.8rem">Devant</label>
-          <div class="upload-slot" id="slot_cap_front_${i}" style="height:80px; min-height:80px;">
-            ${m.cap_front ? '<img src="' + m.cap_front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_cap_front_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'cap_front\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_cap_front_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'cap_front\')">'}
+          <div class="upload-slot" id="slot_jacket_front_${i}" style="height:80px; min-height:80px;">
+            ${m.jacket_front ? '<img src="' + m.jacket_front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_jacket_front_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_front\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_jacket_front_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_front\')">'}
           </div>
         </div>
         <div>
           <label style="font-size:0.8rem">Côté</label>
-          <div class="upload-slot" id="slot_cap_side_${i}" style="height:80px; min-height:80px;">
-            ${m.cap_side ? '<img src="' + m.cap_side + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_cap_side_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'cap_side\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_cap_side_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'cap_side\')">'}
+          <div class="upload-slot" id="slot_jacket_side_${i}" style="height:80px; min-height:80px;">
+            ${m.jacket_side ? '<img src="' + m.jacket_side + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_jacket_side_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_side\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_jacket_side_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_side\')">'}
           </div>
         </div>
         <div>
           <label style="font-size:0.8rem">Dos</label>
-          <div class="upload-slot" id="slot_cap_back_${i}" style="height:80px; min-height:80px;">
-            ${m.cap_back ? '<img src="' + m.cap_back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_cap_back_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'cap_back\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_cap_back_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'cap_back\')">'}
+          <div class="upload-slot" id="slot_jacket_back_${i}" style="height:80px; min-height:80px;">
+            ${m.jacket_back ? '<img src="' + m.jacket_back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_jacket_back_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_back\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_jacket_back_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_back\')">'}
           </div>
         </div>
       </div>
@@ -2178,20 +2178,20 @@ function renderSettingsColorMockups() {
       <div class="admin-grid" style="grid-template-columns: 1fr 1fr 1fr; gap:1rem;">
         <div>
           <label style="font-size:0.8rem">Devant</label>
-          <div class="upload-slot" id="slot_bucket_front_${i}" style="height:80px; min-height:80px;">
-            ${m.bucket_front ? '<img src="' + m.bucket_front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_bucket_front_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'bucket_front\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_bucket_front_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'bucket_front\')">'}
+          <div class="upload-slot" id="slot_hoodie_front_${i}" style="height:80px; min-height:80px;">
+            ${m.hoodie_front ? '<img src="' + m.hoodie_front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_hoodie_front_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_front\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_hoodie_front_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_front\')">'}
           </div>
         </div>
         <div>
           <label style="font-size:0.8rem">Côté</label>
-          <div class="upload-slot" id="slot_bucket_side_${i}" style="height:80px; min-height:80px;">
-            ${m.bucket_side ? '<img src="' + m.bucket_side + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_bucket_side_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'bucket_side\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_bucket_side_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'bucket_side\')">'}
+          <div class="upload-slot" id="slot_hoodie_side_${i}" style="height:80px; min-height:80px;">
+            ${m.hoodie_side ? '<img src="' + m.hoodie_side + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_hoodie_side_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_side\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_hoodie_side_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_side\')">'}
           </div>
         </div>
         <div>
           <label style="font-size:0.8rem">Dos</label>
-          <div class="upload-slot" id="slot_bucket_back_${i}" style="height:80px; min-height:80px;">
-            ${m.bucket_back ? '<img src="' + m.bucket_back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_bucket_back_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'bucket_back\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_bucket_back_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'bucket_back\')">'}
+          <div class="upload-slot" id="slot_hoodie_back_${i}" style="height:80px; min-height:80px;">
+            ${m.hoodie_back ? '<img src="' + m.hoodie_back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_hoodie_back_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_back\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_hoodie_back_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_back\')">'}
           </div>
         </div>
       </div>

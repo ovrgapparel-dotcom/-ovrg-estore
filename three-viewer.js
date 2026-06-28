@@ -131,7 +131,7 @@ export function initThreeViewer() {
   const d2 = new THREE.DirectionalLight(0xffffff, 0.4);
   d2.position.set(-2, 0, -2); scene.add(d2);
 
-  const startUrl = IS_HEADWEAR ? '/cap.glb' : '/scene.gltf';
+  const startUrl = IS_HEADWEAR ? '/cap.glb' : (IS_OUTERWEAR ? '/jacket.glb' : '/scene.gltf');
   window.load3DModel(startUrl);
 
   new ResizeObserver(_onResize).observe(container);
