@@ -25,6 +25,7 @@ let _hwLabelColor  = '#ffffff';
 let _hwScale       = 0.42;   // 0–1 fraction of model height
 
 const IS_HEADWEAR = window.location.pathname.toLowerCase().includes('headwear');
+const IS_OUTERWEAR = window.location.pathname.toLowerCase().includes('outerwear');
 
 // ─── MODEL LOADER ────────────────────────────────────────────────────────────
 window.load3DModel = function (modelUrl) {
@@ -80,7 +81,7 @@ window.load3DModel = function (modelUrl) {
 
     model.updateMatrixWorld(true);
 
-    if (IS_HEADWEAR) {
+    if (IS_HEADWEAR || IS_OUTERWEAR) {
       _rebuildHwOverlay();
     } else {
       _updateTshirtDecals();
@@ -345,32 +346,64 @@ function _rebuildHwOverlay() {
   let pz = cz;
   const ori = new THREE.Euler(0, 0, 0);
 
-  if (zoneId === 'front' || zoneId === 'front-center') {
-    // Default position (center)
-  } else if (zoneId === 'front-left') {
-    px = cx - boxSize.x * 0.16;
-    pz = cz - boxSize.z * 0.05;
-    ori.y = Math.PI / 6;
-  } else if (zoneId === 'front-right') {
-    px = cx + boxSize.x * 0.16;
-    pz = cz - boxSize.z * 0.05;
-    ori.y = -Math.PI / 6;
-  } else if (zoneId === 'back-center') {
-    px = cx;
-    pz = box.min.z;
-    ori.y = Math.PI;
-  } else if (zoneId === 'brim-front') {
-    py = box.min.y + boxSize.y * 0.18;
-    pz = box.max.z + 0.08;
-    ori.x = -Math.PI / 6;
-  } else if (zoneId === 'front-high') {
-    py = cy + boxSize.y * 0.12;
-    pz = cz - boxSize.z * 0.08;
-    ori.x = -Math.PI / 12;
-  } else if (zoneId === 'front-low') {
-    py = cy - boxSize.y * 0.10;
-    pz = cz - boxSize.z * 0.02;
-    ori.x = Math.PI / 24;
+  if (IS_OUTERWEAR) {
+    if (zoneId === 'front' || zoneId === 'front-center') {
+      py = cy + boxSize.y * 0.15;
+      pz = cz - boxSize.z * 0.02;
+    } else if (zoneId === 'front-left') {
+      px = cx - boxSize.x * 0.22;
+      py = cy + boxSize.y * 0.20;
+      pz = cz - boxSize.z * 0.05;
+      ori.y = Math.PI / 12;
+    } else if (zoneId === 'front-right') {
+      px = cx + boxSize.x * 0.22;
+      py = cy + boxSize.y * 0.20;
+      pz = cz - boxSize.z * 0.05;
+      ori.y = -Math.PI / 12;
+    } else if (zoneId === 'back-center') {
+      px = cx;
+      py = cy + boxSize.y * 0.15;
+      pz = box.min.z + boxSize.z * 0.02;
+      ori.y = Math.PI;
+    } else if (zoneId === 'sleeve-left') {
+      px = cx - boxSize.x * 0.45;
+      py = cy + boxSize.y * 0.10;
+      pz = cz - boxSize.z * 0.35;
+      ori.y = Math.PI / 2;
+    } else if (zoneId === 'sleeve-right') {
+      px = cx + boxSize.x * 0.45;
+      py = cy + boxSize.y * 0.10;
+      pz = cz - boxSize.z * 0.35;
+      ori.y = -Math.PI / 2;
+    }
+  } else {
+    if (zoneId === 'front' || zoneId === 'front-center') {
+      // Default position (center)
+    } else if (zoneId === 'front-left') {
+      px = cx - boxSize.x * 0.16;
+      pz = cz - boxSize.z * 0.05;
+      ori.y = Math.PI / 6;
+    } else if (zoneId === 'front-right') {
+      px = cx + boxSize.x * 0.16;
+      pz = cz - boxSize.z * 0.05;
+      ori.y = -Math.PI / 6;
+    } else if (zoneId === 'back-center') {
+      px = cx;
+      pz = box.min.z;
+      ori.y = Math.PI;
+    } else if (zoneId === 'brim-front') {
+      py = box.min.y + boxSize.y * 0.18;
+      pz = box.max.z + 0.08;
+      ori.x = -Math.PI / 6;
+    } else if (zoneId === 'front-high') {
+      py = cy + boxSize.y * 0.12;
+      pz = cz - boxSize.z * 0.08;
+      ori.x = -Math.PI / 12;
+    } else if (zoneId === 'front-low') {
+      py = cy - boxSize.y * 0.10;
+      pz = cz - boxSize.z * 0.02;
+      ori.x = Math.PI / 24;
+    }
   }
 
   const pos  = new THREE.Vector3(px, py, pz);
