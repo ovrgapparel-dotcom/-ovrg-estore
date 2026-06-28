@@ -456,7 +456,7 @@ footer .footer-admin {
     <h2>Personnaliser</h2>
 
     <div class="print-info" id="printInfo">
-      <span>🎨</span> <span>Aucun imprimé sélectionné — choisissez-en un dans la bibliothèque.</span>
+      <span>Aucun imprimé sélectionné — choisissez-en un dans la bibliothèque.</span>
     </div>
 
     <!-- Print customization controls — shown once a print is selected -->
@@ -520,6 +520,17 @@ footer .footer-admin {
       </div>
     </div>
 
+    <div class="ctrl-section" id="embroiderySection" style="display:none">
+      <label class="ctrl-label" style="display:flex;justify-content:space-between;align-items:center">
+        <span>Broderie / Label personnalisé</span>
+        <span style="font-size:0.75rem;color:#f59e0b;font-weight:600">+9,000 FCFA</span>
+      </label>
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.4rem">
+        <button id="embroideryToggle" class="size-btn" onclick="toggleEmbroidery()" style="padding:0.5rem 1.2rem;font-size:0.85rem">Ajouter broderie</button>
+        <span id="embroideryStatus" style="font-size:0.8rem;color:#aaa">Non sélectionné</span>
+      </div>
+    </div>
+
     <div class="price-row">
       <span class="price-main" id="priceMain">18,000 FCFA</span>
       <span class="price-note" id="priceNote">Édition exclusive • livraison à Abidjan</span>
@@ -527,9 +538,9 @@ footer .footer-admin {
     <div id="stockNote" style="display:none;font-size:0.8rem;color:#f59e0b;margin:-1rem 0 1rem"></div>
 
     <div class="action-buttons">
-      <button class="btn-primary" onclick="addToCartShowcase()">🛍 Ajouter au panier</button>
-      <button class="btn-whatsapp" onclick="orderViaWhatsApp()">💬 Commander via WhatsApp</button>
-      <button class="btn-secondary" onclick="goToCheckout()">→ Aller au panier / commande</button>
+      <button class="btn-primary" onclick="addToCartShowcase()">Ajouter au panier</button>
+      <button class="btn-whatsapp" onclick="orderViaWhatsApp()">Commander via WhatsApp</button>
+      <button class="btn-secondary" onclick="goToCheckout()">Voir le panier</button>
     </div>
   </div>
 
@@ -570,9 +581,11 @@ footer .footer-admin {
       <div id="supabaseStatus" class="supabase-status loading">⟳ Connexion à Supabase...</div>
 
       <div class="admin-tabs">
-        <div class="admin-tab active" onclick="showAdminTab('list', this)">Imprimés</div>
-        <div class="admin-tab" onclick="resetPrintForm();showAdminTab('add', this)">+ Ajouter un imprimé</div>
-        <div class="admin-tab" onclick="showAdminTab('settings', this)">⚙ Paramètres Mockup</div>
+        <div class="admin-tab active" onclick="showAdminTab('list', this)">🎨 Imprimés</div>
+        <div class="admin-tab" onclick="resetPrintForm();showAdminTab('add', this)">+ Ajouter imprimé</div>
+        <div class="admin-tab" onclick="resetHeadwearForm('cap');showAdminTab('caps', this)">🧢 Casquettes</div>
+        <div class="admin-tab" onclick="resetHeadwearForm('bob');showAdminTab('bobs', this)">🪣 Bobs</div>
+        <div class="admin-tab" onclick="showAdminTab('settings', this)">⚙ Paramètres</div>
       </div>
 
       <div id="adminTabList">
@@ -676,6 +689,85 @@ footer .footer-admin {
           </div>
         </div>
       </div>
+
+      <!-- ── CAPS ADMIN TAB ── -->
+      <div id="adminTabCaps" style="display:none">
+        <div class="admin-form">
+          <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">Casquettes — Catalogue</h3>
+          <div class="admin-print-list" id="adminCapList">
+            <p style="color:#666;text-align:center;padding:2rem">Chargement...</p>
+          </div>
+          <div style="margin-top:1rem">
+            <button class="btn-save" onclick="resetHeadwearForm('cap');showHeadwearAddForm('cap')">+ Ajouter une casquette</button>
+          </div>
+        </div>
+        <div id="adminCapAddForm" style="display:none">
+          <div class="admin-form">
+            <input type="hidden" id="editCapId" value="">
+            <h3 id="capFormTitle" style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">+ Nouvelle casquette</h3>
+            <div><label>Nom</label><input type="text" id="capName" placeholder="Ex: OVRG Cap Classic"></div>
+            <div class="admin-grid2">
+              <div><label>Catégorie</label><input type="text" id="capCategory" value="Casquette" placeholder="Snapback, Dad Cap..."></div>
+              <div><label>Image (PNG recommandé)</label>
+                <div class="upload-slot" id="capUploadSlot">
+                  <div class="upload-slot-icon">🧢</div>
+                  <div class="upload-progress" id="capUploadProgress">⟳ Upload...</div>
+                  <input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearImage(event,'cap')">
+                </div>
+              </div>
+            </div>
+            <div class="admin-grid2">
+              <div><label>Prix (FCFA)</label><input type="number" id="capPrice" value="15000" min="0" step="500"></div>
+              <div><label>Stock</label><input type="number" id="capStock" value="50" min="0" step="1"></div>
+            </div>
+            <div><label>Couleurs disponibles</label><div class="admin-color-row" id="adminCapColorRow"></div></div>
+            <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+              <button class="btn-save" onclick="saveHeadwear('cap')">💾 Enregistrer</button>
+              <button class="btn-cancel-login" style="background:#333;color:#aaa;padding:0.75rem 1.5rem;border-radius:8px" onclick="cancelHeadwearForm('cap')">Annuler</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BOBS ADMIN TAB ── -->
+      <div id="adminTabBobs" style="display:none">
+        <div class="admin-form">
+          <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">Bobs (Bucket Hats) — Catalogue</h3>
+          <div class="admin-print-list" id="adminBobList">
+            <p style="color:#666;text-align:center;padding:2rem">Chargement...</p>
+          </div>
+          <div style="margin-top:1rem">
+            <button class="btn-save" onclick="resetHeadwearForm('bob');showHeadwearAddForm('bob')">+ Ajouter un bob</button>
+          </div>
+        </div>
+        <div id="adminBobAddForm" style="display:none">
+          <div class="admin-form">
+            <input type="hidden" id="editBobId" value="">
+            <h3 id="bobFormTitle" style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">+ Nouveau bob</h3>
+            <div><label>Nom</label><input type="text" id="bobName" placeholder="Ex: OVRG Bucket Hat"></div>
+            <div class="admin-grid2">
+              <div><label>Catégorie</label><input type="text" id="bobCategory" value="Bob" placeholder="Bucket Hat, Fisherman..."></div>
+              <div><label>Image (PNG recommandé)</label>
+                <div class="upload-slot" id="bobUploadSlot">
+                  <div class="upload-slot-icon">🪣</div>
+                  <div class="upload-progress" id="bobUploadProgress">⟳ Upload...</div>
+                  <input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearImage(event,'bob')">
+                </div>
+              </div>
+            </div>
+            <div class="admin-grid2">
+              <div><label>Prix (FCFA)</label><input type="number" id="bobPrice" value="12000" min="0" step="500"></div>
+              <div><label>Stock</label><input type="number" id="bobStock" value="50" min="0" step="1"></div>
+            </div>
+            <div><label>Couleurs disponibles</label><div class="admin-color-row" id="adminBobColorRow"></div></div>
+            <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+              <button class="btn-save" onclick="saveHeadwear('bob')">💾 Enregistrer</button>
+              <button class="btn-cancel-login" style="background:#333;color:#aaa;padding:0.75rem 1.5rem;border-radius:8px" onclick="cancelHeadwearForm('bob')">Annuler</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -696,7 +788,7 @@ footer .footer-admin {
 // ============================================================
 //  STATE
 // ============================================================
-let sbClient = null;
+let sbClient = supabase.createClient('https://mihpdlhbijlvbdcqvzdw.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paHBkbGhiaWpsdmJkY3F2emR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDkzMTgsImV4cCI6MjA4Nzk4NTMxOH0.X-2XjKKi3enHck1KBtlga-RiVjXN3BS5EhW3fnF3oTE');
 let currentUser = null;
 let prints = [];
 let selectedPrint = null;
@@ -704,6 +796,7 @@ let selectedColor = '#ffffff';
 let selectedSize = 'S';
 let currentView = 'front';
 let pendingPrintImage = '';
+let currentProduct = 'tshirt'; // 'tshirt', 'cap', 'bob'
 
 let globalSettings = {
   front_image_url: null,
@@ -711,6 +804,18 @@ let globalSettings = {
   global_colors: ['#ffffff','#1a1a1a','#e63946','#457b9d','#2a9d8f','#f4a261'],
   color_mockups: []
 };
+
+function switchProduct(product) {
+  if (!['tshirt','cap','bob'].includes(product)) return;
+  currentProduct = product;
+  // Update model URL based on product type
+  const modelUrl = product === 'tshirt' ? '/scene.gltf' : (product === 'cap' ? '/cap.glb' : '/bob.glb');
+  window.load3DModel(modelUrl);
+  // Reset view to front
+  switchView('front');
+  // Optionally update admin UI visibility (caps/bobs tabs) – show all admin tabs as they are already present.
+}
+
 
 const sides = {
   front: { wrap: document.getElementById('canvas-front'), canvas: document.querySelector('#canvas-front canvas'), img: null },
@@ -802,6 +907,7 @@ function updateShirtImagesForColor(colorHex) {
     SHIRT_IMAGES.back = globalSettings.back_image_url || 'https://mihpdlhbijlvbdcqvzdw.supabase.co/storage/v1/object/public/product-images/mockups/ovrg-tshirt-back.jpg';
     usingSpecificMockup = false;
   }
+  // Reload shirt images to apply new mockup/color
   loadShirtImages();
 }
 
@@ -846,6 +952,15 @@ let printBlend = 0.4;     // 0 – 1  (0% flat print, 100% blended into fabric)
 // ============================================================
 function initSupabase() {
   try {
+    // sbClient is already created inline at top of STATE block; just attach the auth listener
+    if (sbClient) {
+      sbClient.auth.onAuthStateChange((event, session) => {
+        currentUser = session?.user ?? null;
+        updateAdminUI();
+      });
+      return true;
+    }
+    // Fallback: try creating via the global supabase object
     const _sb = window['supabase'] || window['supabaseJs'];
     if (!_sb || typeof _sb.createClient !== 'function') throw new Error('Supabase library not loaded');
     sbClient = _sb.createClient(SUPABASE_URL, SUPABASE_ANON, {
@@ -940,6 +1055,14 @@ function selectPrint(p) {
 
   // Show customization controls now that a print is chosen
   document.getElementById('printCustomize').style.display = p.image_url ? '' : 'none';
+  // Show embroidery option
+  document.getElementById('embroiderySection').style.display = '';
+  // Reset embroidery on new print selection
+  embroiderySelected = false;
+  const embBtn = document.getElementById('embroideryToggle');
+  if (embBtn) { embBtn.textContent = 'Ajouter broderie'; embBtn.classList.remove('selected'); }
+  const embStatus = document.getElementById('embroideryStatus');
+  if (embStatus) { embStatus.textContent = 'Non sélectionné'; embStatus.style.color = '#aaa'; }
 
   // Apply this print's price
   const price = p.price != null ? p.price : SHOWCASE_PRICE;
@@ -1000,16 +1123,20 @@ const COLOR_NAMES = {'#ffffff':'Blanc','#1a1a1a':'Noir','#e63946':'Rouge','#457b
 
 function renderColorOptions(colors) {
   const row = document.getElementById('colorRow');
-  row.innerHTML = colors.map((c,i) => `<button class="color-swatch${i===0?' selected':''}" style="background:${c}" data-color="${c}" title="${COLOR_NAMES[c]||c}"></button>`).join('');
-  selectedColor = colors[0];
+  // Preserve selectedColor if it exists in new list; otherwise default to first
+  const keepColor = colors.includes(selectedColor) ? selectedColor : colors[0];
+  row.innerHTML = colors.map(c => `<button class="color-swatch${c===keepColor?' selected':''}" style="background:${c}" data-color="${c}" title="${COLOR_NAMES[c]||c}"></button>`).join('');
+  selectedColor = keepColor;
   updateShirtImagesForColor(selectedColor);
   if (window.setShirtColor) window.setShirtColor(selectedColor);
 }
 
 function renderSizeOptions(sizes) {
   const row = document.getElementById('sizeRow');
-  row.innerHTML = sizes.map((s,i) => `<button class="size-btn${i===0?' selected':''}" data-size="${s}">${s}</button>`).join('');
-  selectedSize = sizes[0];
+  // Preserve selectedSize if it exists in new list; otherwise default to first
+  const keepSize = sizes.includes(selectedSize) ? selectedSize : sizes[0];
+  row.innerHTML = sizes.map(s => `<button class="size-btn${s===keepSize?' selected':''}" data-size="${s}">${s}</button>`).join('');
+  selectedSize = keepSize;
 }
 
 // ============================================================
@@ -1022,13 +1149,15 @@ document.getElementById('colorRow').addEventListener('click', e => {
   document.querySelectorAll('.color-swatch').forEach(b => b.classList.toggle('selected', b===btn));
   updateShirtImagesForColor(selectedColor);
   if (window.setShirtColor) window.setShirtColor(selectedColor);
+  // Re-apply current print onto newly colored shirt
+  if (sides.front.img) scheduleRender();
 });
 
 document.getElementById('sizeRow').addEventListener('click', e => {
   const btn = e.target.closest('.size-btn');
   if (!btn) return;
   selectedSize = btn.dataset.size;
-  document.querySelectorAll('.size-btn').forEach(b => b.classList.toggle('selected', b===btn));
+  document.querySelectorAll('#sizeRow .size-btn').forEach(b => b.classList.toggle('selected', b===btn));
 });
 
 // ============================================================
@@ -1292,6 +1421,38 @@ window.addEventListener('resize', () => {
 });
 
 // ============================================================
+//  EMBROIDERY TOGGLE
+// ============================================================
+let embroiderySelected = false;
+const EMBROIDERY_SURCHARGE = 9000;
+
+function toggleEmbroidery() {
+  embroiderySelected = !embroiderySelected;
+  const btn = document.getElementById('embroideryToggle');
+  const status = document.getElementById('embroideryStatus');
+  if (embroiderySelected) {
+    btn.textContent = '✓ Broderie sélectionnée';
+    btn.classList.add('selected');
+    status.textContent = `+${fmt(EMBROIDERY_SURCHARGE)} ajouté`;
+    status.style.color = '#22c55e';
+  } else {
+    btn.textContent = 'Ajouter broderie';
+    btn.classList.remove('selected');
+    status.textContent = 'Non sélectionné';
+    status.style.color = '#aaa';
+  }
+  // Update displayed price
+  if (selectedPrint) {
+    const base = selectedPrint.price != null ? selectedPrint.price : SHOWCASE_PRICE;
+    const total = base + (embroiderySelected ? EMBROIDERY_SURCHARGE : 0);
+    document.getElementById('priceMain').textContent = fmt(total);
+    document.getElementById('priceNote').textContent = embroiderySelected
+      ? `Prix de base ${fmt(base)} + broderie ${fmt(EMBROIDERY_SURCHARGE)}`
+      : 'Édition exclusive • livraison à Abidjan';
+  }
+}
+
+// ============================================================
 //  ORDER ACTIONS
 // ============================================================
 const SHOWCASE_PRICE = 18000;
@@ -1304,12 +1465,13 @@ const PLACEMENT_LABELS = {
 
 function buildOrderItem() {
   if (!selectedPrint) return null;
-  const price = selectedPrint.price != null ? selectedPrint.price : SHOWCASE_PRICE;
+  const basePrice = selectedPrint.price != null ? selectedPrint.price : SHOWCASE_PRICE;
+  const totalPrice = basePrice + (embroiderySelected ? EMBROIDERY_SURCHARGE : 0);
   return {
-    key: `showcase-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPreset}-${Math.round(printScale*100)}-${Math.round(printBlend*100)}`,
+    key: `showcase-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPreset}-${Math.round(printScale*100)}-${Math.round(printBlend*100)}-${embroiderySelected?'emb':''}`,
     id: `showcase-${selectedPrint.id}`,
-    name: `T-Shirt OVRG — ${selectedPrint.name}`,
-    price: price,
+    name: `T-Shirt OVRG — ${selectedPrint.name}${embroiderySelected ? ' (Broderie)' : ''}`,
+    price: totalPrice,
     qty: 1,
     size: selectedSize,
     color: selectedColor,
@@ -1319,7 +1481,8 @@ function buildOrderItem() {
       placement: printPreset,
       placementLabel: PLACEMENT_LABELS[printPreset] || printPreset,
       scale: Math.round(printScale * 100),
-      blend: Math.round(printBlend * 100)
+      blend: Math.round(printBlend * 100),
+      embroidery: embroiderySelected
     }
   };
 }
@@ -1457,7 +1620,13 @@ function showAdminTab(tab, el) {
   document.getElementById('adminTabAdd').style.display = tab==='add' ? '' : 'none';
   const settingsTab = document.getElementById('adminTabSettings');
   if (settingsTab) settingsTab.style.display = tab==='settings' ? '' : 'none';
+  const capsTab = document.getElementById('adminTabCaps');
+  if (capsTab) capsTab.style.display = tab==='caps' ? '' : 'none';
+  const bobsTab = document.getElementById('adminTabBobs');
+  if (bobsTab) bobsTab.style.display = tab==='bobs' ? '' : 'none';
   if (tab === 'settings') loadAdminSettingsUI();
+  if (tab === 'caps') loadAdminHeadwear('cap');
+  if (tab === 'bobs') loadAdminHeadwear('bob');
 }
 
 async function loadAdminPrints() {
@@ -1723,8 +1892,8 @@ function renderSettingsColorMockups() {
           <label style="font-size:0.8rem">Devant (Front)</label>
           <div class="upload-slot" id="settingsFrontSlot_${i}" style="height:120px; min-height:120px;">
             ${m.front 
-              ? \`<img src="\${m.front}" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="settingsFrontProg_\${i}"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, \${i}, 'front')">\`
-              : \`<div class="upload-slot-icon" style="font-size:1.5rem">👕</div><div class="upload-progress" id="settingsFrontProg_\${i}">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, \${i}, 'front')">\`
+              ? '<img src="' + m.front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="settingsFrontProg_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, ' + i + ', \'front\')">'
+              : '<div class="upload-slot-icon" style="font-size:1.5rem">👕</div><div class="upload-progress" id="settingsFrontProg_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, ' + i + ', \'front\')">'
             }
           </div>
         </div>
@@ -1732,9 +1901,8 @@ function renderSettingsColorMockups() {
           <label style="font-size:0.8rem">Dos (Back)</label>
           <div class="upload-slot" id="settingsBackSlot_${i}" style="height:120px; min-height:120px;">
             ${m.back 
-              ? \`<img src="\${m.back}" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="settingsBackProg_\${i}"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, \${i}, 'back')">\`
-              : \`<div class="upload-slot-icon" style="font-size:1.5rem">👕</div><div class="upload-progress" id="settingsBackProg_\${i}">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, \${i}, 'back')">\`
-            }
+              ? '<img src="' + m.back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="settingsBackProg_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, ' + i + ', \'back\')">' 
+              : '<div class="upload-slot-icon" style="font-size:1.5rem">👕</div><div class="upload-progress" id="settingsBackProg_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, ' + i + ', \'back\')">'}
           </div>
         </div>
       </div>
@@ -1743,9 +1911,14 @@ function renderSettingsColorMockups() {
 }
 
 function addColorMockup() {
+  const MAX_COLORS = 7;
   const hex = document.getElementById('newGlobalColor').value;
   if (pendingColorMockups.find(m => m.hex.toLowerCase() === hex.toLowerCase())) {
     showToast('Erreur', 'Cette couleur existe déjà.', '#ef4444');
+    return;
+  }
+  if (pendingColorMockups.length >= MAX_COLORS) {
+    showToast('Limite atteinte', 'Maximum ' + MAX_COLORS + ' couleurs autorisées.', '#f59e0b');
     return;
   }
   pendingColorMockups.push({ hex: hex, front: null, back: null });
@@ -1768,8 +1941,8 @@ async function uploadMockupImage(event, index, side) {
   prog.classList.add('show');
   try {
     const ext = file.name.split('.').pop();
-    const filename = \`mockup_\${side}_\${Date.now()}.\${ext}\`;
-    const path = \`mockups/\${filename}\`;
+    const filename = 'mockup_' + side + '_' + Date.now() + '.' + ext;
+    const path = 'mockups/' + filename;
     const { error } = await sbClient.storage.from(STORAGE_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
     if (error) throw error;
     
@@ -1788,7 +1961,7 @@ async function uploadMockupImage(event, index, side) {
 async function saveSettings() {
   for (let m of pendingColorMockups) {
     if (!m.front || !m.back) {
-      showToast('Attention', \`Les mockups (devant et dos) de la couleur \${m.hex} ne sont pas complets.\`, '#f59e0b');
+      showToast('Attention', 'Les mockups (devant et dos) de la couleur ' + m.hex + ' ne sont pas complets.', '#f59e0b');
     }
   }
 
@@ -1817,6 +1990,201 @@ async function saveSettings() {
   } catch(e) {
     console.error('Save settings error:', e);
     showToast('Erreur', e.message, '#ef4444');
+  }
+}
+
+// ============================================================
+//  HEADWEAR ADMIN (CAPS & BOBS)
+// ============================================================
+const HEADWEAR_TABLE = 'headwear_items'; // Supabase table: headwear_items
+let pendingHeadwearImage = { cap: '', bob: '' };
+let adminHeadwearData = { cap: [], bob: [] };
+
+async function loadAdminHeadwear(type) {
+  const listId = type === 'cap' ? 'adminCapList' : 'adminBobList';
+  const list = document.getElementById(listId);
+  if (!list) return;
+  list.innerHTML = `<p style="color:#666;text-align:center;padding:2rem">Chargement...</p>`;
+  try {
+    const { data, error } = await sbClient.from(HEADWEAR_TABLE).select('*').eq('type', type).order('id', { ascending: true });
+    if (error) throw error;
+    adminHeadwearData[type] = data || [];
+    renderAdminHeadwearList(type, data || []);
+  } catch(e) {
+    list.innerHTML = `<p style="color:#f87171;text-align:center;padding:2rem">Table <code>${HEADWEAR_TABLE}</code> non configurée — créez-la dans Supabase.</p>`;
+  }
+}
+
+function renderAdminHeadwearList(type, items) {
+  const listId = type === 'cap' ? 'adminCapList' : 'adminBobList';
+  const list = document.getElementById(listId);
+  if (!items.length) {
+    list.innerHTML = `<div style="text-align:center;padding:2.5rem;color:#555"><div style="font-size:2.2rem;margin-bottom:0.8rem">${type==='cap'?'🧢':'🪣'}</div><p>Aucun article. Cliquez <strong style="color:var(--primary)">+ Ajouter</strong> pour commencer.</p></div>`;
+    return;
+  }
+  list.innerHTML = items.map(p => {
+    const price = p.price != null ? p.price : 12000;
+    const stock = p.stock != null ? p.stock : 50;
+    return `
+    <div class="admin-print-item">
+      <div class="admin-print-thumb">${p.image_url ? `<img src="${p.image_url}" alt="${p.name}">` : (type==='cap'?'🧢':'🪣')}</div>
+      <div class="admin-print-meta">
+        <h4>${p.name}</h4>
+        <p>${p.category || '—'} • ${p.active ? 'Actif (visible)' : 'Masqué'}</p>
+        <p style="margin-top:0.3rem"><strong style="color:white">${fmt(price)}</strong> &nbsp;•&nbsp; Stock: <span style="color:${stock<=5?'#f87171':'#aaa'}">${stock}</span></p>
+      </div>
+      <div class="admin-print-actions">
+        <button class="btn-edit" onclick="editHeadwear('${type}',${p.id})">✏ Modifier</button>
+        <button class="${p.active?'btn-toggle-active':'btn-toggle-inactive'}" onclick="toggleHeadwearActive('${type}',${p.id},${!p.active})">${p.active?'✓ Actif':'○ Masqué'}</button>
+        <button class="btn-del-print" onclick="deleteHeadwear('${type}',${p.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showHeadwearAddForm(type) {
+  const formId = type === 'cap' ? 'adminCapAddForm' : 'adminBobAddForm';
+  document.getElementById(formId).style.display = '';
+  // Render color checkboxes
+  const colorRowId = type === 'cap' ? 'adminCapColorRow' : 'adminBobColorRow';
+  document.getElementById(colorRowId).innerHTML = globalSettings.global_colors.map(c =>
+    `<label class="admin-check-swatch" data-color="${c}" style="background:${c}"><input type="checkbox" value="${c}" checked><span class="check-mark">✓</span></label>`
+  ).join('');
+}
+
+function cancelHeadwearForm(type) {
+  const formId = type === 'cap' ? 'adminCapAddForm' : 'adminBobAddForm';
+  document.getElementById(formId).style.display = 'none';
+  resetHeadwearForm(type);
+}
+
+function resetHeadwearForm(type) {
+  const T = type === 'cap';
+  const prefix = T ? 'cap' : 'bob';
+  const idEl = document.getElementById(`edit${T?'Cap':'Bob'}Id`);
+  if (idEl) idEl.value = '';
+  const nameEl = document.getElementById(`${prefix}Name`);
+  if (nameEl) nameEl.value = '';
+  const catEl = document.getElementById(`${prefix}Category`);
+  if (catEl) catEl.value = T ? 'Casquette' : 'Bob';
+  const priceEl = document.getElementById(`${prefix}Price`);
+  if (priceEl) priceEl.value = T ? '15000' : '12000';
+  const stockEl = document.getElementById(`${prefix}Stock`);
+  if (stockEl) stockEl.value = '50';
+  pendingHeadwearImage[type] = '';
+  const slotEl = document.getElementById(`${prefix}UploadSlot`);
+  if (slotEl) slotEl.innerHTML = `<div class="upload-slot-icon">${T?'🧢':'🪣'}</div><div class="upload-progress" id="${prefix}UploadProgress">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearImage(event,'${type}')">`;
+  const titleEl = document.getElementById(`${prefix}FormTitle`);
+  if (titleEl) titleEl.textContent = T ? '+ Nouvelle casquette' : '+ Nouveau bob';
+  const formId = T ? 'adminCapAddForm' : 'adminBobAddForm';
+  const formEl = document.getElementById(formId);
+  if (formEl) formEl.style.display = 'none';
+}
+
+async function uploadHeadwearImage(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const prefix = type === 'cap' ? 'cap' : 'bob';
+  const prog = document.getElementById(`${prefix}UploadProgress`);
+  if (prog) prog.classList.add('show');
+  try {
+    const ext = file.name.split('.').pop();
+    const filename = `headwear_${type}_${Date.now()}.${ext}`;
+    const path = `headwear/${filename}`;
+    const { error } = await sbClient.storage.from(STORAGE_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+    if (error) throw error;
+    const { data: urlData } = sbClient.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+    pendingHeadwearImage[type] = urlData.publicUrl;
+    const slot = document.getElementById(`${prefix}UploadSlot`);
+    if (slot) slot.innerHTML = `<img src="${urlData.publicUrl}" alt="Preview"><div class="upload-progress" id="${prefix}UploadProgress"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearImage(event,'${type}')">`;
+    showToast('Image uploadée ✓', "Prête à être enregistrée.");
+  } catch(e) {
+    if (prog) prog.classList.remove('show');
+    // Fallback: local base64
+    const reader = new FileReader();
+    reader.onload = ev => {
+      pendingHeadwearImage[type] = ev.target.result;
+      const prefix2 = type === 'cap' ? 'cap' : 'bob';
+      const slot = document.getElementById(`${prefix2}UploadSlot`);
+      if (slot) slot.innerHTML = `<img src="${ev.target.result}" alt="Preview">`;
+      showToast('Image chargée (locale)', 'Bucket non configuré — image temporaire.', '#f59e0b');
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+async function saveHeadwear(type) {
+  const prefix = type === 'cap' ? 'cap' : 'bob';
+  const T = type === 'cap';
+  const name = document.getElementById(`${prefix}Name`).value.trim();
+  const category = document.getElementById(`${prefix}Category`).value.trim();
+  const price = parseInt(document.getElementById(`${prefix}Price`).value, 10);
+  const stock = parseInt(document.getElementById(`${prefix}Stock`).value, 10);
+  const colors = Array.from(document.querySelectorAll(`#admin${T?'Cap':'Bob'}ColorRow input:checked`)).map(i => i.value);
+  const editId = document.getElementById(`edit${T?'Cap':'Bob'}Id`).value;
+
+  if (!name) { showToast('Nom requis', 'Donnez un nom au produit.', '#f59e0b'); return; }
+  if (isNaN(price) || price < 0) { showToast('Prix invalide', 'Indiquez un prix valide.', '#f59e0b'); return; }
+
+  const payload = { name, category: category || type, image_url: pendingHeadwearImage[type] || '', price, stock, colors, type, active: true };
+
+  try {
+    if (editId) {
+      const { error } = await sbClient.from(HEADWEAR_TABLE).update(payload).eq('id', parseInt(editId, 10));
+      if (error) throw error;
+    } else {
+      const { error } = await sbClient.from(HEADWEAR_TABLE).insert(payload);
+      if (error) throw error;
+    }
+    cancelHeadwearForm(type);
+    await loadAdminHeadwear(type);
+    showToast('Enregistré! ✓', `"${name}" ${editId ? 'mis à jour' : 'ajouté'}.`);
+  } catch(e) {
+    showToast('Erreur Supabase', e.message || 'Vérifiez la configuration.', '#ef4444');
+  }
+}
+
+function editHeadwear(type, id) {
+  const p = adminHeadwearData[type].find(x => x.id === id);
+  if (!p) return;
+  const prefix = type === 'cap' ? 'cap' : 'bob';
+  const T = type === 'cap';
+  document.getElementById(`edit${T?'Cap':'Bob'}Id`).value = id;
+  document.getElementById(`${prefix}Name`).value = p.name || '';
+  document.getElementById(`${prefix}Category`).value = p.category || type;
+  document.getElementById(`${prefix}Price`).value = p.price != null ? p.price : (T ? 15000 : 12000);
+  document.getElementById(`${prefix}Stock`).value = p.stock != null ? p.stock : 50;
+  pendingHeadwearImage[type] = p.image_url || '';
+  const slot = document.getElementById(`${prefix}UploadSlot`);
+  if (slot && p.image_url) slot.innerHTML = `<img src="${p.image_url}" alt="Preview"><div class="upload-progress" id="${prefix}UploadProgress"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearImage(event,'${type}')">`;
+  const titleEl = document.getElementById(`${prefix}FormTitle`);
+  if (titleEl) titleEl.textContent = `✏ Modifier — ${p.name}`;
+  showHeadwearAddForm(type);
+  // Pre-check stored colors
+  const colors = p.colors || [];
+  document.querySelectorAll(`#admin${T?'Cap':'Bob'}ColorRow input`).forEach(i => { i.checked = colors.includes(i.value); });
+}
+
+async function toggleHeadwearActive(type, id, newActive) {
+  try {
+    const { error } = await sbClient.from(HEADWEAR_TABLE).update({ active: newActive }).eq('id', id);
+    if (error) throw error;
+    await loadAdminHeadwear(type);
+    showToast('Mis à jour', newActive ? 'Article activé.' : 'Article masqué.');
+  } catch(e) {
+    showToast('Erreur', e.message || 'Impossible de mettre à jour.', '#ef4444');
+  }
+}
+
+async function deleteHeadwear(type, id) {
+  if (!confirm('Supprimer cet article définitivement?')) return;
+  try {
+    const { error } = await sbClient.from(HEADWEAR_TABLE).delete().eq('id', id);
+    if (error) throw error;
+    await loadAdminHeadwear(type);
+    showToast('Supprimé', 'Article retiré.');
+  } catch(e) {
+    showToast('Erreur', e.message || 'Impossible de supprimer.', '#ef4444');
   }
 }
 

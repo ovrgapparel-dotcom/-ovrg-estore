@@ -697,7 +697,7 @@ footer .footer-admin {
 // ============================================================
 //  STATE
 // ============================================================
-let sbClient = null;
+let sbClient = supabase.createClient('https://mihpdlhbijlvbdcqvzdw.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paHBkbGhiaWpsdmJkY3F2emR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDkzMTgsImV4cCI6MjA4Nzk4NTMxOH0.X-2XjKKi3enHck1KBtlga-RiVjXN3BS5EhW3fnF3oTE');
 let currentUser = null;
 let prints = [];
 let selectedPrint = null;
@@ -847,6 +847,15 @@ let printBlend = 0.4;     // 0 – 1  (0% flat print, 100% blended into fabric)
 // ============================================================
 function initSupabase() {
   try {
+    // sbClient is already created inline at top of STATE block; just attach the auth listener
+    if (sbClient) {
+      sbClient.auth.onAuthStateChange((event, session) => {
+        currentUser = session?.user ?? null;
+        updateAdminUI();
+      });
+      return true;
+    }
+    // Fallback: try creating via the global supabase object
     const _sb = window['supabase'] || window['supabaseJs'];
     if (!_sb || typeof _sb.createClient !== 'function') throw new Error('Supabase library not loaded');
     sbClient = _sb.createClient(SUPABASE_URL, SUPABASE_ANON, {
@@ -1724,8 +1733,8 @@ function renderSettingsColorMockups() {
           <label style="font-size:0.8rem">Devant (Front)</label>
           <div class="upload-slot" id="settingsFrontSlot_${i}" style="height:120px; min-height:120px;">
             ${m.front 
-              ? \`<img src="\${m.front}" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="settingsFrontProg_\${i}"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, \${i}, 'front')">\`
-              : \`<div class="upload-slot-icon" style="font-size:1.5rem">👕</div><div class="upload-progress" id="settingsFrontProg_\${i}">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, \${i}, 'front')">\`
+              ? '<img src="' + m.front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="settingsFrontProg_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, ' + i + ', \'front\')">'
+              : '<div class="upload-slot-icon" style="font-size:1.5rem">👕</div><div class="upload-progress" id="settingsFrontProg_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, ' + i + ', \'front\')">'
             }
           </div>
         </div>
@@ -1733,9 +1742,8 @@ function renderSettingsColorMockups() {
           <label style="font-size:0.8rem">Dos (Back)</label>
           <div class="upload-slot" id="settingsBackSlot_${i}" style="height:120px; min-height:120px;">
             ${m.back 
-              ? \`<img src="\${m.back}" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="settingsBackProg_\${i}"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, \${i}, 'back')">\`
-              : \`<div class="upload-slot-icon" style="font-size:1.5rem">👕</div><div class="upload-progress" id="settingsBackProg_\${i}">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, \${i}, 'back')">\`
-            }
+              ? '<img src="' + m.back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="settingsBackProg_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, ' + i + ', \'back\')">' 
+              : '<div class="upload-slot-icon" style="font-size:1.5rem">👕</div><div class="upload-progress" id="settingsBackProg_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadMockupImage(event, ' + i + ', \'back\')">'}
           </div>
         </div>
       </div>
@@ -1744,9 +1752,14 @@ function renderSettingsColorMockups() {
 }
 
 function addColorMockup() {
+  const MAX_COLORS = 7;
   const hex = document.getElementById('newGlobalColor').value;
   if (pendingColorMockups.find(m => m.hex.toLowerCase() === hex.toLowerCase())) {
     showToast('Erreur', 'Cette couleur existe déjà.', '#ef4444');
+    return;
+  }
+  if (pendingColorMockups.length >= MAX_COLORS) {
+    showToast('Limite atteinte', 'Maximum ' + MAX_COLORS + ' couleurs autorisées.', '#f59e0b');
     return;
   }
   pendingColorMockups.push({ hex: hex, front: null, back: null });
@@ -1769,8 +1782,8 @@ async function uploadMockupImage(event, index, side) {
   prog.classList.add('show');
   try {
     const ext = file.name.split('.').pop();
-    const filename = \`mockup_\${side}_\${Date.now()}.\${ext}\`;
-    const path = \`mockups/\${filename}\`;
+    const filename = 'mockup_' + side + '_' + Date.now() + '.' + ext;
+    const path = 'mockups/' + filename;
     const { error } = await sbClient.storage.from(STORAGE_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
     if (error) throw error;
     
@@ -1789,7 +1802,7 @@ async function uploadMockupImage(event, index, side) {
 async function saveSettings() {
   for (let m of pendingColorMockups) {
     if (!m.front || !m.back) {
-      showToast('Attention', \`Les mockups (devant et dos) de la couleur \${m.hex} ne sont pas complets.\`, '#f59e0b');
+      showToast('Attention', 'Les mockups (devant et dos) de la couleur ' + m.hex + ' ne sont pas complets.', '#f59e0b');
     }
   }
 
