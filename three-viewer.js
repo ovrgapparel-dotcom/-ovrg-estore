@@ -345,7 +345,9 @@ function _rebuildHwOverlay() {
   let pz = cz;
   const ori = new THREE.Euler(0, 0, 0);
 
-  if (zoneId === 'front-left') {
+  if (zoneId === 'front' || zoneId === 'front-center') {
+    // Default position (center)
+  } else if (zoneId === 'front-left') {
     px = cx - boxSize.x * 0.16;
     pz = cz - boxSize.z * 0.05;
     ori.y = Math.PI / 6;
@@ -361,6 +363,14 @@ function _rebuildHwOverlay() {
     py = box.min.y + boxSize.y * 0.18;
     pz = box.max.z + 0.08;
     ori.x = -Math.PI / 6;
+  } else if (zoneId === 'front-high') {
+    py = cy + boxSize.y * 0.12;
+    pz = cz - boxSize.z * 0.08;
+    ori.x = -Math.PI / 12;
+  } else if (zoneId === 'front-low') {
+    py = cy - boxSize.y * 0.10;
+    pz = cz - boxSize.z * 0.02;
+    ori.x = Math.PI / 24;
   }
 
   const pos  = new THREE.Vector3(px, py, pz);

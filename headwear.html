@@ -421,13 +421,12 @@ footer .footer-admin {
   position: fixed; inset: 0; z-index: 9000;
   background: rgba(0,0,0,0.72);
   backdrop-filter: blur(6px);
-  display: flex !important;
+  display: flex;
   align-items: center; justify-content: center;
   padding: 1rem;
   animation: pgFadeIn 0.22s ease;
 }
 @keyframes pgFadeIn { from { opacity: 0 } to { opacity: 1 } }
-.pg-overlay[style*="display:none"]{ display:none !important; }
 
 .pg-modal {
   background: #111318;
@@ -659,6 +658,9 @@ footer .footer-admin {
           <button class="size-btn" data-scale="S" onclick="setEmbroiderySize('S')">S</button>
           <button class="size-btn selected" data-scale="M" onclick="setEmbroiderySize('M')">M</button>
           <button class="size-btn" data-scale="L" onclick="setEmbroiderySize('L')">L</button>
+        </div>
+        <div style="margin-top:0.8rem;">
+          <input type="range" id="scaleSlider" min="40" max="160" value="100" class="scale-slider" oninput="onScaleSliderInput(this.value)" style="width:100%">
         </div>
       </div>
     </div>
@@ -939,24 +941,22 @@ let decorMode = 'embroidery'; // 'embroidery' | 'label' | 'both'
 // cx/cy = centre of zone, w/h = zone dimensions.
 const EMBROIDERY_ZONES = {
   cap: [
-    { id: 'front-center', label: 'Devant Centre',
-      cx: 305, cy: 210, w: 180, h: 130 },
-    { id: 'front-left',   label: 'Devant Gauche',
-      cx: 195, cy: 225, w: 100, h:  90 },
-    { id: 'front-right',  label: 'Devant Droite',
-      cx: 415, cy: 225, w: 100, h:  90 },
-    { id: 'back-center',  label: 'Dos Centre',
-      cx: 305, cy: 300, w: 130, h:  90 },
+    { id: 'front',        label: 'Devant Complet',cx: 305, cy: 210, w: 180, h: 200 },
+    { id: 'front-high',   label: 'Devant Haut',   cx: 305, cy: 155, w: 160, h:  90 },
+    { id: 'front-center', label: 'Devant Milieu', cx: 305, cy: 210, w: 180, h: 110 },
+    { id: 'front-low',    label: 'Devant Bas',    cx: 305, cy: 265, w: 170, h:  80 },
+    { id: 'front-left',   label: 'Devant Gauche', cx: 195, cy: 225, w: 100, h:  90 },
+    { id: 'front-right',  label: 'Devant Droite', cx: 415, cy: 225, w: 100, h:  90 },
+    { id: 'back-center',  label: 'Dos Centre',    cx: 305, cy: 300, w: 130, h:  90 },
   ],
   bucket: [
-    { id: 'front-center', label: 'Devant Centre',
-      cx: 300, cy: 230, w: 200, h: 140 },
-    { id: 'front-left',   label: 'Devant Gauche',
-      cx: 170, cy: 245, w: 110, h: 100 },
-    { id: 'front-right',  label: 'Devant Droite',
-      cx: 430, cy: 245, w: 110, h: 100 },
-    { id: 'brim-front',   label: 'Bord Devant',
-      cx: 300, cy: 420, w: 240, h:  60 },
+    { id: 'front',        label: 'Devant Complet',cx: 300, cy: 230, w: 200, h: 200 },
+    { id: 'front-high',   label: 'Devant Haut',   cx: 300, cy: 175, w: 180, h:  90 },
+    { id: 'front-center', label: 'Devant Milieu', cx: 300, cy: 230, w: 200, h: 110 },
+    { id: 'front-low',    label: 'Devant Bas',    cx: 300, cy: 285, w: 180, h:  80 },
+    { id: 'front-left',   label: 'Devant Gauche', cx: 170, cy: 245, w: 110, h: 100 },
+    { id: 'front-right',  label: 'Devant Droite', cx: 430, cy: 245, w: 110, h: 100 },
+    { id: 'brim-front',   label: 'Bord Devant',   cx: 300, cy: 420, w: 240, h:  60 },
   ]
 };
 
@@ -965,6 +965,7 @@ const EMBROIDERY_SIZES = { S: 0.65, M: 1.0, L: 1.40 };
 
 let activeZoneId    = 'front-center';
 let embroiderySize  = 'M';
+let scaleMultiplier = 1.0;
 
 
 // sides is populated once the DOM is ready (see DOMContentLoaded)
@@ -1039,6 +1040,7 @@ function loadShirtImages() {
     img.onload = () => {
       shirtSource[side] = img;
       analyzeFabric(side);
+      recolorShirt(side);
       scheduleRender();   // redraws shirt + overlays design
     };
     img.onerror = () => {
@@ -1060,7 +1062,8 @@ function recolorShirt(side) {
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   ctx.drawImage(img, 0, 0, w, h);
-  // Design is overlaid by renderDesign() — called by scheduleRender after this
+  
+  scheduleRender();
 }
 
 // Print customization state — variables already declared above; no redeclaration needed.
@@ -1287,6 +1290,15 @@ function switchView(view) {
     if (el) el.style.display = v === view ? 'block' : 'none';
   });
 
+  if (view !== '3d') {
+    if (shirtSource[view]) {
+      recolorShirt(view);
+    } else {
+      paintFallbackCanvas(view);
+    }
+    scheduleRender();
+  }
+
   // Trigger 3D viewer resize when switching to 3D, then rebuild overlay
   if (view === '3d' && window.trigger3DResize) {
     setTimeout(() => {
@@ -1374,10 +1386,45 @@ function setZone(zoneId) {
   _sync3DOverlay();
 }
 
+function updateSliderBg(slider) {
+  if (!slider) return;
+  const min = slider.min ? parseFloat(slider.min) : 40;
+  const max = slider.max ? parseFloat(slider.max) : 160;
+  const val = slider.value ? parseFloat(slider.value) : 100;
+  const pct = ((val - min) / (max - min)) * 100;
+  slider.style.setProperty('--val', pct + '%');
+}
+
+function onScaleSliderInput(val) {
+  scaleMultiplier = parseFloat(val) / 100;
+  const el = document.getElementById('scaleDisplay');
+  if (el) el.textContent = val + '%';
+  
+  // Sync S/M/L buttons selection state based on value
+  document.querySelectorAll('[data-scale]').forEach(btn => {
+    const scale = btn.dataset.scale;
+    const targetVal = scale === 'S' ? 65 : scale === 'L' ? 140 : 100;
+    btn.classList.toggle('selected', Math.abs(val - targetVal) < 15);
+  });
+
+  scheduleRender();
+  _sync3DOverlay();
+}
+
 function setEmbroiderySize(sz) {
   embroiderySize = sz;
+  const mults = { S: 0.65, M: 1.0, L: 1.40 };
+  scaleMultiplier = mults[sz];
+  
   const el = document.getElementById('scaleDisplay');
   if (el) el.textContent = sz;
+  
+  const slider = document.getElementById('scaleSlider');
+  if (slider) {
+    slider.value = Math.round(scaleMultiplier * 100);
+    updateSliderBg(slider);
+  }
+
   document.querySelectorAll('[data-scale]').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.scale === sz);
   });
@@ -1388,7 +1435,7 @@ function setEmbroiderySize(sz) {
 // Push zone + size to the 3D overlay
 function _sync3DOverlay() {
   const z    = getActiveZone();
-  const mult = EMBROIDERY_SIZES[embroiderySize] || 1.0;
+  const mult = scaleMultiplier;
   // Convert canvas px (600×600 base) to fraction of canvas size
   const scaleFrac = (z.w * mult) / 600;   // fraction of model bounding box
   if (window.setHeadwearDecalScale) window.setHeadwearDecalScale(scaleFrac * 100);
@@ -1423,7 +1470,7 @@ function renderDesign(side) {
 
   // ── Map active zone (600×600 base coords) → % of wrapper ─────────────────
   const zone = getActiveZone();
-  const mult = EMBROIDERY_SIZES[embroiderySize] || 1.0;
+  const mult = scaleMultiplier;
   // Zone is defined in 600×600 px space; wrapper height is ~600px rendered size.
   // Convert to % of displayed wrapper.
   const zWpx = zone.w * mult;
@@ -1704,6 +1751,7 @@ function paintFallbackCanvas(side) {
   ctx.font = '13px DM Sans, sans-serif';
   ctx.fillStyle = 'rgba(0,0,0,0.20)';
   ctx.fillText('Uploadez un mockup dans les Paramètres', 300, 565);
+  scheduleRender();
 }
 
 function _shadedColor(hex, factor) {
@@ -2449,7 +2497,7 @@ function pgBuildZoneList() {
   const zones = EMBROIDERY_ZONES[pgCurrentType] || EMBROIDERY_ZONES.cap;
   list.innerHTML = zones.map((z, i) => `
     <div class="pg-zone-item${z.id === pgSelectedZone ? ' active' : ''}"
-         onclick="pgSelectZone('${z.id}')" data-zone="${z.id}">
+         onclick="pgSelectZone('${z.id}'); applyPgSelection();" data-zone="${z.id}">
       <div class="pg-zone-dot" style="background:${ZONE_COLORS[i % ZONE_COLORS.length]}"></div>
       <span class="pg-zone-name">${z.label}</span>
     </div>`).join('');
@@ -2615,7 +2663,10 @@ function pgCanvasPos(e) {
 function pgHandleClick(e) {
   const [mx, my] = pgCanvasPos(e);
   const zoneId = pgGetZoneAt(mx, my);
-  if (zoneId) pgSelectZone(zoneId);
+  if (zoneId) {
+    pgSelectZone(zoneId);
+    applyPgSelection();
+  }
 }
 
 function pgHandleHover(e) {
