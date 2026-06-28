@@ -1,0 +1,2736 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OVRG Showcase — Headwear</title>
+<meta name="description" content="Personnalisez vos casquettes et bobs avec nos broderies exclusives OVRG.">
+<meta name="theme-color" content="#FF6B35">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
+      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/"
+    }
+  }
+</script>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  SUPABASE SETUP — same project as the main e-store            ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+<script>
+  const SUPABASE_URL    = 'https://mihpdlhbijlvbdcqvzdw.supabase.co';
+  const SUPABASE_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paHBkbGhiaWpsdmJkY3F2emR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDkzMTgsImV4cCI6MjA4Nzk4NTMxOH0.X-2XjKKi3enHck1KBtlga-RiVjXN3BS5EhW3fnF3oTE';
+  const STORAGE_BUCKET  = 'product-images';   // reused bucket for print images
+  const PRINTS_TABLE    = 'headwear_embroideries';  // new table — SQL below
+</script>
+
+<!--
+╔══════════════════════════════════════════════════════════════════════╗
+║  ONE-TIME SUPABASE SETUP for Headwear                                  ║
+╠══════════════════════════════════════════════════════════════════════╣
+║  Run this SQL in Supabase → SQL Editor:                               ║
+║                                                                        ║
+║  create table if not exists headwear_embroideries (                   ║
+║    id          bigserial primary key,                                  ║
+║    name        text not null,                                          ║
+║    image_url   text not null,                                          ║
+║    category    text default 'Édition Limitée',                         ║
+║    price       integer not null default 18000,                         ║
+║    colors      text[] default array['#ffffff','#1a1a1a','#e63946',     ║
+║                  '#457b9d','#2a9d8f','#f4a261'],                        ║
+║    sizes       text[] default array['S','M','L','XL','XXL'],           ║
+║    stock       integer default 100,                                    ║
+║    active      boolean default true,                                   ║
+║    created_at  timestamptz default now()                               ║
+║  );                                                                    ║
+║                                                                        ║
+║  alter table headwear_embroideries enable row level security;          ║
+║  create policy "Public read active embroideries" on headwear_embroideries ║
+║    for select using (active = true);                                   ║
+║  create policy "Auth full access embroideries" on headwear_embroideries   ║
+║    for all using (auth.role() = 'authenticated');                      ║
+║                                                                        ║
+║  -- showcase_settings table (shared with main store, id=1)            ║
+║  create table if not exists showcase_settings (                        ║
+║    id            integer primary key,                                  ║
+║    global_colors  text[] default array['#ffffff','#1a1a1a','#e63946',  ║
+║                     '#457b9d','#2a9d8f','#f4a261'],                     ║
+║    color_mockups  jsonb  default '[]'::jsonb                           ║
+║  );                                                                    ║
+║  alter table showcase_settings enable row level security;              ║
+║  create policy "Public read settings"   on showcase_settings           ║
+║    for select using (true);                                            ║
+║  create policy "Auth full access settings" on showcase_settings        ║
+║    for all using (auth.role() = 'authenticated');                      ║
+║                                                                        ║
+║  -- If showcase_settings already exists, just add the missing column:  ║
+║  alter table showcase_settings                                         ║
+║    add column if not exists color_mockups jsonb default '[]'::jsonb;  ║
+║                                                                        ║
+║  Storage bucket "product-images" is reused.                            ║
+║  Mockup images are uploaded under the mockups/ prefix.                 ║
+╚══════════════════════════════════════════════════════════════════════╝
+-->
+
+<style>
+:root {
+  --primary: #FF6B35;
+  --primary-dark: #e55a2b;
+  --dark: #0d0d0d;
+  --dark2: #1a1a1a;
+  --gray: #888;
+  --light: #f5f4f1;
+  --white: #ffffff;
+  --border: #e8e5e0;
+  --success: #22c55e;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--light);
+  color: var(--dark);
+  line-height: 1.6;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--dark); position: sticky; top: 0; z-index: 100;
+  border-bottom: 2px solid var(--primary);
+}
+.header-inner {
+  max-width: 1400px; margin: 0 auto; padding: 0 1.5rem;
+  display: flex; align-items: center; justify-content: space-between; height: 64px;
+}
+.logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; color: var(--white); letter-spacing: 0.08em; text-decoration: none; }
+.logo span { color: var(--primary); }
+.header-sub { color: #999; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.back-link {
+  color: #ccc; text-decoration: none; font-size: 0.85rem; font-weight: 500;
+  border: 1px solid #444; padding: 0.45rem 1rem; border-radius: 6px; transition: all 0.2s;
+}
+.back-link:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ── HERO ── */
+.hero { background: var(--dark); padding: 3rem 1.5rem 4rem; text-align: center; position: relative; overflow: hidden; }
+.hero::before {
+  content: 'SHOWCASE'; position: absolute; font-family: 'Bebas Neue', sans-serif;
+  font-size: 16vw; color: rgba(255,107,53,0.04); top: 50%; left: 50%;
+  transform: translate(-50%, -50%); pointer-events: none; letter-spacing: 0.1em; white-space: nowrap;
+}
+.hero-tag {
+  display: inline-block; background: var(--primary); color: white; font-size: 0.75rem;
+  font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.35rem 1rem;
+  border-radius: 20px; margin-bottom: 1.2rem;
+}
+.hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 7vw, 5rem); color: var(--white); letter-spacing: 0.05em; line-height: 1; margin-bottom: 0.8rem; }
+.hero h1 span { color: var(--primary); }
+.hero p { color: #aaa; font-size: 1rem; max-width: 520px; margin: 0 auto; }
+
+/* ── MAIN LAYOUT ── */
+.showcase-main {
+  max-width: 1300px; margin: -2rem auto 4rem; padding: 0 1.5rem;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;
+}
+@media(max-width: 900px) { .showcase-main { grid-template-columns: 1fr; } }
+
+/* ── MOCKUP STAGE ── */
+.mockup-card {
+  background: white; border-radius: 18px; padding: 1.5rem;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.08); position: sticky; top: 90px;
+}
+.view-tabs { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1rem; }
+.view-btn {
+  background: var(--light); border: 1.5px solid var(--border); color: var(--gray);
+  padding: 0.45rem 1.2rem; border-radius: 30px; cursor: pointer; font-size: 0.85rem;
+  font-weight: 600; font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+}
+.view-btn.active { background: var(--dark); border-color: var(--dark); color: white; }
+
+.mockup-stage {
+  position: relative; background: radial-gradient(ellipse at 50% 60%, #2e2e44 0%, #15151f 70%);
+  border-radius: 14px; overflow: hidden; min-height: 420px;
+  display: flex; align-items: center; justify-content: center;
+}
+.mockup-stage::before { content:''; position:absolute; inset:0; background: radial-gradient(ellipse at 50% 80%, rgba(100,100,180,0.08) 0%, transparent 60%); pointer-events:none; }
+.mockup-stage::after { content:''; position:absolute; bottom:0; left:10%; right:10%; height:30%; background: radial-gradient(ellipse at 50% 100%, rgba(0,0,0,0.4) 0%, transparent 70%); pointer-events:none; }
+
+.shirt-wrapper { position: relative; display: inline-block; }
+.shirt-wrapper canvas.shirt-img { display: block; width: 320px; height: auto; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5)) drop-shadow(0 8px 16px rgba(0,0,0,0.3)); }
+.fabric-highlight { position: absolute; inset: 0; background: linear-gradient(160deg, rgba(255,255,255,0.08) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.06) 100%); pointer-events: none; }
+.design-canvas-wrap {
+  position: absolute; pointer-events: all; cursor: grab; z-index: 5;
+  transition: box-shadow 0.15s;
+  border-radius: 4px;
+}
+.design-canvas-wrap:active { cursor: grabbing; }
+.design-canvas-wrap canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.35)); }
+.design-resize-handle {
+  position: absolute; bottom: -10px; right: -10px; width: 22px; height: 22px;
+  background: var(--primary); border-radius: 50%; cursor: se-resize; z-index: 10;
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  user-select: none; touch-action: none;
+}
+.design-drag-hint {
+  font-size:0.72rem; color:var(--gray); margin-top:0.4rem; text-align:center;
+  letter-spacing:0.02em;
+}
+.scale-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 5px; border-radius: 3px;
+  background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--val,50%), #ddd var(--val,50%), #ddd 100%);
+  outline: none; cursor: pointer; margin-top: 0.6rem;
+}
+.scale-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--primary);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+}
+.scale-slider::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--primary); border: none;
+}
+
+.no-print-msg {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.6); color: #ccc; font-size: 0.78rem;
+  padding: 0.4rem 1rem; border-radius: 20px; white-space: nowrap;
+}
+
+/* ── PRINT GALLERY ── */
+.print-gallery { margin-top: 1.5rem; }
+.print-gallery h3 {
+  font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 0.06em;
+  margin-bottom: 0.8rem; color: var(--dark);
+}
+.print-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 0.6rem;
+}
+.print-thumb {
+  aspect-ratio: 1; border-radius: 10px; overflow: hidden; cursor: pointer;
+  border: 2px solid var(--border); background: #f0ede8; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center; position: relative;
+}
+.print-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.print-thumb:hover { border-color: var(--primary); transform: translateY(-2px); }
+.print-thumb.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,107,53,0.15); }
+.print-thumb .pname {
+  position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6);
+  color: white; font-size: 0.6rem; padding: 2px 4px; text-align: center;
+  opacity: 0; transition: opacity 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.print-thumb:hover .pname { opacity: 1; }
+.print-thumb-none {
+  display: flex; align-items: center; justify-content: center; font-size: 0.7rem;
+  color: var(--gray); text-align: center; padding: 0.3rem;
+}
+
+/* ── CONTROLS PANEL ── */
+.controls-card {
+  background: white; border-radius: 18px; padding: 1.8rem;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+}
+.controls-card h2 {
+  font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.05em;
+  margin-bottom: 1.5rem; color: var(--dark);
+}
+.ctrl-section { margin-bottom: 1.6rem; }
+.ctrl-label {
+  font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--dark); margin-bottom: 0.6rem; display: block;
+}
+.color-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.color-swatch {
+  width: 38px; height: 38px; border-radius: 50%; cursor: pointer; border: 2px solid var(--border);
+  transition: transform 0.15s, border-color 0.15s; position: relative;
+}
+.color-swatch:hover { transform: scale(1.1); }
+.color-swatch.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,107,53,0.15); }
+.color-swatch.selected::after { content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:white; font-size:0.9rem; font-weight:700; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+
+.size-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.size-btn {
+  border: 1.5px solid var(--border); background: white; padding: 0.5rem 1.1rem; border-radius: 8px;
+  cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600; transition: all 0.15s;
+}
+.size-btn:hover, .size-btn.selected { border-color: var(--primary); background: var(--primary); color: white; }
+
+/* ── PRINT CUSTOMIZATION ── */
+.slider-row { display: flex; align-items: center; gap: 0.9rem; }
+.range-input {
+  flex: 1; accent-color: var(--primary); cursor: pointer; height: 4px;
+}
+.slider-value {
+  font-size: 0.85rem; font-weight: 700; color: var(--dark);
+  min-width: 44px; text-align: right;
+}
+.blend-hint {
+  display: flex; justify-content: space-between; margin-top: 0.35rem;
+  font-size: 0.7rem; color: var(--gray);
+}
+.placement-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; max-width: 220px;
+}
+.placement-btn {
+  aspect-ratio: 1; border: 1.5px solid var(--border); background: white; border-radius: 8px;
+  cursor: pointer; font-size: 1.1rem; color: var(--gray); transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.placement-btn:hover { border-color: var(--primary); color: var(--primary); }
+.placement-btn.selected { background: var(--primary); border-color: var(--primary); color: white; }
+
+.print-info {
+  background: var(--light); border-radius: 10px; padding: 0.9rem 1.1rem; margin-bottom: 1rem;
+  font-size: 0.85rem; color: #555; display: flex; align-items: center; gap: 0.6rem;
+}
+.print-info strong { color: var(--dark); }
+
+.price-row { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 1.5rem; }
+.price-main { font-size: 1.8rem; font-weight: 700; color: var(--dark); }
+.price-note { font-size: 0.8rem; color: var(--gray); }
+
+.action-buttons { display: flex; flex-direction: column; gap: 0.6rem; }
+.btn-primary { background: var(--dark); color: white; border: none; padding: 0.85rem; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+.btn-primary:hover { background: var(--primary); }
+.btn-whatsapp { background: #25D366; color: white; border: none; padding: 0.85rem; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: opacity 0.2s; }
+.btn-whatsapp:hover { opacity: 0.9; }
+.btn-secondary { background: white; color: var(--dark); border: 1.5px solid var(--border); padding: 0.85rem; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ── ADMIN ── */
+.admin-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 500;
+  overflow-y: auto; padding: 1rem; align-items: flex-start; justify-content: center;
+}
+.admin-overlay.open { display: flex; }
+.admin-box { background: var(--dark2); border-radius: 16px; max-width: 760px; width: 100%; margin: 2rem auto; overflow: hidden; color: white; animation: modalIn 0.25s ease; }
+@keyframes modalIn { from { opacity:0; transform: translateY(20px) scale(0.97); } to { opacity:1; transform: translateY(0) scale(1); } }
+.admin-hdr { background: var(--dark); padding: 1.2rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); }
+.admin-hdr h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.7rem; letter-spacing: 0.05em; color: var(--primary); }
+.admin-content { padding: 1.8rem 2rem; }
+.btn-close { background: #333; color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; transition: background 0.2s; }
+.btn-close:hover { background: #444; }
+
+.login-field input, .admin-form input, .admin-form select {
+  width: 100%; padding: 0.75rem 1rem; background: #111; border: 1.5px solid #333; border-radius: 8px;
+  color: white; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; transition: border-color 0.2s;
+}
+.login-field input:focus, .admin-form input:focus, .admin-form select:focus { outline: none; border-color: var(--primary); }
+.admin-form label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #aaa; display: block; margin-bottom: 0.4rem; }
+.admin-form { display: flex; flex-direction: column; gap: 1rem; }
+.admin-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media(max-width:560px){ .admin-grid2 { grid-template-columns: 1fr; } }
+
+/* Admin print color/size selectors */
+.admin-color-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.admin-check-swatch {
+  position: relative; width: 38px; height: 38px; border-radius: 50%;
+  border: 2px solid #444; cursor: pointer; transition: transform 0.15s, border-color 0.15s;
+}
+.admin-check-swatch:hover { transform: scale(1.08); }
+.admin-check-swatch input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; margin:0; }
+.admin-check-swatch .check-mark {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 1rem; font-weight: 700; opacity: 0; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  transition: opacity 0.15s; pointer-events: none;
+}
+.admin-check-swatch input:checked ~ .check-mark { opacity: 1; }
+.admin-check-swatch input:checked { }
+.admin-check-swatch:has(input:checked) { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(255,107,53,0.25); }
+
+.admin-size-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.admin-check-pill {
+  position: relative; border: 1.5px solid #444; border-radius: 8px; cursor: pointer;
+  padding: 0.5rem 1.1rem; font-size: 0.9rem; font-weight: 600; color: #888;
+  transition: all 0.15s; background: #111;
+}
+.admin-check-pill input { position: absolute; opacity: 0; width:100%; height:100%; top:0; left:0; cursor:pointer; margin:0; }
+.admin-check-pill:has(input:checked) { border-color: var(--primary); background: var(--primary); color: white; }
+
+.login-box { text-align: center; padding: 2.5rem; }
+.login-logo { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--primary); letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+.login-box h3 { font-size: 0.95rem; font-weight: 500; color: #aaa; margin-bottom: 1.6rem; }
+.login-field { margin-bottom: 1rem; }
+.btn-login { width: 100%; background: var(--primary); color: white; border: none; padding: 0.9rem; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 0.5rem; transition: background 0.2s; }
+.btn-login:hover { background: var(--primary-dark); }
+.login-error { color: #f87171; font-size: 0.85rem; margin-top: 0.75rem; min-height: 1.2rem; }
+.btn-cancel-login { background: none; border: none; color: #666; font-size: 0.85rem; cursor: pointer; margin-top: 1rem; font-family: 'DM Sans', sans-serif; }
+.btn-cancel-login:hover { color: #aaa; }
+
+.upload-slot {
+  aspect-ratio: 1; max-width: 160px; border-radius: 10px; background: #111; border: 2px dashed #444;
+  overflow: hidden; position: relative; cursor: pointer; transition: border-color 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.upload-slot:hover { border-color: var(--primary); }
+.upload-slot img { width: 100%; height: 100%; object-fit: cover; }
+.upload-slot-icon { font-size: 2rem; opacity: 0.2; }
+.upload-progress { display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; font-size: 0.75rem; color: white; }
+.upload-progress.show { display: flex; }
+
+.admin-print-list { display: flex; flex-direction: column; gap: 0.7rem; margin-top: 1.2rem; }
+.admin-print-item { background: #222; border-radius: 10px; padding: 0.8rem 1rem; display: flex; gap: 1rem; align-items: center; }
+.admin-print-thumb { width: 50px; height: 50px; border-radius: 8px; background: #333; flex-shrink: 0; overflow: hidden; }
+.admin-print-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.admin-print-meta { flex: 1; }
+.admin-print-meta h4 { font-size: 0.9rem; margin-bottom: 0.15rem; }
+.admin-print-meta p { font-size: 0.75rem; color: #aaa; }
+.admin-print-actions { display: flex; gap: 0.5rem; }
+.admin-print-actions button { padding: 0.35rem 0.7rem; border-radius: 6px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 600; }
+.btn-toggle-active { background: var(--primary); color: white; }
+.btn-toggle-inactive { background: #444; color: #aaa; }
+.btn-edit { background: #2d3748; color: white; }
+.btn-edit:hover { background: var(--primary); }
+.btn-del-print { background: #333; color: #aaa; transition: all 0.2s; }
+.btn-del-print:hover { background: #c33; color: white; }
+
+.admin-tabs { display: flex; border-bottom: 1px solid #333; margin-bottom: 1.2rem; }
+.admin-tab { padding: 0.8rem 1.1rem; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #888; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.admin-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.supabase-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; padding: 0.5rem 1rem; border-radius: 6px; margin-bottom: 1rem; }
+.supabase-status.connected { background: rgba(34,197,94,0.1); color: #22c55e; }
+.supabase-status.disconnected { background: rgba(239,68,68,0.1); color: #ef4444; }
+.supabase-status.loading { background: rgba(59,130,246,0.1); color: #3b82f6; }
+
+.btn-save { background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+.btn-save:hover { background: var(--primary-dark); }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--dark); color: white; border-left: 4px solid var(--success); padding: 1rem 1.5rem; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 999; transform: translateY(100px); opacity: 0; transition: all 0.4s ease; max-width: 320px; }
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast .toast-title { font-weight: 700; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.5rem; }
+.toast .toast-body { font-size: 0.85rem; color: #ccc; }
+
+/* ── FOOTER ── */
+footer { background: var(--dark); padding: 2rem 1.5rem; text-align: center; color: #666; font-size: 0.8rem; }
+footer .footer-admin {
+  display: inline-block; background: none; border: none; cursor: pointer;
+  color: #1a1a1a; font-size: 0.6rem; margin-left: 0.5rem; opacity: 0.15;
+  transition: opacity 0.3s; padding: 2px 4px; border-radius: 3px;
+}
+
+/* ── PLACEMENT GUIDE POPUP ──────────────────────────────────────── */
+.pg-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center; justify-content: center;
+  padding: 1rem;
+  animation: pgFadeIn 0.22s ease;
+}
+@keyframes pgFadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+.pg-modal {
+  background: #111318;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 20px;
+  width: min(860px, 98vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 2rem 2rem 1.5rem;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+  animation: pgSlideUp 0.28s cubic-bezier(0.22,1,0.36,1);
+  color: #e8e8e8;
+}
+@keyframes pgSlideUp {
+  from { transform: translateY(28px); opacity: 0 }
+  to   { transform: translateY(0);    opacity: 1 }
+}
+
+.pg-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 1.2rem;
+}
+.pg-title {
+  font-size: 1.22rem; font-weight: 800; letter-spacing: -0.02em;
+  color: #fff; margin: 0 0 0.25rem;
+}
+.pg-subtitle { font-size: 0.82rem; color: rgba(255,255,255,0.45); margin: 0; }
+.pg-close {
+  background: rgba(255,255,255,0.08); border: none; cursor: pointer;
+  color: #fff; width: 34px; height: 34px; border-radius: 50%;
+  font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s; flex-shrink: 0;
+}
+.pg-close:hover { background: rgba(255,255,255,0.18); }
+
+.pg-type-row {
+  display: flex; gap: 0.5rem; margin-bottom: 1.4rem;
+}
+.pg-type-btn {
+  padding: 0.45rem 1.3rem; border-radius: 30px; border: 1.5px solid rgba(255,255,255,0.15);
+  background: transparent; color: rgba(255,255,255,0.5); cursor: pointer;
+  font-size: 0.85rem; font-weight: 600; font-family: inherit;
+  transition: all 0.2s;
+}
+.pg-type-btn.active {
+  background: #fff; border-color: #fff; color: #111;
+}
+
+.pg-body {
+  display: grid; grid-template-columns: 1.1fr 1fr; gap: 2rem;
+  align-items: start;
+}
+@media (max-width: 640px) { .pg-body { grid-template-columns: 1fr; } }
+
+.pg-diagram-wrap { }
+.pg-diagram-label {
+  font-size: 0.78rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; color: rgba(255,255,255,0.4); margin: 0 0 0.8rem;
+  text-align: center;
+}
+.pg-canvas-hint {
+  font-size: 0.72rem; color: rgba(255,255,255,0.28); text-align: center;
+  margin: 0.6rem 0 0; font-style: italic;
+}
+
+.pg-info-wrap { display: flex; flex-direction: column; gap: 1.2rem; }
+
+.pg-zone-list {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+}
+.pg-zone-item {
+  padding: 0.6rem 0.9rem; border-radius: 10px;
+  border: 1.5px solid rgba(255,255,255,0.10);
+  cursor: pointer; transition: all 0.18s;
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.pg-zone-item:hover { border-color: rgba(255,107,53,0.6); background: rgba(255,107,53,0.08); }
+.pg-zone-item.active { border-color: #ff6b35; background: rgba(255,107,53,0.15); }
+.pg-zone-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.pg-zone-name { font-size: 0.82rem; font-weight: 600; color: #e8e8e8; }
+
+.pg-size-guide { }
+.pg-sg-title {
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: rgba(255,255,255,0.4); margin: 0 0 0.6rem;
+}
+.pg-sg-table {
+  width: 100%; border-collapse: collapse; font-size: 0.82rem;
+}
+.pg-sg-table th {
+  text-align: left; padding: 0.4rem 0.6rem;
+  font-weight: 600; color: rgba(255,255,255,0.35);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.pg-sg-table td {
+  padding: 0.45rem 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: #e8e8e8;
+}
+.pg-sg-table tr:last-child td { border-bottom: none; }
+
+.pg-note {
+  font-size: 0.78rem; line-height: 1.6;
+  color: rgba(255,255,255,0.38);
+  padding: 0.8rem 1rem; background: rgba(255,255,255,0.03);
+  border-radius: 8px; border-left: 2px solid rgba(255,107,53,0.4);
+}
+.pg-note strong { color: rgba(255,255,255,0.65); }
+
+.pg-apply-btn {
+  width: 100%; padding: 0.85rem; border-radius: 12px;
+  background: linear-gradient(135deg, #ff6b35, #e05a2a);
+  border: none; color: #fff; font-weight: 700; font-size: 0.95rem;
+  font-family: inherit; cursor: pointer; letter-spacing: 0.02em;
+  transition: all 0.2s; box-shadow: 0 4px 16px rgba(255,107,53,0.3);
+}
+.pg-apply-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,107,53,0.45); }
+
+/* Info trigger button next to zone label */
+.pg-trigger {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.25rem 0.6rem; border-radius: 20px;
+  border: 1px solid rgba(255,107,53,0.4); background: rgba(255,107,53,0.08);
+  color: #ff6b35; cursor: pointer; font-size: 0.72rem; font-weight: 600;
+  font-family: inherit; transition: all 0.2s; letter-spacing: 0.03em;
+}
+.pg-trigger:hover { background: rgba(255,107,53,0.18); border-color: rgba(255,107,53,0.7); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <a href="index.html" class="logo">OVRG<span>.</span></a>
+      <span class="header-sub">Vestes &amp; Hoodies</span>
+    </div>
+    <a href="index.html" class="back-link">← Retour à la boutique</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">Custom Outerwear</div>
+  <h1>OVRG <span>Showcase</span></h1>
+  <p>Choisissez une broderie exclusive ou ajoutez votre propre label, personnalisez la couleur de votre veste ou hoodie, puis prévisualisez votre création.</p>
+</section>
+
+<!-- MAIN -->
+<main class="showcase-main">
+
+  <!-- MOCKUP -->
+  <div class="mockup-card">
+    <div class="view-tabs">
+      <button class="view-btn active" id="front-btn" onclick="switchView('front')">Devant</button>
+      <button class="view-btn" id="side-btn" onclick="switchView('sleeve-left')">Côté</button>
+      <button class="view-btn" id="back-btn" onclick="switchView('back')">Dos</button>
+      <button class="view-btn" id="btn-3d" onclick="switchView('3d')" style="background: linear-gradient(135deg, var(--primary), #d94d1a); color: white; border: none; box-shadow: 0 4px 10px rgba(255,107,53,0.3);">✨ Vue 3D</button>
+    </div>
+    <div class="mockup-stage">
+      <div class="shirt-wrapper" id="front-view">
+        <canvas id="tshirt-front" class="shirt-img"></canvas>
+        <div class="fabric-highlight"></div>
+        <div class="design-canvas-wrap" id="canvas-front" style="display:none"><canvas></canvas></div>
+      </div>
+      <div class="shirt-wrapper" id="sleeve-left-view" style="display:none">
+        <canvas id="tshirt-sleeve-left" class="shirt-img"></canvas>
+        <div class="fabric-highlight"></div>
+        <div class="design-canvas-wrap" id="canvas-sleeve-left" style="display:none"><canvas></canvas></div>
+      </div>
+      <div class="shirt-wrapper" id="sleeve-right-view" style="display:none">
+        <canvas id="tshirt-sleeve-right" class="shirt-img"></canvas>
+        <div class="fabric-highlight"></div>
+        <div class="design-canvas-wrap" id="canvas-sleeve-right" style="display:none"><canvas></canvas></div>
+      </div>
+      <div class="shirt-wrapper" id="back-view" style="display:none">
+        <canvas id="tshirt-back" class="shirt-img"></canvas>
+        <div class="fabric-highlight"></div>
+        <div class="design-canvas-wrap" id="canvas-back" style="display:none"><canvas></canvas></div>
+      </div>
+      <div class="shirt-wrapper" id="3d-view" style="display:none; width: 100%; aspect-ratio: 4/5; min-height: 400px;">
+        <div id="threeContainer" style="width: 100%; height: 100%; min-height: 400px;"></div>
+      </div>
+      <div class="no-print-msg" id="noPrintMsg">Sélectionnez une broderie ci-dessous</div>
+    </div>
+
+    <div class="print-gallery">
+      <h3>Bibliothèque d'imprimés <span id="printCount" style="color:var(--gray);font-weight:400;font-size:0.85rem"></span></h3>
+      <div class="print-grid" id="printGrid">
+        <div class="print-thumb-none" style="grid-column:1/-1">Chargement…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls-card">
+    <h2>Personnaliser</h2>
+
+    <div class="ctrl-section">
+      <label class="ctrl-label">Type de produit</label>
+      <div class="size-row" id="productTypeRow">
+        <button class="size-btn selected" data-type="jacket" onclick="setProductType('jacket')">Veste en jean</button>
+        <button class="size-btn" data-type="hoodie" onclick="setProductType('hoodie')">Sweat à capuche</button>
+      </div>
+    </div>
+
+    <div class="print-info" id="printInfo">
+      <span>Aucune broderie sélectionnée — choisissez-en une ci-dessous.</span>
+    </div>
+
+    <!-- Embroidery customization controls — shown once an artwork is selected -->
+    <div id="printCustomize" style="display:none">
+
+      <div class="ctrl-section">
+        <label class="ctrl-label" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Zone d'application</span>
+          <button class="pg-trigger" onclick="openPlacementGuide()" title="Voir le guide de placement">Guide zones</button>
+        </label>
+        <div id="zoneGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.3rem"></div>
+        <p style="font-size:0.75rem;color:var(--gray);margin-top:0.5rem;line-height:1.4">
+          Zones calibrées pour la broderie sur mesure · Les positions correspondent aux zones réelles de broderie machine.
+        </p>
+      </div>
+
+      <div class="ctrl-section">
+        <label class="ctrl-label" style="display:flex;justify-content:space-between">
+          <span>Taille de la broderie</span>
+          <span id="scaleDisplay" style="color:var(--primary);font-weight:700">M</span>
+        </label>
+        <div class="size-row" style="margin-top:0.4rem">
+          <button class="size-btn" data-scale="S" onclick="setEmbroiderySize('S')">S</button>
+          <button class="size-btn selected" data-scale="M" onclick="setEmbroiderySize('M')">M</button>
+          <button class="size-btn" data-scale="L" onclick="setEmbroiderySize('L')">L</button>
+        </div>
+        <div style="margin-top:0.8rem;">
+          <input type="range" id="scaleSlider" min="40" max="160" value="100" class="scale-slider" oninput="onScaleSliderInput(this.value)" style="width:100%">
+        </div>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <label class="ctrl-label">Type de décoration</label>
+      <div class="size-row" id="decorModeRow">
+        <button class="size-btn selected" data-mode="embroidery" onclick="setDecorMode('embroidery')">Broderie</button>
+        <button class="size-btn" data-mode="label" onclick="setDecorMode('label')">Label</button>
+        <button class="size-btn" data-mode="both" onclick="setDecorMode('both')">Broderie &amp; Label</button>
+      </div>
+    </div>
+
+    <!-- Label section — shown in 'label' or 'both' mode -->
+    <div id="labelSection" style="display:none">
+      <div class="ctrl-section">
+        <label class="ctrl-label">Texte du label <span style="color:var(--gray);font-weight:400;font-size:0.8rem">(max 7 car. • +150 FCFA/lettre)</span></label>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <input type="text" id="customLabelInput" maxlength="7" placeholder="Ex: OVRG"
+            oninput="onLabelChange()"
+            style="flex:1;padding:0.75rem 1rem;background:#fff;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans';font-weight:600;font-size:1rem;letter-spacing:0.05em">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:0.2rem">
+            <input type="color" id="customLabelColor" value="#ffffff"
+              style="width:45px;height:45px;padding:0;cursor:pointer;border:1.5px solid var(--border);background:none;border-radius:8px;"
+              oninput="onLabelChange()">
+            <span style="font-size:0.65rem;color:var(--gray)">Couleur</span>
+          </div>
+        </div>
+        <div id="labelPreviewRow" style="display:none;margin-top:0.5rem;padding:0.5rem 1rem;background:#111;border-radius:8px;text-align:center">
+          <span id="labelPreviewText" style="font-size:1.4rem;font-weight:900;letter-spacing:0.08em"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <label class="ctrl-label">Couleur du produit</label>
+      <div class="color-row" id="colorRow">
+        <button class="color-swatch selected" style="background:#ffffff" data-color="#ffffff" title="Blanc"></button>
+        <button class="color-swatch" style="background:#1a1a1a" data-color="#1a1a1a" title="Noir"></button>
+        <button class="color-swatch" style="background:#e63946" data-color="#e63946" title="Rouge"></button>
+        <button class="color-swatch" style="background:#457b9d" data-color="#457b9d" title="Bleu"></button>
+        <button class="color-swatch" style="background:#2a9d8f" data-color="#2a9d8f" title="Vert"></button>
+        <button class="color-swatch" style="background:#f4a261" data-color="#f4a261" title="Orange"></button>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <label class="ctrl-label">Taille</label>
+      <div class="size-row" id="sizeRow">
+        <button class="size-btn selected" data-size="TU">Taille Unique (TU)</button>
+      </div>
+    </div>
+
+    <div class="price-row">
+      <span class="price-main" id="priceMain">9,000 FCFA</span>
+      <span class="price-note" id="priceNote">Broderie sur mesure • livraison à Abidjan</span>
+    </div>
+    <div id="stockNote" style="display:none;font-size:0.8rem;color:#f59e0b;margin:-1rem 0 1rem"></div>
+
+    <div class="action-buttons">
+      <button class="btn-primary" onclick="addToCartShowcase()">Ajouter au panier</button>
+      <button class="btn-whatsapp" onclick="orderViaWhatsApp()">Commander via WhatsApp</button>
+      <button class="btn-secondary" onclick="goToCheckout()">Voir le panier</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <span>© 2026 La boutique OVRG — Casquettes &amp; Bobs sur mesure</span>
+  <button id="adminToggleBtn" onclick="handleAdminClick()" title=""
+    style="background:none;border:none;cursor:pointer;color:#1a1a1a;font-size:0.6rem;margin-left:0.5rem;opacity:0.15;transition:opacity 0.3s;padding:2px 4px;border-radius:3px;"
+    onmouseenter="this.style.opacity='0.5'" onmouseleave="this.style.opacity='0.15'">⚙</button>
+</footer>
+
+<!-- ADMIN LOGIN -->
+<div class="admin-overlay" id="loginOverlay">
+  <div class="admin-box" style="max-width:420px">
+    <div class="login-box">
+      <div class="login-logo">OVRG.</div>
+      <h3>Accès Administrateur — Showcase</h3>
+      <div class="login-field"><input type="email" id="loginEmail" placeholder="Email admin" autocomplete="email"></div>
+      <div class="login-field"><input type="password" id="loginPassword" placeholder="Mot de passe" autocomplete="current-password"></div>
+      <button class="btn-login" onclick="doLogin()">Se connecter</button>
+      <div class="login-error" id="loginError"></div>
+      <button class="btn-cancel-login" onclick="closeLogin()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-overlay" id="adminOverlay" onclick="if(event.target===this)closeAdmin()">
+  <div class="admin-box">
+    <div class="admin-hdr">
+      <h2>Admin — Imprimés Showcase</h2>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn-cancel-login" onclick="doLogout()" style="font-size:0.8rem;color:#aaa">Déconnexion</button>
+        <button class="btn-close" onclick="closeAdmin()">✕</button>
+      </div>
+    </div>
+    <div class="admin-content">
+      <div id="supabaseStatus" class="supabase-status loading">⟳ Connexion à Supabase...</div>
+
+      <div class="admin-tabs">
+        <div class="admin-tab active" onclick="showAdminTab('list', this)">Broderies</div>
+        <div class="admin-tab" onclick="resetPrintForm();showAdminTab('add', this)">+ Ajouter une broderie</div>
+        <div class="admin-tab" onclick="showAdminTab('settings', this)">⚙ Paramètres Headwear</div>
+      </div>
+
+      <div id="adminTabList">
+        <div class="admin-print-list" id="adminPrintList">
+          <p style="color:#666;text-align:center;padding:2rem">Chargement...</p>
+        </div>
+      </div>
+
+      <div id="adminTabAdd" style="display:none">
+        <div class="admin-form">
+          <input type="hidden" id="editPrintId" value="">
+          <h3 id="printFormTitle" style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">+ Nouvelle broderie</h3>
+          <div>
+            <label>Nom de la broderie</label>
+            <input type="text" id="printName" placeholder="Ex: Logo OVRG">
+          </div>
+          <div class="admin-grid2">
+            <div>
+              <label>Catégorie / Badge</label>
+              <input type="text" id="printCategory" placeholder="Édition Limitée, Nouveau, etc." value="Édition Limitée">
+            </div>
+            <div>
+              <label>Image de la broderie (PNG transparent recommandé)</label>
+              <div class="upload-slot" id="printUploadSlot">
+                <div class="upload-slot-icon">📷</div>
+                <div class="upload-progress" id="printUploadProgress">⟳ Upload...</div>
+                <input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadPrintImage(event)">
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-grid2">
+            <div>
+              <label>Supplément Prix (FCFA)</label>
+              <input type="number" id="printPrice" placeholder="0" value="0" min="0" step="500">
+            </div>
+            <div>
+              <label>Stock disponible</label>
+              <input type="number" id="printStock" placeholder="100" value="100" min="0" step="1">
+            </div>
+          </div>
+
+          <div>
+            <label>Couleurs disponibles</label>
+            <div class="admin-color-row" id="adminColorRow">
+              <label class="admin-check-swatch" data-color="#ffffff" style="background:#ffffff">
+                <input type="checkbox" value="#ffffff" checked><span class="check-mark">✓</span>
+              </label>
+              <label class="admin-check-swatch" data-color="#1a1a1a" style="background:#1a1a1a">
+                <input type="checkbox" value="#1a1a1a" checked><span class="check-mark">✓</span>
+              </label>
+              <label class="admin-check-swatch" data-color="#e63946" style="background:#e63946">
+                <input type="checkbox" value="#e63946" checked><span class="check-mark">✓</span>
+              </label>
+              <label class="admin-check-swatch" data-color="#457b9d" style="background:#457b9d">
+                <input type="checkbox" value="#457b9d" checked><span class="check-mark">✓</span>
+              </label>
+              <label class="admin-check-swatch" data-color="#2a9d8f" style="background:#2a9d8f">
+                <input type="checkbox" value="#2a9d8f" checked><span class="check-mark">✓</span>
+              </label>
+              <label class="admin-check-swatch" data-color="#f4a261" style="background:#f4a261">
+                <input type="checkbox" value="#f4a261" checked><span class="check-mark">✓</span>
+              </label>
+            </div>
+          </div>
+
+          <div style="display:none;">
+            <label>Tailles disponibles</label>
+</div>
+      </div>
+
+          <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+            <button class="btn-save" id="printSaveBtn" onclick="savePrint()">💾 Enregistrer la broderie</button>
+            <button class="btn-cancel-login" style="background:#333;color:#aaa;padding:0.75rem 1.5rem;border-radius:8px" onclick="cancelAddPrint()">Annuler</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="adminTabSettings" style="display:none">
+        <div class="admin-form">
+          <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">Paramètres Headwear</h3>
+          
+                    <div style="margin-top:1.5rem;">
+            <label>Prix de base (FCFA)</label>
+            <input type="number" id="headwearBasePrice" placeholder="9000" value="9000" min="0" step="500" style="width: 150px;">
+          </div>
+
+          <h3 style="margin-top:2rem; color:var(--primary); font-family:'Bebas Neue',sans-serif; letter-spacing:0.05em; font-size:1.3rem;">Mockups par couleur</h3>
+          <p style="color:#aaa;font-size:0.85rem;margin-bottom:1rem">Uploadez les mockups spécifiques (Devant, Côté, Dos) pour Casquette et Bob.</p>
+          
+          <div id="settingsColorMockupsList">
+            <!-- Rendu JS -->
+          </div>
+
+          <div style="margin-top:1.5rem; display:flex; gap:0.5rem; align-items:center;">
+            <input type="color" id="newGlobalColor" value="#ff0000" style="width:40px;height:40px;padding:0;border:none;border-radius:4px;cursor:pointer">
+            <button class="btn-secondary" style="padding:0.6rem 1rem;font-size:0.85rem" onclick="addColorMockup()">+ Ajouter une couleur</button>
+          </div>
+
+          <div style="margin-top:2rem">
+            <button class="btn-save" onclick="saveHeadwearSettings()">💾 Sauvegarder les paramètres</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-title">✅ <span id="toastTitle">Succès</span></div>
+  <div class="toast-body" id="toastBody"></div>
+</div>
+
+<!-- SUPABASE CDN — must load before any script that calls supabase.createClient -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+<!-- 3D VIEWER MODULE -->
+<script type="module" src="three-viewer.js"></script>
+
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+let globalSettings = {
+  front_image_url: null,
+  back_image_url: null,
+  global_colors: ['#ffffff','#1a1a1a','#e63946','#457b9d','#2a9d8f','#f4a261'],
+  color_mockups: [],
+  jacketMockupUrl: null,
+  hoodieMockupUrl: null,
+  jacketMockupFrontUrl: null,
+  jacketMockupSleeveLeftUrl: null,
+  jacketMockupSleeveRightUrl: null,
+  jacketMockupBackUrl: null,
+  hoodieMockupFrontUrl: null,
+  hoodieMockupSleeveLeftUrl: null,
+  hoodieMockupSleeveRightUrl: null,
+  hoodieMockupBackUrl: null
+};
+
+globalSettings.outerwearBasePrice = 25000;
+try {
+  const savedPrice = localStorage.getItem('ovrg_outerwear_base_price');
+  if (savedPrice) globalSettings.outerwearBasePrice = parseInt(savedPrice, 10);
+  globalSettings.jacketMockupUrl = localStorage.getItem('ovrg_jacket_mockup_url');
+  globalSettings.hoodieMockupUrl = localStorage.getItem('ovrg_hoodie_mockup_url');
+} catch(e) {}
+
+const HEADWEAR_MOCKUPS_BUCKET = 'product-images';
+let sbClient = null;
+try { sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON); } catch(e) { console.warn('Supabase early init failed, will retry in initSupabase():', e); }
+let currentUser = null;
+let prints = [];
+let selectedPrint = null;
+let selectedSize = 'TU';
+let currentView = 'front';
+let pendingPrintImage = '';
+
+// Headwear specific states
+let productType = 'jacket';
+let printPlacement = 'front-center'; window.printPlacement = 'front-center';
+let printScale = 1.0;
+let decorMode = 'embroidery'; // 'embroidery' | 'label' | 'both'
+
+// ── EMBROIDERY ZONES ──────────────────────────────────────────────────────────
+// Pixel coordinates on the 600×600 fallback canvas, calibrated to where each
+// zone sits on the drawn hat silhouette. When a real mockup photo is loaded,
+// these percentages are reused relative to the photo dimensions.
+//
+// Zone format: { id, label, cx, cy, w, h }  (canvas pixel coords, 600×600 base)
+// cx/cy = centre of zone, w/h = zone dimensions.
+const EMBROIDERY_ZONES = {
+  jacket: [
+    { id: 'front',        label: 'Devant Complet', cx: 300, cy: 230, w: 180, h: 220 },
+    { id: 'front-left',   label: 'Poitrine Gauche',cx: 210, cy: 190, w: 100, h: 100 },
+    { id: 'front-right',  label: 'Poitrine Droite',cx: 390, cy: 190, w: 100, h: 100 },
+    { id: 'back-center',  label: 'Dos Complet',    cx: 300, cy: 250, w: 240, h: 280 },
+    { id: 'sleeve-left',  label: 'Manche Gauche',  cx: 300, cy: 260, w: 100, h: 220 },
+    { id: 'sleeve-right', label: 'Manche Droite',  cx: 300, cy: 260, w: 100, h: 220 }
+  ,
+    { id: 'front-center-high', label: 'Centre Haut',    cx: 300, cy: 150, w: 100, h: 80 },
+    { id: 'front-center-mid',  label: 'Centre Milieu',  cx: 300, cy: 230, w: 120, h: 80 },
+    { id: 'front-center-low',  label: 'Centre Bas',     cx: 300, cy: 310, w: 120, h: 80 }
+  ],
+  hoodie: [
+    { id: 'front',        label: 'Devant Complet', cx: 300, cy: 250, w: 200, h: 200 },
+    { id: 'front-left',   label: 'Poitrine Gauche',cx: 210, cy: 200, w: 100, h: 100 },
+    { id: 'front-right',  label: 'Poitrine Droite',cx: 390, cy: 200, w: 100, h: 100 },
+    { id: 'back-center',  label: 'Dos Complet',    cx: 300, cy: 250, w: 240, h: 280 },
+    { id: 'sleeve-left',  label: 'Manche Gauche',  cx: 300, cy: 260, w: 100, h: 220 },
+    { id: 'sleeve-right', label: 'Manche Droite',  cx: 300, cy: 260, w: 100, h: 220 }
+  ,
+    { id: 'front-center-high', label: 'Centre Haut',    cx: 300, cy: 160, w: 100, h: 80 },
+    { id: 'front-center-mid',  label: 'Centre Milieu',  cx: 300, cy: 240, w: 120, h: 80 },
+    { id: 'front-center-low',  label: 'Centre Bas',     cx: 300, cy: 320, w: 120, h: 80 }
+  ]
+};
+
+// Size multipliers (S / M / L)
+const EMBROIDERY_SIZES = { S: 0.65, M: 1.0, L: 1.40 };
+
+let activeZoneId    = 'front';
+let embroiderySize  = 'M';
+let scaleMultiplier = 1.0;
+
+function getZoneSide(zoneId) {
+  if (zoneId.includes('back')) return 'back';
+  if (zoneId.includes('sleeve-left')) return 'sleeve-left';
+  if (zoneId.includes('sleeve-right')) return 'sleeve-right';
+  return 'front';
+}
+
+// sides is populated once the DOM is ready (see DOMContentLoaded)
+let sides = {
+  front: { wrap: null, canvas: null, img: null },
+  'sleeve-left': { wrap: null, canvas: null, img: null },
+  'sleeve-right': { wrap: null, canvas: null, img: null },
+  back: { wrap: null, canvas: null, img: null }
+};
+
+// ============================================================
+//  OUTERWEAR MOCKUP IMAGES + RECOLORING ENGINE
+// ============================================================
+const GENERIC_MOCKUPS = {
+  jacket: { front: null, back: null, 'sleeve-left': null, 'sleeve-right': null },
+  hoodie: { front: null, back: null, 'sleeve-left': null, 'sleeve-right': null }
+};
+
+let SHIRT_IMAGES = { front: null, back: null, 'sleeve-left': null, 'sleeve-right': null };
+const shirtSource = { front: null, back: null, 'sleeve-left': null, 'sleeve-right': null };
+
+// ── FABRIC ANALYSIS DATA ──
+const fabricData = { front: null, back: null, 'sleeve-left': null, 'sleeve-right': null };
+
+function analyzeFabric(side) {
+  const img = shirtSource[side];
+  if (!img) return;
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const offscreen = document.createElement('canvas');
+  offscreen.width = w; offscreen.height = h;
+  const ctx = offscreen.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, w, h);
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const data = imageData.data;
+
+  const LUM_THRESHOLD = 0.30;
+  const lum = new Float32Array(w * h);
+  const mask = new Uint8Array(w * h);
+  let lumSum = 0, fabricCount = 0;
+
+  for (let i = 0; i < w * h; i++) {
+    const r = data[i*4] / 255, g = data[i*4+1] / 255, b = data[i*4+2] / 255;
+    const l = 0.2126*r + 0.7152*g + 0.0722*b;
+    lum[i] = l;
+    if (l > LUM_THRESHOLD) {
+      mask[i] = 1;
+      lumSum += l;
+      fabricCount++;
+    }
+  }
+  const meanLum = fabricCount > 0 ? lumSum / fabricCount : 0.78;
+
+  const dx = new Float32Array(w * h);
+  const dy = new Float32Array(w * h);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const idx = y * w + x;
+      dx[idx] = (lum[idx + 1] - lum[idx - 1]) * 0.5;
+      dy[idx] = (lum[idx + w] - lum[idx - w]) * 0.5;
+    }
+  }
+
+  fabricData[side] = { lum, dx, dy, mask, meanLum, w, h };
+}
+
+function loadShirtImages() {
+  ['front','sleeve-left','sleeve-right','back'].forEach(side => {
+    const url = SHIRT_IMAGES[side];
+    if (!url) {
+      // No mockup uploaded yet for this side — just show the labelled placeholder
+      paintFallbackCanvas(side);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      shirtSource[side] = img;
+      analyzeFabric(side);
+      recolorShirt(side);
+      scheduleRender();   // redraws shirt + overlays design
+    };
+    img.onerror = () => {
+      console.warn(`Could not load ${side} mockup, using fallback canvas`);
+      shirtSource[side] = null;
+      paintFallbackCanvas(side);
+    };
+    img.src = url;
+  });
+}
+
+function recolorShirt(side) {
+  const img = shirtSource[side];
+  const ids = { front: 'tshirt-front', 'sleeve-left': 'tshirt-sleeve-left', 'sleeve-right': 'tshirt-sleeve-right', back: 'tshirt-back' };
+  const canvas = document.getElementById(ids[side]);
+  if (!img || !canvas) return;
+
+  const w = img.naturalWidth, h = img.naturalHeight;
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, w, h);
+  
+  scheduleRender();
+}
+
+// Print customization state — variables already declared above; no redeclaration needed.
+
+// ============================================================
+//  SUPABASE INIT
+// ============================================================
+function initSupabase() {
+  try {
+    if (sbClient) {
+      sbClient.auth.onAuthStateChange((event, session) => {
+        currentUser = session?.user ?? null;
+        updateAdminUI();
+      });
+      return true;
+    }
+    const _sb = window['supabase'] || window['supabaseJs'];
+    if (!_sb || typeof _sb.createClient !== 'function') throw new Error('Supabase library not loaded');
+    sbClient = _sb.createClient(SUPABASE_URL, SUPABASE_ANON, {
+      auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, storage: window.localStorage }
+    });
+    sbClient.auth.onAuthStateChange((event, session) => {
+      currentUser = session?.user ?? null;
+      updateAdminUI();
+    });
+    return true;
+  } catch(e) {
+    console.error('Supabase init error:', e);
+    return false;
+  }
+}
+
+// ============================================================
+//  LOAD DATA
+// ============================================================
+async function loadSettings() {
+  try {
+    const { data, error } = await sbClient.from('showcase_settings').select('*').eq('id', 4).single();
+    if (error && error.code !== 'PGRST116') throw error;
+    if (data) {
+      if (data.global_colors && data.global_colors.length) {
+        globalSettings.global_colors = data.global_colors;
+      }
+      // Restore color-specific mockups (the main source of truth)
+      if (data.color_mockups && Array.isArray(data.color_mockups) && data.color_mockups.length) {
+        globalSettings.color_mockups = data.color_mockups;
+        // Also persist to localStorage for offline preview
+        try { localStorage.setItem('ovrg_outerwear_color_mockups', JSON.stringify(data.color_mockups)); } catch(e) {}
+      } else {
+        // Fallback to localStorage if Supabase returned nothing
+        try {
+          const cached = localStorage.getItem('ovrg_outerwear_color_mockups');
+          if (cached) globalSettings.color_mockups = JSON.parse(cached);
+        } catch(e) {}
+      }
+    }
+  } catch(e) {
+    console.error('Load settings error:', e);
+    // On network error, try localStorage
+    try {
+      const cached = localStorage.getItem('ovrg_outerwear_color_mockups');
+      if (cached) globalSettings.color_mockups = JSON.parse(cached);
+    } catch(e2) {}
+  }
+}
+
+async function loadPrints() {
+  let tries = 0;
+  while (!sbClient && tries < 10) { await new Promise(r => setTimeout(r, 300)); tries++; }
+  if (!sbClient) { prints = []; renderPrintGrid(); return; }
+  try {
+    const { data, error } = await sbClient
+      .from(PRINTS_TABLE)
+      .select('*')
+      .eq('active', true)
+      .order('id', { ascending: true });
+    if (error) throw error;
+    prints = data || [];
+    renderPrintGrid();
+  } catch(e) {
+    console.error('Load prints error:', e);
+    prints = [];
+    renderPrintGrid();
+  }
+}
+
+function renderPrintGrid() {
+  const grid = document.getElementById('printGrid');
+  if (document.getElementById('printCount')) document.getElementById('printCount').textContent = `(${prints.length})`;
+  if (!prints.length) {
+    grid.innerHTML = `<div class="print-thumb-none" style="grid-column:1/-1">Aucun imprimé disponible pour le moment.</div>`;
+    return;
+  }
+  grid.innerHTML = prints.map(p => `
+    <div class="print-thumb${selectedPrint && selectedPrint.id===p.id ? ' selected':''}" onclick='selectPrint(${JSON.stringify(p).replace(/'/g,"&#39;")})'>
+      ${p.image_url
+        ? `<img src="${p.image_url}" alt="${p.name}">`
+        : `<div class="print-thumb-none">${p.name}</div>`}
+      <span class="pname">${p.name}</span>
+    </div>`).join('');
+}
+
+function selectPrint(p) {
+  selectedPrint = p;
+  document.getElementById('printInfo').innerHTML = `<span>Broderie sélectionnée : <strong>${p.name}</strong>${p.category ? ' • ' + p.category : ''}</span>`;
+  document.getElementById('printCustomize').style.display = '';
+  renderZoneButtons();   // rebuild zone selector for current product type
+
+  updatePrice();
+
+  if (window.applyHeadwearPrint && (decorMode === 'embroidery' || decorMode === 'both')) {
+    window.applyHeadwearPrint(p.image_url || null);
+  }
+
+  // Load print image into sides.img for 2D overlays
+  if (p.image_url) {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.src = p.image_url;
+    img.onload = () => {
+      sides.front.img = img;
+      sides['sleeve-left'].img = img;
+      sides['sleeve-right'].img = img;
+      sides.back.img = img;
+      scheduleRender();
+    };
+  } else {
+    sides.front.img = null;
+    sides['sleeve-left'].img = null;
+    sides['sleeve-right'].img = null;
+    sides.back.img = null;
+    scheduleRender();
+  }
+
+  renderPrintGrid();
+}
+
+
+// ── DECORATION MODE ─────────────────────────────────────────────────────
+function setDecorMode(mode) {
+  decorMode = mode;
+  document.querySelectorAll('#decorModeRow .size-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.mode === mode);
+  });
+  const labelSection   = document.getElementById('labelSection');
+  const printGallery   = document.querySelector('.print-gallery');
+  const printInfo      = document.getElementById('printInfo');
+  const printCustomize = document.getElementById('printCustomize');
+  const showLabel = mode === 'label' || mode === 'both';
+  const showPrint = mode === 'embroidery' || mode === 'both';
+  if (labelSection)   labelSection.style.display   = showLabel ? '' : 'none';
+  if (printGallery)   printGallery.style.display   = showPrint ? '' : 'none';
+  if (printInfo)      printInfo.style.display      = showPrint ? '' : 'none';
+  if (printCustomize) printCustomize.style.display = ((showPrint && selectedPrint) || showLabel) ? '' : 'none';
+  if (window.applyHeadwearPrint)
+    window.applyHeadwearPrint(showPrint && selectedPrint ? selectedPrint.image_url : null);
+  onLabelChange();
+  updatePrice();
+  scheduleRender();
+}
+
+// ── LABEL HANDLER ─────────────────────────────────────────────────────
+function onLabelChange() {
+  const text  = (document.getElementById('customLabelInput')?.value || '').toUpperCase().trim();
+  const color = document.getElementById('customLabelColor')?.value || '#ffffff';
+  const previewRow  = document.getElementById('labelPreviewRow');
+  const previewSpan = document.getElementById('labelPreviewText');
+  if (previewRow && previewSpan) {
+    if (text) {
+      previewRow.style.display  = '';
+      previewSpan.textContent   = text;
+      previewSpan.style.color   = color;
+      previewSpan.style.textShadow = color === '#ffffff'
+        ? '0 0 6px rgba(0,0,0,0.8)' : '0 0 6px rgba(255,255,255,0.5)';
+    } else {
+      previewRow.style.display = 'none';
+    }
+  }
+  const showLabel = decorMode === 'label' || decorMode === 'both';
+  if (window.applyHeadwearLabel)
+    window.applyHeadwearLabel(showLabel ? text : '', color);
+  updatePrice();
+  scheduleRender();
+}
+
+
+// ── PRICE CALCULATION ─────────────────────────────────────────────────────
+function updatePrice() {
+  const basePrice = selectedPrint && selectedPrint.price != null
+    ? selectedPrint.price
+    : globalSettings.headwearBasePrice || 9000;
+
+  const showLabel = decorMode === 'label' || decorMode === 'both';
+  let labelSurcharge = 0;
+  if (showLabel) {
+    const labelText = (document.getElementById('customLabelInput')?.value || '').trim();
+    labelSurcharge = labelText.length * 150;
+  }
+
+  const total = basePrice + labelSurcharge;
+  const priceEl = document.getElementById('priceMain');
+  if (priceEl) priceEl.textContent = fmt(total);
+
+  const noteEl = document.getElementById('priceNote');
+  if (noteEl) {
+    if (labelSurcharge > 0) {
+      noteEl.textContent = `Broderie ${fmt(basePrice)} + Label ${fmt(labelSurcharge)} • livraison à Abidjan`;
+    } else {
+      noteEl.textContent = `${decorMode === 'label' ? 'Label' : 'Broderie'} sur mesure • livraison à Abidjan`;
+    }
+  }
+}
+
+function switchView(view) {
+  currentView = view;
+
+  // Update button active states
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    const onclick = btn.getAttribute('onclick') || '';
+    btn.classList.toggle('active', onclick.includes(`'${view}'`));
+  });
+
+  // Show / hide the appropriate mockup containers
+  ['front','sleeve-left','sleeve-right','back','3d'].forEach(v => {
+    const el = document.getElementById(v === '3d' ? '3d-view' : v + '-view');
+    if (el) el.style.display = v === view ? 'block' : 'none';
+  });
+
+  if (view !== '3d') {
+    if (shirtSource[view]) {
+      recolorShirt(view);
+    } else {
+      paintFallbackCanvas(view);
+    }
+    scheduleRender();
+  }
+
+  // Trigger 3D viewer resize when switching to 3D, then rebuild overlay
+  if (view === '3d' && window.trigger3DResize) {
+    setTimeout(() => {
+      window.trigger3DResize();
+      // Rebuild decal after resize so it has correct dimensions
+      if (window.applyHeadwearPrint || window.applyHeadwearLabel) {
+        const decorMode_ = typeof decorMode !== 'undefined' ? decorMode : 'embroidery';
+        const print_ = typeof selectedPrint !== 'undefined' ? selectedPrint : null;
+        const showPrint = decorMode_ === 'embroidery' || decorMode_ === 'both';
+        const showLabel = decorMode_ === 'label' || decorMode_ === 'both';
+        if (showPrint && print_ && window.applyHeadwearPrint) window.applyHeadwearPrint(print_.image_url || null);
+        if (showLabel && window.applyHeadwearLabel) {
+          const text = document.getElementById('customLabelInput')?.value || '';
+          const color = document.getElementById('customLabelColor')?.value || '#ffffff';
+          window.applyHeadwearLabel(text, color);
+        }
+      }
+    }, 100);
+  }
+}
+function handleAdminClick() {
+  // If a user is authenticated, open the admin panel; otherwise, show the login overlay.
+  if (currentUser) {
+    document.getElementById('adminOverlay').classList.add('open');
+  } else {
+    document.getElementById('loginOverlay').classList.add('open');
+  }
+}
+
+
+function setProductType(type) {
+  productType = type;
+  activeZoneId = 'front-center';   // reset to front zone on type change
+
+  document.querySelectorAll('#productTypeRow .size-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.type === type);
+  });
+
+  // Rebuild zone buttons for the new product type
+  renderZoneButtons();
+
+  if (globalSettings.global_colors) {
+    renderColorOptions(globalSettings.global_colors);
+  } else {
+    updateShirtImagesForColor(selectedColor);
+  }
+
+  if (window.load3DModel) {
+    const modelUrl = type === 'jacket' ? '/jacket.glb' : '/hoodie.glb';
+    window.load3DModel(modelUrl);
+  }
+}
+
+
+
+// ============================================================
+//  PLACEMENT & SCALE CONTROLS
+// ============================================================
+// ── ZONE SYSTEM ───────────────────────────────────────────────────────────────
+
+function getActiveZone() {
+  const zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.jacket;
+  return zones.find(z => z.id === activeZoneId) || zones[0];
+}
+
+// Build the zone selector buttons dynamically for the current product type
+function renderZoneButtons() {
+  const grid = document.getElementById('zoneGrid');
+  if (!grid) return;
+  const zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.jacket;
+  grid.innerHTML = zones.map(z => `
+    <button class="size-btn${z.id === activeZoneId ? ' selected' : ''}"
+            data-zone="${z.id}"
+            onclick="setZone('${z.id}')"
+            style="font-size:0.78rem;padding:0.5rem 0.6rem">
+      ${z.label}
+    </button>`).join('');
+}
+
+function setZone(zoneId) {
+  activeZoneId  = zoneId;
+  printPlacement = zoneId;
+  window.printPlacement = zoneId;
+  // Highlight selected button
+  document.querySelectorAll('#zoneGrid .size-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.zone === zoneId);
+  });
+  scheduleRender();
+  _sync3DOverlay();
+}
+
+function updateSliderBg(slider) {
+  if (!slider) return;
+  const min = slider.min ? parseFloat(slider.min) : 40;
+  const max = slider.max ? parseFloat(slider.max) : 160;
+  const val = slider.value ? parseFloat(slider.value) : 100;
+  const pct = ((val - min) / (max - min)) * 100;
+  slider.style.setProperty('--val', pct + '%');
+}
+
+function onScaleSliderInput(val) {
+  scaleMultiplier = parseFloat(val) / 100;
+  const el = document.getElementById('scaleDisplay');
+  if (el) el.textContent = val + '%';
+  
+  // Sync S/M/L buttons selection state based on value
+  document.querySelectorAll('[data-scale]').forEach(btn => {
+    const scale = btn.dataset.scale;
+    const targetVal = scale === 'S' ? 65 : scale === 'L' ? 140 : 100;
+    btn.classList.toggle('selected', Math.abs(val - targetVal) < 15);
+  });
+
+  scheduleRender();
+  _sync3DOverlay();
+}
+
+function setEmbroiderySize(sz) {
+  embroiderySize = sz;
+  const mults = { S: 0.65, M: 1.0, L: 1.40 };
+  scaleMultiplier = mults[sz];
+  
+  const el = document.getElementById('scaleDisplay');
+  if (el) el.textContent = sz;
+  
+  const slider = document.getElementById('scaleSlider');
+  if (slider) {
+    slider.value = Math.round(scaleMultiplier * 100);
+    updateSliderBg(slider);
+  }
+
+  document.querySelectorAll('[data-scale]').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.scale === sz);
+  });
+  scheduleRender();
+  _sync3DOverlay();
+}
+
+// Push zone + size to the 3D overlay
+function _sync3DOverlay() {
+  const z    = getActiveZone();
+  const mult = scaleMultiplier;
+  // Convert canvas px (600×600 base) to fraction of canvas size
+  const scaleFrac = (z.w * mult) / 600;   // fraction of model bounding box
+  if (window.setHeadwearDecalScale) window.setHeadwearDecalScale(scaleFrac * 100);
+}
+
+// ── CANVAS RENDER — showcase pipeline, adapted for zone-based headwear ─────────
+// Uses the FLOATING OVERLAY canvas (s.wrap / s.canvas) identical to showcase.html.
+// The zone converts to % position over the shirt wrapper, then the full
+// fabric-distortion pipeline (fold displacement + highlight/shadow + edge feathering)
+// is applied via per-pixel processing — exactly as in the working T-shirt renderer.
+
+const EMBROIDERY_BLEND = 0.55;   // fixed blend for embroidery (slightly absorbed look)
+
+function renderDesign(side) {
+  const s = sides[side];
+  if (!s || !s.wrap || !s.canvas) return;
+
+  const hasPrint = !!(s.img);
+  const hasLabel = !!(typeof decorMode !== 'undefined' &&
+    (decorMode === 'label' || decorMode === 'both') &&
+    document.getElementById('customLabelInput')?.value?.trim());
+
+  if (!hasPrint && !hasLabel) { s.wrap.style.display = 'none'; return; }
+
+  // ── Get wrapper dimensions ────────────────────────────────────────────────
+  const wrapId = { front: 'front-view', 'sleeve-left': 'sleeve-left-view', 'sleeve-right': 'sleeve-right-view', back: 'back-view' };
+  const wrapper = document.getElementById(wrapId[side]);
+  if (!wrapper) return;
+  const rect = wrapper.getBoundingClientRect();
+  const wW = rect.width, wH = rect.height;
+  if (wW < 10 || wH < 10) { requestAnimationFrame(() => renderDesign(side)); return; }
+
+  // ── Map active zone (600×600 base coords) → % of wrapper ─────────────────
+  const zone = getActiveZone();
+  const mult = scaleMultiplier;
+  // Zone is defined in 600×600 px space; wrapper height is ~600px rendered size.
+  // Convert to % of displayed wrapper.
+  const zWpx = zone.w * mult;
+  const zHpx = zone.h * mult;
+  const leftPct = (zone.cx - zWpx / 2) / 600 * 100;
+  const topPct  = (zone.cy - zHpx / 2) / 600 * 100;
+  const wPct    = zWpx / 600 * 100;
+  const hPct    = zHpx / 600 * 100;
+
+  // Position the overlay wrapper
+  s.wrap.style.left    = leftPct + '%';
+  s.wrap.style.top     = topPct  + '%';
+  s.wrap.style.width   = wPct    + '%';
+  s.wrap.style.height  = hPct    + '%';
+  s.wrap.style.display = '';
+
+  // ── Size the overlay canvas at 2× for crisp rendering ────────────────────
+  const cW = Math.max(10, Math.round(wW * wPct / 100 * 2));
+  const cH = Math.max(10, Math.round(wH * hPct / 100 * 2));
+  const canvas = s.canvas;
+  canvas.width  = cW;
+  canvas.height = cH;
+  const ctx = canvas.getContext('2d', { alpha: true });
+  ctx.clearRect(0, 0, cW, cH);
+
+  // ── Build source image into a temp canvas ─────────────────────────────────
+  // For prints: draw the image. For labels: draw the text. For both: stack them.
+  const tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width  = cW;
+  tmpCanvas.height = cH;
+  const tmpCtx = tmpCanvas.getContext('2d', { alpha: true });
+
+  const padding = 0.05;
+
+  if (hasPrint && hasLabel) {
+    // Print in top 62%, label in bottom 33%
+    const imgAreaH = cH * 0.60;
+    const lblAreaY = cH * 0.65;
+    const lblAreaH = cH * 0.30;
+    _renderImageToCtx(tmpCtx, s.img, 0, 0, cW, imgAreaH, padding);
+    _renderLabelToCtx(tmpCtx, 0, lblAreaY, cW, lblAreaH);
+  } else if (hasPrint) {
+    _renderImageToCtx(tmpCtx, s.img, 0, 0, cW, cH, padding);
+  } else {
+    _renderLabelToCtx(tmpCtx, 0, cH * 0.15, cW, cH * 0.70);
+  }
+
+  const printData = tmpCtx.getImageData(0, 0, cW, cH);
+  const pd = printData.data;
+
+  // ── Fabric-distortion pipeline (ported from showcase.html) ────────────────
+  const fd = fabricData[side];
+  if (fd) {
+    // Map overlay canvas pixel coords → fabric image pixel coords
+    const fxStart = (leftPct / 100) * fd.w;
+    const fyStart = (topPct  / 100) * fd.h;
+    const fxScale = (wPct / 100) * fd.w / cW;
+    const fyScale = (hPct / 100) * fd.h / cH;
+
+    const DISP_STRENGTH   = 3.5 * EMBROIDERY_BLEND;
+    const SHADE_INTENSITY = 0.35 * EMBROIDERY_BLEND;
+    const TEXTURE_STRENGTH = 0.15 * EMBROIDERY_BLEND;
+
+    const outData = ctx.createImageData(cW, cH);
+    const od = outData.data;
+
+    for (let cy = 0; cy < cH; cy++) {
+      for (let cx = 0; cx < cW; cx++) {
+        const fx = Math.round(fxStart + cx * fxScale);
+        const fy = Math.round(fyStart + cy * fyScale);
+        const canvasIdx = (cy * cW + cx) * 4;
+
+        if (fx < 1 || fx >= fd.w - 1 || fy < 1 || fy >= fd.h - 1) {
+          od[canvasIdx + 3] = 0; continue;
+        }
+        const fabricIdx = fy * fd.w + fx;
+        if (fd.mask[fabricIdx] === 0) { od[canvasIdx + 3] = 0; continue; }
+
+        // Fold displacement
+        const dispX = fd.dx[fabricIdx] * DISP_STRENGTH / fxScale;
+        const dispY = fd.dy[fabricIdx] * DISP_STRENGTH / fyScale;
+        let srcX = Math.max(0, Math.min(cW - 1, cx - dispX));
+        let srcY = Math.max(0, Math.min(cH - 1, cy - dispY));
+
+        // Bilinear sample
+        const sx0 = Math.floor(srcX), sy0 = Math.floor(srcY);
+        const sx1 = Math.min(sx0+1, cW-1), sy1 = Math.min(sy0+1, cH-1);
+        const fx1 = srcX-sx0, fy1 = srcY-sy0;
+        const fx0 = 1-fx1,    fy0 = 1-fy1;
+        const i00=(sy0*cW+sx0)*4, i10=(sy0*cW+sx1)*4;
+        const i01=(sy1*cW+sx0)*4, i11=(sy1*cW+sx1)*4;
+
+        let pr = pd[i00]*fx0*fy0 + pd[i10]*fx1*fy0 + pd[i01]*fx0*fy1 + pd[i11]*fx1*fy1;
+        let pg = pd[i00+1]*fx0*fy0 + pd[i10+1]*fx1*fy0 + pd[i01+1]*fx0*fy1 + pd[i11+1]*fx1*fy1;
+        let pb = pd[i00+2]*fx0*fy0 + pd[i10+2]*fx1*fy0 + pd[i01+2]*fx0*fy1 + pd[i11+2]*fx1*fy1;
+        let pa = pd[i00+3]*fx0*fy0 + pd[i10+3]*fx1*fy0 + pd[i01+3]*fx0*fy1 + pd[i11+3]*fx1*fy1;
+
+        if (pa < 1) { od[canvasIdx+3] = 0; continue; }
+
+        // Highlight & shadow
+        const fabLum = fd.lum[fabricIdx];
+        const lumDev = fabLum - fd.meanLum;
+        let shadeMultiplier = lumDev > 0
+          ? 1.0 + lumDev * SHADE_INTENSITY * 2.5
+          : 1.0 + lumDev * SHADE_INTENSITY * 3.0;
+        shadeMultiplier = Math.max(0.5, Math.min(1.5, shadeMultiplier));
+
+        const textureMod = 1.0 + (fabLum - fd.meanLum) * TEXTURE_STRENGTH * 2.0;
+        const combined   = shadeMultiplier * textureMod;
+
+        pr = Math.max(0, Math.min(255, pr * combined));
+        pg = Math.max(0, Math.min(255, pg * combined));
+        pb = Math.max(0, Math.min(255, pb * combined));
+        pa = pa * (1.0 - EMBROIDERY_BLEND * 0.12);
+
+        // Edge feathering
+        let edgeFade = 1.0;
+        for (let ey = -2; ey <= 2; ey++) {
+          for (let ex = -2; ex <= 2; ex++) {
+            const nfy = fy+ey, nfx = fx+ex;
+            if (nfy >= 0 && nfy < fd.h && nfx >= 0 && nfx < fd.w) {
+              if (fd.mask[nfy * fd.w + nfx] === 0) {
+                edgeFade = Math.min(edgeFade, Math.sqrt(ex*ex+ey*ey) / 2.5);
+              }
+            }
+          }
+        }
+        pa *= Math.max(0, edgeFade);
+
+        od[canvasIdx]   = pr; od[canvasIdx+1] = pg;
+        od[canvasIdx+2] = pb; od[canvasIdx+3] = pa;
+      }
+    }
+    ctx.putImageData(outData, 0, 0);
+
+  } else {
+    // Fallback: simple draw when fabric data not yet ready
+    ctx.drawImage(tmpCanvas, 0, 0);
+    const imageData = ctx.getImageData(0, 0, cW, cH);
+    const data = imageData.data;
+    const brightness = 0.98 - EMBROIDERY_BLEND * 0.28;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i+3] > 0) {
+        data[i]   *= brightness;
+        data[i+1] *= brightness;
+        data[i+2] *= brightness;
+        data[i+3]  = data[i+3] * (1 - EMBROIDERY_BLEND * 0.18);
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  canvas.style.opacity = String(0.97 - EMBROIDERY_BLEND * 0.08);
+}
+
+// Draw a print image into a region of tmpCtx, respecting aspect ratio + padding
+function _renderImageToCtx(tmpCtx, img, x, y, w, h, padding = 0.05) {
+  if (!img) return;
+  const pw = w * (1 - padding * 2);
+  const ph = h * (1 - padding * 2);
+  const ir = img.naturalWidth / img.naturalHeight;
+  const br = pw / ph;
+  let dw, dh;
+  if (ir > br) { dw = pw; dh = pw / ir; }
+  else         { dh = ph; dw = ph * ir; }
+  tmpCtx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+}
+
+// Draw a label text into a region of tmpCtx
+function _renderLabelToCtx(tmpCtx, x, y, w, h) {
+  const text  = (document.getElementById('customLabelInput')?.value || '').trim().toUpperCase();
+  if (!text) return;
+  const color = document.getElementById('customLabelColor')?.value || '#ffffff';
+  const sz    = Math.min(h * 0.80, w / Math.max(text.length, 1) * 1.5);
+  tmpCtx.save();
+  tmpCtx.font          = `900 ${sz}px "Arial Black", Arial, sans-serif`;
+  tmpCtx.textAlign     = 'center';
+  tmpCtx.textBaseline  = 'middle';
+  tmpCtx.strokeStyle   = color === '#ffffff' ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.5)';
+  tmpCtx.lineWidth     = sz * 0.09;
+  tmpCtx.lineJoin      = 'round';
+  tmpCtx.strokeText(text, x + w / 2, y + h / 2);
+  tmpCtx.fillStyle = color;
+  tmpCtx.fillText(text, x + w / 2, y + h / 2);
+  tmpCtx.restore();
+}
+
+
+function paintFallbackCanvas(side) {
+  const ids = { front: 'tshirt-front', 'sleeve-left': 'tshirt-sleeve-left', 'sleeve-right': 'tshirt-sleeve-right', back: 'tshirt-back' };
+  const canvas = document.getElementById(ids[side] || 'tshirt-front');
+  if (!canvas) return;
+
+  const W = 600, H = 600;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Background — transparent so the dark stage shows through
+  ctx.clearRect(0, 0, W, H);
+
+  const col = (typeof selectedColor !== 'undefined' && selectedColor) ? selectedColor : '#ffffff';
+
+  // Generic outerwear silhouette
+  ctx.save();
+  ctx.beginPath();
+  // Simple shirt shape (for fallback only)
+  ctx.moveTo(150, 150); // Left shoulder
+  ctx.lineTo(250, 100); // Neck left
+  ctx.lineTo(350, 100); // Neck right
+  ctx.lineTo(450, 150); // Right shoulder
+  ctx.lineTo(550, 300); // Right sleeve end
+  ctx.lineTo(450, 350); // Right armpit
+  ctx.lineTo(450, 550); // Right bottom
+  ctx.lineTo(150, 550); // Left bottom
+  ctx.lineTo(150, 350); // Left armpit
+  ctx.lineTo(50, 300);  // Left sleeve end
+  ctx.closePath();
+  ctx.fillStyle = col;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.20)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.restore();
+
+  // Side label if no mockup
+  const label = side === 'front' ? 'Devant' : side === 'back' ? 'Dos' : side === 'sleeve-left' ? 'Manche Gauche' : 'Manche Droite';
+  ctx.fillStyle = 'rgba(0,0,0,0.30)';
+  ctx.font = 'bold 18px DM Sans, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, 300, 540);
+  ctx.font = '13px DM Sans, sans-serif';
+  ctx.fillStyle = 'rgba(0,0,0,0.20)';
+  ctx.fillText('Uploadez un mockup dans les Paramètres', 300, 565);
+  scheduleRender();
+}
+
+function _shadedColor(hex, factor) {
+  try {
+    let r = parseInt(hex.slice(1,3), 16);
+    let g = parseInt(hex.slice(3,5), 16);
+    let b = parseInt(hex.slice(5,7), 16);
+    r = Math.max(0, Math.min(255, Math.round(r * (1 + factor))));
+    g = Math.max(0, Math.min(255, Math.round(g * (1 + factor))));
+    b = Math.max(0, Math.min(255, Math.round(b * (1 + factor))));
+    return `rgb(${r},${g},${b})`;
+  } catch(e) { return hex; }
+}
+
+
+const COLOR_NAMES = {'#ffffff':'Blanc','#1a1a1a':'Noir','#e63946':'Rouge','#457b9d':'Bleu','#2a9d8f':'Vert','#f4a261':'Orange'};
+
+let selectedColor = '#ffffff';
+
+function renderColorOptions(colors) {
+  const row = document.getElementById('colorRow');
+  if (!row) return;
+
+  let availableColors = colors;
+  if (globalSettings.color_mockups) {
+    availableColors = colors.filter(c => {
+      const m = globalSettings.color_mockups.find(mock => mock.hex.toLowerCase() === c.toLowerCase());
+      if (!m) return false;
+      if (productType === 'jacket') return m.jacket_front || m.jacket_side || m.jacket_back;
+      return m.hoodie_front || m.hoodie_side || m.hoodie_back;
+    });
+  }
+  if (availableColors.length === 0) availableColors = colors; // fallback if none match
+
+  row.innerHTML = availableColors.map((c,i) => `<button class="color-swatch${i===0?' selected':''}" style="background:${c}" data-color="${c}" title="${COLOR_NAMES[c]||c}"></button>`).join('');
+  
+  if (!availableColors.includes(selectedColor)) {
+    selectedColor = availableColors[0];
+  }
+  
+  if (window.setShirtColor) window.setShirtColor(selectedColor);
+  updateShirtImagesForColor(selectedColor);
+}
+
+document.getElementById('colorRow')?.addEventListener('click', e => {
+  const btn = e.target.closest('.color-swatch');
+  if (!btn) return;
+  selectedColor = btn.dataset.color;
+  document.querySelectorAll('.color-swatch').forEach(b => b.classList.toggle('selected', b===btn));
+  if (window.setShirtColor) window.setShirtColor(selectedColor);
+  updateShirtImagesForColor(selectedColor);
+});
+
+let _renderRAF = null;
+
+// ============================================================
+//  DRAG & RESIZE  — per-side interactive positioning
+// ============================================================
+function initDraggable(side) {
+  const s = sides[side];
+  if (!s || !s.wrap) return;
+
+  // Resize handle
+  const handle = document.createElement('div');
+  handle.className = 'design-resize-handle';
+  handle.textContent = '↘';
+  handle.title = 'Redimensionner';
+  s.wrap.appendChild(handle);
+
+  let mode = null;   // 'drag' | 'resize'
+  let startX, startY, snapXPct, snapYPct, snapWPct, snapHPct;
+
+  function getParentRect() {
+    return (s.wrap.parentElement || document.body).getBoundingClientRect();
+  }
+
+  function onStart(e, isResize) {
+    e.stopPropagation();
+    const pt = e.touches ? e.touches[0] : e;
+    mode = isResize ? 'resize' : 'drag';
+    startX = pt.clientX; startY = pt.clientY;
+    snapXPct = designState[side].xPct;
+    snapYPct = designState[side].yPct;
+    snapWPct = designState[side].wPct;
+    snapHPct = designState[side].hPct;
+    if (!isResize) s.wrap.style.cursor = 'grabbing';
+    e.preventDefault();
+  }
+
+  function onMove(e) {
+    if (!mode) return;
+    const pt = e.touches ? e.touches[0] : e;
+    const pr = getParentRect();
+    const dx = (pt.clientX - startX) / pr.width  * 100;
+    const dy = (pt.clientY - startY) / pr.height * 100;
+    const ds = designState[side];
+    if (mode === 'drag') {
+      ds.xPct = Math.max(0, Math.min(95 - ds.wPct, snapXPct + dx));
+      ds.yPct = Math.max(0, Math.min(95 - ds.hPct, snapYPct + dy));
+    } else {
+      ds.wPct = Math.max(5, Math.min(90, snapWPct + dx));
+      ds.hPct = Math.max(5, Math.min(90, snapHPct + dy));
+      // Keep centre-aligned as user resizes
+      ds.xPct = Math.max(0, snapXPct - (ds.wPct - snapWPct)/2);
+      ds.yPct = Math.max(0, snapYPct - (ds.hPct - snapHPct)/2);
+      // Sync slider
+      const slider = document.getElementById('scaleSlider');
+      if (slider) {
+        slider.value = Math.round(ds.wPct);
+        document.getElementById('scaleDisplay').textContent = Math.round(ds.wPct) + '%';
+        updateSliderBg(slider);
+      }
+    }
+    renderDesign(side);
+    e.preventDefault();
+  }
+
+  function onEnd() {
+    if (mode === 'drag') s.wrap.style.cursor = 'grab';
+    mode = null;
+  }
+
+  // Mouse
+  s.wrap.addEventListener('mousedown',   e => onStart(e, false));
+  handle.addEventListener('mousedown',   e => onStart(e, true));
+  document.addEventListener('mousemove', e => { if (mode) onMove(e); });
+  document.addEventListener('mouseup',   onEnd);
+
+  // Touch
+  s.wrap.addEventListener('touchstart',  e => onStart(e, false), { passive: false });
+  handle.addEventListener('touchstart',  e => onStart(e, true),  { passive: false });
+  document.addEventListener('touchmove', e => { if (mode) onMove(e); }, { passive: false });
+  document.addEventListener('touchend',  onEnd);
+}
+
+function renderAllDesigns() {
+  ['front', 'sleeve-left', 'sleeve-right', 'back'].forEach(s => renderDesign(s));
+}
+
+function scheduleRender() {
+  if (_renderRAF) return;   // deduplicate within the same frame
+  _renderRAF = requestAnimationFrame(() => {
+    _renderRAF = null;
+    // Overlay designs on each side (the shirt base is drawn by recolorShirt / paintFallbackCanvas
+    // which are called separately when mockup images load — no need to call here)
+    renderAllDesigns();
+    // Sync 3D overlay
+    if (window.setPrintTransform) {
+      window.setPrintTransform({ scale: 1.0, preset: activeZoneId, blend: EMBROIDERY_BLEND });
+    }
+  });
+}
+
+function updateAdminUI() {
+  const btn = document.getElementById('adminToggleBtn');
+  if (!btn) return;
+  if (currentUser) {
+    btn.textContent = '⚙●';
+    btn.style.color = '#22c55e';
+    btn.style.opacity = '0.5';
+  } else {
+    btn.textContent = '⚙';
+    btn.style.color = '#1a1a1a';
+    btn.style.opacity = '0.15';
+  }
+}
+
+function openLogin() {
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('loginOverlay').classList.add('open');
+}
+
+function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  document.getElementById('loginError').textContent = '';
+  if (!email || !password) { document.getElementById('loginError').textContent = 'Veuillez remplir tous les champs.'; return; }
+  if (!sbClient) {
+    document.getElementById('loginError').textContent = 'Connexion à Supabase indisponible. Rechargez la page et réessayez.';
+    return;
+  }
+  try {
+    await sbClient.auth.signOut().catch(()=>{});
+    const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    currentUser = data.user;
+    closeLogin();
+    openAdmin();
+  } catch(e) {
+    console.error('Login error:', e);
+    document.getElementById('loginError').textContent = 'Email ou mot de passe incorrect.';
+  }
+}
+
+async function doLogout() {
+  await sbClient.auth.signOut().catch(()=>{});
+  currentUser = null;
+  closeAdmin();
+  showToast('Déconnecté', 'Session admin terminée.');
+}
+
+function openAdmin() {
+  document.getElementById('adminOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  checkSupabaseConnection();
+  loadAdminPrints();
+}
+
+function closeAdmin() {
+  document.getElementById('adminOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function checkSupabaseConnection() {
+  const el = document.getElementById('supabaseStatus');
+  try {
+    const { error } = await sbClient.from(PRINTS_TABLE).select('id').limit(1);
+    if (error) throw error;
+    el.className = 'supabase-status connected';
+    el.textContent = '✓ Connecté à Supabase — table showcase_prints prête';
+  } catch(e) {
+    el.className = 'supabase-status disconnected';
+    el.textContent = '✗ Table showcase_prints introuvable — exécutez le SQL fourni dans le code source';
+  }
+}
+
+function showAdminTab(tab, el) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('adminTabList').style.display = tab==='list' ? '' : 'none';
+  document.getElementById('adminTabAdd').style.display = tab==='add' ? '' : 'none';
+  const settingsTab = document.getElementById('adminTabSettings');
+  if (settingsTab) settingsTab.style.display = tab==='settings' ? '' : 'none';
+  if (tab === 'settings') loadAdminSettingsUI();
+}
+
+async function loadAdminPrints() {
+  const list = document.getElementById('adminPrintList');
+  list.innerHTML = `<p style="color:#666;text-align:center;padding:2rem">Chargement...</p>`;
+  try {
+    const { data, error } = await sbClient.from(PRINTS_TABLE).select('*').order('id', { ascending: true });
+    if (error) throw error;
+    renderAdminPrintList(data || []);
+  } catch(e) {
+    list.innerHTML = `<p style="color:#f87171;text-align:center;padding:2rem">Table non configurée.</p>`;
+  }
+}
+
+let adminPrintsData = []; 
+
+function renderAdminPrintList(items) {
+  adminPrintsData = items;
+  const list = document.getElementById('adminPrintList');
+  if (!items.length) {
+    list.innerHTML = `<div style="text-align:center;padding:2.5rem;color:#555">
+      <div style="font-size:2.2rem;margin-bottom:0.8rem">🎨</div>
+      <p>Aucun imprimé.</p>
+    </div>`;
+    return;
+  }
+  list.innerHTML = items.map(p => {
+    const price = p.price != null ? p.price : 18000;
+    const stock = p.stock != null ? p.stock : 100;
+    const colors = p.colors || [];
+    const colorDots = colors.map(c => `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c};border:1px solid #555;margin-right:2px"></span>`).join('');
+    return `
+    <div class="admin-print-item">
+      <div class="admin-print-thumb">${p.image_url ? `<img src="${p.image_url}" alt="${p.name}">` : '🎨'}</div>
+      <div class="admin-print-meta">
+        <h4>${p.name}</h4>
+        <p>${p.category || '—'} • ${p.active ? 'Actif' : 'Masqué'}</p>
+        <p style="margin-top:0.3rem">
+          <strong style="color:white">${fmt(price)}</strong>
+          &nbsp;•&nbsp; Stock: ${stock}
+        </p>
+        <p style="margin-top:0.3rem">${colorDots}</p>
+      </div>
+      <div class="admin-print-actions">
+        <button class="btn-edit" onclick="editPrint(${p.id})">✏ Modifier</button>
+        <button class="${p.active ? 'btn-toggle-active' : 'btn-toggle-inactive'}" onclick="togglePrintActive(${p.id}, ${!p.active})">${p.active ? '✓ Actif' : '○ Masqué'}</button>
+        <button class="btn-del-print" onclick="deletePrint(${p.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function togglePrintActive(id, newActive) {
+  try {
+    const { error } = await sbClient.from(PRINTS_TABLE).update({ active: newActive }).eq('id', id);
+    if (error) throw error;
+    await loadAdminPrints();
+    await loadPrints();
+    showToast('Mis à jour', newActive ? 'Imprimé activé.' : 'Imprimé masqué du catalogue.');
+  } catch(e) {
+    showToast('Erreur', e.message, '#ef4444');
+  }
+}
+
+async function deletePrint(id) {
+  if (!confirm('Supprimer cet imprimé définitivement?')) return;
+  try {
+    const { error } = await sbClient.from(PRINTS_TABLE).delete().eq('id', id);
+    if (error) throw error;
+    await loadAdminPrints();
+    await loadPrints();
+    showToast('Supprimé', 'Imprimé retiré de Supabase.');
+  } catch(e) {
+    showToast('Erreur', e.message, '#ef4444');
+  }
+}
+
+async function uploadPrintImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const slot = document.getElementById('printUploadSlot');
+  const prog = document.getElementById('printUploadProgress');
+  prog.classList.add('show');
+  try {
+    const { data: { user } } = await sbClient.auth.getUser();
+    if (!user) throw new Error('Non authentifié');
+    const ext = file.name.split('.').pop();
+    const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const path = `prints/${filename}`;
+    const { error } = await sbClient.storage.from(STORAGE_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+    if (error) throw error;
+    const { data: urlData } = sbClient.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+    pendingPrintImage = urlData.publicUrl;
+    slot.innerHTML = `<img src="${pendingPrintImage}"><div class="upload-progress" id="printUploadProgress"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadPrintImage(event)">`;
+    showToast('Image uploadée ✓', "L'imprimé est prêt.");
+  } catch(e) {
+    prog.classList.remove('show');
+    showToast('Erreur upload', e.message, '#ef4444');
+  }
+}
+
+async function savePrint() {
+  const name = document.getElementById('printName').value.trim();
+  const category = document.getElementById('printCategory').value.trim();
+  const price = parseInt(document.getElementById('printPrice').value, 10);
+  const stock = parseInt(document.getElementById('printStock').value, 10);
+  const colors = Array.from(document.querySelectorAll('#adminColorRow input:checked')).map(i => i.value);
+  const editId = document.getElementById('editPrintId').value;
+  if (!name) { showToast('Champ requis', 'Veuillez saisir un nom pour la broderie.', '#f59e0b'); return; }
+  if (!pendingPrintImage) { showToast('Image requise', 'Veuillez uploader une image pour la broderie.', '#f59e0b'); return; }
+  const payload = { name, category: category || 'Édition Limitée', image_url: pendingPrintImage, price, stock, colors, sizes: ['TU'] };
+  try {
+    if (editId) {
+      await sbClient.from(PRINTS_TABLE).update(payload).eq('id', parseInt(editId, 10));
+    } else {
+      payload.active = true;
+      await sbClient.from(PRINTS_TABLE).insert(payload);
+    }
+    await loadAdminPrints();
+    await loadPrints();
+    showAdminTab('list', document.querySelectorAll('.admin-tab')[0]);
+    showToast('Enregistré! ✓', `"${name}" ${editId ? 'mis à jour' : 'ajouté'}.`);
+  } catch(e) {
+    showToast('Erreur Supabase', e.message, '#ef4444');
+  }
+}
+
+function editPrint(id) {
+  const p = adminPrintsData.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('editPrintId').value = id;
+  document.getElementById('printName').value = p.name || '';
+  document.getElementById('printCategory').value = p.category || '';
+  document.getElementById('printPrice').value = p.price != null ? p.price : 9000;
+  document.getElementById('printStock').value = p.stock != null ? p.stock : 100;
+  const colors = p.colors || [];
+  renderAdminColorCheckboxes(colors);
+  pendingPrintImage = p.image_url || '';
+  const slot = document.getElementById('printUploadSlot');
+  slot.innerHTML = pendingPrintImage ? `<img src="${pendingPrintImage}"><div class="upload-progress" id="printUploadProgress"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadPrintImage(event)">` : '';
+  showAdminTab('add', document.querySelectorAll('.admin-tab')[1]);
+}
+
+function renderAdminColorCheckboxes(selected = []) {
+  const row = document.getElementById('adminColorRow');
+  if(!row) return;
+  row.innerHTML = globalSettings.global_colors.map(c => `
+    <label class="admin-check-swatch" data-color="${c}" style="background:${c}">
+      <input type="checkbox" value="${c}" ${selected.includes(c) ? 'checked' : ''}><span class="check-mark">✓</span>
+    </label>
+  `).join('');
+}
+
+function resetPrintForm() {
+  document.getElementById('editPrintId').value = '';
+  document.getElementById('printName').value = '';
+  document.getElementById('printCategory').value = 'Édition Limitée';
+  document.getElementById('printPrice').value = '9000';
+  document.getElementById('printStock').value = '100';
+  renderAdminColorCheckboxes(globalSettings.global_colors);
+  pendingPrintImage = '';
+}
+
+function cancelAddPrint() {
+  resetPrintForm();
+  showAdminTab('list', document.querySelectorAll('.admin-tab')[0]);
+}
+
+let pendingColorMockups = [];
+
+function loadAdminSettingsUI() {
+  pendingColorMockups = JSON.parse(JSON.stringify(globalSettings.color_mockups || []));
+  if (pendingColorMockups.length === 0 && globalSettings.global_colors && globalSettings.global_colors.length > 0) {
+    pendingColorMockups = globalSettings.global_colors.map(c => ({
+      hex: c,
+      jacket_front: null, jacket_side: null, jacket_back: null,
+      hoodie_front: null, hoodie_side: null, hoodie_back: null
+    }));
+  }
+  renderSettingsColorMockups();
+}
+
+function renderSettingsColorMockups() {
+  const container = document.getElementById('settingsColorMockupsList');
+  if (!container) return;
+  if (!pendingColorMockups || pendingColorMockups.length === 0) {
+    container.innerHTML = '<p style="color:#666">Aucune couleur définie.</p>';
+    return;
+  }
+  
+  container.innerHTML = pendingColorMockups.map((m, i) => `
+    <div style="background:#111; border:1px solid #333; padding:1rem; border-radius:8px; margin-bottom:1rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <div style="width:30px; height:30px; background:${m.hex}; border-radius:4px; border:1px solid #444;"></div>
+          <strong style="color:#eee; font-family:monospace">${m.hex}</strong>
+        </div>
+        <button class="btn-cancel-login" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="removeColorMockup(${i})">Supprimer</button>
+      </div>
+      
+      <h4 style="margin-bottom:0.5rem; color:#888; font-size:0.9rem;">Veste</h4>
+      <div class="admin-grid" style="grid-template-columns: 1fr 1fr 1fr; gap:1rem; margin-bottom:1.5rem">
+        <div>
+          <label style="font-size:0.8rem">Devant</label>
+          <div class="upload-slot" id="slot_jacket_front_${i}" style="height:80px; min-height:80px;">
+            ${m.jacket_front ? '<img src="' + m.jacket_front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_jacket_front_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_front\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_jacket_front_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_front\')">'}
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.8rem">Côté</label>
+          <div class="upload-slot" id="slot_jacket_side_${i}" style="height:80px; min-height:80px;">
+            ${m.jacket_side ? '<img src="' + m.jacket_side + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_jacket_side_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_side\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_jacket_side_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_side\')">'}
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.8rem">Dos</label>
+          <div class="upload-slot" id="slot_jacket_back_${i}" style="height:80px; min-height:80px;">
+            ${m.jacket_back ? '<img src="' + m.jacket_back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_jacket_back_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_back\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_jacket_back_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_back\')">'}
+          </div>
+        </div>
+      </div>
+
+      <h4 style="margin-bottom:0.5rem; color:#888; font-size:0.9rem;">Hoodie</h4>
+      <div class="admin-grid" style="grid-template-columns: 1fr 1fr 1fr; gap:1rem;">
+        <div>
+          <label style="font-size:0.8rem">Devant</label>
+          <div class="upload-slot" id="slot_hoodie_front_${i}" style="height:80px; min-height:80px;">
+            ${m.hoodie_front ? '<img src="' + m.hoodie_front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_hoodie_front_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_front\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_hoodie_front_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_front\')">'}
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.8rem">Côté</label>
+          <div class="upload-slot" id="slot_hoodie_side_${i}" style="height:80px; min-height:80px;">
+            ${m.hoodie_side ? '<img src="' + m.hoodie_side + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_hoodie_side_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_side\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_hoodie_side_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_side\')">'}
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.8rem">Dos</label>
+          <div class="upload-slot" id="slot_hoodie_back_${i}" style="height:80px; min-height:80px;">
+            ${m.hoodie_back ? '<img src="' + m.hoodie_back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_hoodie_back_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_back\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_hoodie_back_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_back\')">'}
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addColorMockup() {
+  const hex = document.getElementById('newGlobalColor').value;
+  if (pendingColorMockups.find(m => m.hex.toLowerCase() === hex.toLowerCase())) {
+    showToast('Erreur', 'Cette couleur existe déjà.', '#ef4444'); return;
+  }
+  pendingColorMockups.push({ hex: hex, jacket_front: null, jacket_side: null, jacket_back: null, hoodie_front: null, hoodie_side: null, hoodie_back: null });
+  renderSettingsColorMockups();
+}
+
+function removeColorMockup(index) {
+  if (pendingColorMockups.length <= 1) { showToast('Erreur', 'Il doit rester au moins une couleur.', '#ef4444'); return; }
+  pendingColorMockups.splice(index, 1);
+  renderSettingsColorMockups();
+}
+
+async function uploadHeadwearMockup(event, index, key) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const prog = document.getElementById(`prog_${key}_${index}`);
+  if(prog) prog.classList.add('show');
+  try {
+    const ext = file.name.split('.').pop();
+    const filename = 'mockup_' + key + '_' + Date.now() + '.' + ext;
+    const path = 'mockups/' + filename;
+    const { error } = await sbClient.storage.from(STORAGE_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+    if (error) throw error;
+    const { data: urlData } = sbClient.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+    pendingColorMockups[index][key] = urlData.publicUrl;
+    renderSettingsColorMockups();
+    showToast('Mockup uploadé ✓', "Sauvegardez les paramètres pour appliquer.");
+  } catch(e) {
+    if(prog) prog.classList.remove('show');
+    showToast('Erreur upload', e.message, '#ef4444');
+  }
+}
+
+async function saveHeadwearSettings() {
+  const basePrice = parseInt(document.getElementById('headwearBasePrice').value, 10);
+  if (!isNaN(basePrice)) {
+    globalSettings.headwearBasePrice = basePrice;
+    localStorage.setItem('ovrg_headwear_base_price', basePrice);
+  }
+
+  const global_colors = pendingColorMockups.map(m => m.hex);
+  const payload = {
+    id: 4,
+    global_colors: global_colors,
+    color_mockups: pendingColorMockups
+  };
+
+  try {
+    const { error } = await sbClient.from('showcase_settings').upsert(payload, { onConflict: 'id' });
+    if (error) throw error;
+    
+    globalSettings.color_mockups = JSON.parse(JSON.stringify(pendingColorMockups));
+    globalSettings.global_colors = global_colors;
+    
+    updateShirtImagesForColor(selectedColor);
+    
+    if (typeof renderColorOptions === 'function' && !selectedPrint) {
+       renderColorOptions(globalSettings.global_colors);
+    }
+    
+    showToast('Paramètres enregistrés', 'Les modifications ont été sauvegardées.');
+  } catch(e) {
+    console.error('Save settings error:', e);
+    showToast('Erreur', e.message, '#ef4444');
+  }
+}
+
+function updateShirtImagesForColor(hex) {
+  // If no color mockups loaded yet, just paint fallback canvases
+  if (!globalSettings.color_mockups || !globalSettings.color_mockups.length) {
+    paintFallbackCanvas('front');
+    paintFallbackCanvas('side');
+    paintFallbackCanvas('back');
+    return;
+  }
+  const match = globalSettings.color_mockups.find(m => m.hex && m.hex.toLowerCase() === hex.toLowerCase())
+              || globalSettings.color_mockups[0];
+  if (!match) { paintFallbackCanvas('front'); paintFallbackCanvas('side'); paintFallbackCanvas('back'); return; }
+
+  if (productType === 'jacket') {
+    SHIRT_IMAGES.front = match.jacket_front || null;
+    SHIRT_IMAGES['sleeve-left']  = match.jacket_side  || null;
+    SHIRT_IMAGES['sleeve-right'] = match.jacket_side  || null;
+    SHIRT_IMAGES.back  = match.jacket_back  || null;
+  } else {
+    SHIRT_IMAGES.front = match.hoodie_front || null;
+    SHIRT_IMAGES['sleeve-left']  = match.hoodie_side  || null;
+    SHIRT_IMAGES['sleeve-right'] = match.hoodie_side  || null;
+    SHIRT_IMAGES.back  = match.hoodie_back  || null;
+  }
+  loadShirtImages();
+}
+
+
+function buildOrderItem() {
+  if (!selectedPrint) return null;
+  const price = selectedPrint.price != null ? selectedPrint.price : globalSettings.headwearBasePrice;
+  return {
+    key: `showcase-headwear-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${printSize}`,
+    id: `showcase-${selectedPrint.id}`,
+    name: `${productType === 'cap' ? 'Casquette' : 'Bob'} OVRG — ${selectedPrint.name}`,
+    price: price,
+    qty: 1,
+    size: selectedSize,
+    color: selectedColor,
+    img: selectedPrint.image_url || '',
+    type: 'showcase',
+    customization: {
+      placement: printPlacement,
+      placementLabel: printPlacement === 'front' ? 'Devant' : 'Côté',
+      scale: printSize === 'small' ? 'Petit' : 'Grand',
+      blend: 100
+    }
+  };
+}
+
+function addToCartShowcase() {
+  const item = buildOrderItem();
+  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
+  let cart = [];
+  try { cart = JSON.parse(localStorage.getItem('ovrg_cart') || '[]'); } catch(e) {}
+  const existing = cart.find(c => c.key === item.key);
+  if (existing) existing.qty += 1;
+  else cart.push(item);
+  localStorage.setItem('ovrg_cart', JSON.stringify(cart));
+  showToast('Ajouté au panier! 🛍', `${item.name} ajouté.`);
+}
+
+function orderViaWhatsApp() {
+  const item = buildOrderItem();
+  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
+  const c = item.customization;
+  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'cap' ? 'veste' : 'hoodie'}:%0A%0A`+
+              `🎨 Imprimé: ${selectedPrint.name}%0A`+
+              `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}%0A`+
+              `📏 Taille: ${item.size}%0A`+
+              `📍 Position: ${c.placementLabel}%0A`+
+              `💰 Prix: ${fmt(item.price)}`;
+  window.open(`https://wa.me/2250799108108?text=${msg}`, '_blank');
+}
+
+function goToCheckout() {
+  const item = buildOrderItem();
+  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
+  addToCartShowcase();
+  setTimeout(() => { window.location.href = '/#catalogue'; }, 150);
+}
+
+
+// ============================================================
+//  UTILS
+// ============================================================
+function fmt(n) { return Number(n).toLocaleString('fr-FR') + ' FCFA'; }
+
+function showToast(title, body, borderColor='#22c55e') {
+  const t = document.getElementById('toast');
+  t.style.borderLeftColor = borderColor;
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastBody').textContent = body;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 4500);
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', async () => {
+  // Wire up the sides overlay canvases now that the DOM is ready
+  sides.front.wrap   = document.getElementById('canvas-front');
+  sides.front.canvas = document.querySelector('#canvas-front canvas');
+  sides['sleeve-left'].wrap    = document.getElementById('canvas-sleeve-left');
+  sides['sleeve-left'].canvas  = document.querySelector('#canvas-sleeve-left canvas');
+  sides['sleeve-right'].wrap   = document.getElementById('canvas-sleeve-right');
+  sides['sleeve-right'].canvas = document.querySelector('#canvas-sleeve-right canvas');
+  sides.back.wrap    = document.getElementById('canvas-back');
+  sides.back.canvas  = document.querySelector('#canvas-back canvas');
+
+  // Init zone buttons
+  renderZoneButtons();
+
+  // Init scale slider background
+  const slider = document.getElementById('scaleSlider');
+  if (slider) updateSliderBg(slider);
+
+  // Retry initSupabase a few times in case the CDN script is still loading
+  let ok = initSupabase();
+  let tries = 0;
+  while (!ok && tries < 10) {
+    await new Promise(r => setTimeout(r, 300));
+    ok = initSupabase();
+    tries++;
+  }
+  if (!ok) console.error('Supabase indisponible après plusieurs tentatives.');
+
+  if (sbClient) await loadSettings();
+
+  // After settings load, apply mockups for the default color
+  updateShirtImagesForColor(selectedColor);
+  await loadPrints();
+
+  // If no print is selected, initialize the color selector with global colors
+  if (!selectedPrint) renderColorOptions(globalSettings.global_colors);
+
+  if (sbClient) {
+    try {
+      const { data: { session }, error } = await sbClient.auth.getSession();
+      if (error && (error.message||'').includes('Refresh Token')) {
+        await sbClient.auth.signOut();
+        currentUser = null;
+      } else {
+        currentUser = session?.user ?? null;
+      }
+      updateAdminUI();
+    } catch(e) {
+      console.warn('Session check failed:', e);
+    }
+  }
+});
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  PLACEMENT GUIDE POPUP — JS
+//  Draws an interactive hat diagram with clickable embroidery zones
+// ══════════════════════════════════════════════════════════════
+
+// Colours for each zone (index-based)
+const ZONE_COLORS = ['#ff6b35','#4ecdc4','#ffe66d','#a8e6cf'];
+
+let pgCurrentType = 'jacket';     // 'cap' | 'bucket'
+let pgSelectedZone  = 'front-center';
+let pgHoveredZone   = null;
+
+// Open popup, sync to current state
+function openPlacementGuide() {
+  pgCurrentType  = productType;
+  pgSelectedZone = activeZoneId;
+  document.getElementById('placementGuide').style.display = '';
+  document.body.style.overflow = 'hidden';
+  // Sync type buttons
+  document.getElementById('pgTypeJacket').classList.toggle('active', pgCurrentType === 'jacket');
+  document.getElementById('pgTypeHoodie').classList.toggle('active', pgCurrentType === 'hoodie');
+  document.getElementById('pgHatLabel').textContent = pgCurrentType === 'jacket' ? 'veste' : 'hoodie';
+  pgBuildZoneList();
+  pgDraw();
+}
+
+function closePlacementGuide() {
+  document.getElementById('placementGuide').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function setPgType(type) {
+  pgCurrentType = type;
+  pgSelectedZone = 'front-center';
+  document.getElementById('pgTypeJacket').classList.toggle('active', type === 'cap');
+  document.getElementById('pgTypeHoodie').classList.toggle('active', type === 'bucket');
+  document.getElementById('pgHatLabel').textContent = type === 'cap' ? 'veste' : 'hoodie';
+  pgBuildZoneList();
+  pgDraw();
+}
+
+function applyPgSelection() {
+  // Push type + zone back to main page
+  if (pgCurrentType !== productType) setProductType(pgCurrentType);
+  setZone(pgSelectedZone);
+  closePlacementGuide();
+}
+
+// Build the zone list in the right panel
+function pgBuildZoneList() {
+  const list = document.getElementById('pgZoneList');
+  if (!list) return;
+  const zones = EMBROIDERY_ZONES[pgCurrentType] || EMBROIDERY_ZONES.jacket;
+  list.innerHTML = zones.map((z, i) => `
+    <div class="pg-zone-item${z.id === pgSelectedZone ? ' active' : ''}"
+         onclick="pgSelectZone('${z.id}'); applyPgSelection();" data-zone="${z.id}">
+      <div class="pg-zone-dot" style="background:${ZONE_COLORS[i % ZONE_COLORS.length]}"></div>
+      <span class="pg-zone-name">${z.label}</span>
+    </div>`).join('');
+}
+
+function pgSelectZone(zoneId) {
+  pgSelectedZone = zoneId;
+  // Update zone list highlight
+  document.querySelectorAll('#pgZoneList .pg-zone-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.zone === zoneId);
+  });
+  pgDraw();
+}
+
+// ── Canvas drawing ────────────────────────────────────────────
+// Scaled from the 600×600 paintFallbackCanvas paths → 400×380 canvas
+const PG_W = 400, PG_H = 380;
+const PG_SX = PG_W / 600, PG_SY = PG_H / 600;
+
+function pgScale(x, y) { return [x * PG_SX, y * PG_SY]; }
+
+function pgDraw() {
+  const canvas = document.getElementById('pgCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, PG_W, PG_H);
+
+  // Dark background
+  ctx.fillStyle = '#1a1d24';
+  ctx.beginPath();
+  ctx.roundRect(0, 0, PG_W, PG_H, 12);
+  ctx.fill();
+
+  const zones = EMBROIDERY_ZONES[pgCurrentType] || EMBROIDERY_ZONES.jacket;
+
+  // ── Draw hat silhouette ──────────────────────────────────────
+  if (pgCurrentType === 'hoodie') {
+    pgDrawBucketSilhouette(ctx);
+  } else {
+    pgDrawCapSilhouette(ctx);
+  }
+
+  // ── Draw zone overlays ────────────────────────────────────────
+  zones.forEach((z, i) => {
+    const cx  = z.cx * PG_SX;
+    const cy  = z.cy * PG_SY;
+    const hw  = z.w  * PG_SX / 2;
+    const hh  = z.h  * PG_SY / 2;
+    const col = ZONE_COLORS[i % ZONE_COLORS.length];
+    const isSelected = z.id === pgSelectedZone;
+    const isHovered  = z.id === pgHoveredZone;
+
+    ctx.save();
+    ctx.globalAlpha = isSelected ? 0.35 : isHovered ? 0.20 : 0.10;
+    ctx.fillStyle   = col;
+    ctx.beginPath();
+    ctx.roundRect(cx - hw, cy - hh, hw * 2, hh * 2, 4);
+    ctx.fill();
+    ctx.globalAlpha = isSelected ? 1.0 : isHovered ? 0.75 : 0.45;
+    ctx.strokeStyle = col;
+    ctx.lineWidth   = isSelected ? 2.5 : 1.5;
+    ctx.setLineDash(isSelected ? [] : [4, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    // Zone label inside the box
+    ctx.save();
+    ctx.font = `${isSelected ? 600 : 500} ${Math.min(10, hw * 0.35)}px DM Sans, sans-serif`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = isSelected ? '#fff' : col;
+    ctx.globalAlpha  = isSelected ? 1.0 : 0.8;
+    ctx.fillText(z.label, cx, cy);
+    ctx.restore();
+  });
+
+  // ── Selected zone: animated ring ─────────────────────────────
+  const selZone = zones.find(z => z.id === pgSelectedZone);
+  if (selZone) {
+    const cx = selZone.cx * PG_SX;
+    const cy = selZone.cy * PG_SY;
+    const hw = selZone.w  * PG_SX / 2;
+    const hh = selZone.h  * PG_SY / 2;
+    ctx.save();
+    ctx.strokeStyle = '#ff6b35';
+    ctx.lineWidth   = 2.5;
+    ctx.shadowColor = 'rgba(255,107,53,0.6)';
+    ctx.shadowBlur  = 10;
+    ctx.beginPath();
+    ctx.roundRect(cx - hw - 3, cy - hh - 3, hw * 2 + 6, hh * 2 + 6, 6);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+
+function pgDrawJacketSilhouette(ctx) {
+  ctx.save();
+  ctx.fillStyle = '#444';
+  ctx.beginPath();
+  ctx.moveTo(PG_SX * 200, PG_SY * 100);
+  ctx.lineTo(PG_SX * 400, PG_SY * 100);
+  ctx.lineTo(PG_SX * 450, PG_SY * 400);
+  ctx.lineTo(PG_SX * 150, PG_SY * 400);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function pgDrawHoodieSilhouette(ctx) {
+  ctx.save();
+  ctx.fillStyle = '#333';
+  ctx.beginPath();
+  ctx.moveTo(PG_SX * 250, PG_SY * 50);
+  ctx.lineTo(PG_SX * 350, PG_SY * 50);
+  ctx.lineTo(PG_SX * 400, PG_SY * 150);
+  ctx.lineTo(PG_SX * 450, PG_SY * 400);
+  ctx.lineTo(PG_SX * 150, PG_SY * 400);
+  ctx.lineTo(PG_SX * 200, PG_SY * 150);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+
+// Hit-test: find which zone the click lands in
+function pgGetZoneAt(mx, my) {
+  const zones = EMBROIDERY_ZONES[pgCurrentType] || EMBROIDERY_ZONES.jacket;
+  // Iterate in reverse so top-most zone wins
+  for (let i = zones.length - 1; i >= 0; i--) {
+    const z  = zones[i];
+    const cx = z.cx * PG_SX, cy = z.cy * PG_SY;
+    const hw = z.w * PG_SX / 2, hh = z.h * PG_SY / 2;
+    if (mx >= cx - hw && mx <= cx + hw && my >= cy - hh && my <= cy + hh) return z.id;
+  }
+  return null;
+}
+
+function pgCanvasPos(e) {
+  const r = e.target.getBoundingClientRect();
+  const sx = PG_W / r.width, sy = PG_H / r.height;
+  return [(e.clientX - r.left) * sx, (e.clientY - r.top) * sy];
+}
+
+function pgHandleClick(e) {
+  const [mx, my] = pgCanvasPos(e);
+  const zoneId = pgGetZoneAt(mx, my);
+  if (zoneId) {
+    pgSelectZone(zoneId);
+    applyPgSelection();
+  }
+}
+
+function pgHandleHover(e) {
+  const [mx, my] = pgCanvasPos(e);
+  const zoneId = pgGetZoneAt(mx, my);
+  if (zoneId !== pgHoveredZone) {
+    pgHoveredZone = zoneId;
+    e.target.style.cursor = zoneId ? 'pointer' : 'default';
+    pgDraw();
+  }
+}
+
+function pgHandleLeave() {
+  pgHoveredZone = null;
+  pgDraw();
+}
+</script>
+<!-- ══════════════════════════════════════════════════════════════
+     PLACEMENT GUIDE POPUP
+═══════════════════════════════════════════════════════════════ -->
+<div id="placementGuide" class="pg-overlay" style="display:none" onclick="if(event.target===this)closePlacementGuide()">
+  <div class="pg-modal" role="dialog" aria-modal="true" aria-labelledby="pgTitle">
+
+    <div class="pg-header">
+      <div>
+        <h2 class="pg-title" id="pgTitle">Guide des zones de broderie</h2>
+        <p class="pg-subtitle">Cliquez sur une zone pour la sélectionner directement sur le schéma</p>
+      </div>
+      <button class="pg-close" onclick="closePlacementGuide()" aria-label="Fermer">✕</button>
+    </div>
+
+    <!-- Product type toggle inside popup -->
+    <div class="pg-type-row">
+      <button class="pg-type-btn active" id="pgTypeJacket" onclick="setPgType('jacket')">Veste</button>
+      <button class="pg-type-btn" id="pgTypeHoodie" onclick="setPgType('hoodie')">Hoodie</button>
+    </div>
+
+    <div class="pg-body">
+
+      <!-- Left: Interactive SVG diagram -->
+      <div class="pg-diagram-wrap">
+        <p class="pg-diagram-label">Schéma de la <span id="pgHatLabel">casquette</span></p>
+        <canvas id="pgCanvas" width="400" height="380"
+                onclick="pgHandleClick(event)"
+                onmousemove="pgHandleHover(event)"
+                onmouseleave="pgHandleLeave()"
+                style="cursor:pointer;border-radius:12px;max-width:100%;display:block;margin:0 auto"></canvas>
+        <p class="pg-canvas-hint">Cliquez sur une zone pour la sélectionner</p>
+      </div>
+
+      <!-- Right: Zone list + size guide -->
+      <div class="pg-info-wrap">
+        <div class="pg-zone-list" id="pgZoneList"></div>
+
+        <div class="pg-size-guide">
+          <h4 class="pg-sg-title">Tailles de broderie</h4>
+          <table class="pg-sg-table">
+            <thead>
+              <tr><th>Taille</th><th>Largeur maxi</th><th>Hauteur maxi</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>S</strong></td><td>5 cm</td><td>4 cm</td></tr>
+              <tr><td><strong>M</strong></td><td>8 cm</td><td>6 cm</td></tr>
+              <tr><td><strong>L</strong></td><td>12 cm</td><td>9 cm</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pg-note">
+          <strong>Broderie machine</strong> — toutes les positions sont approuvées pour la broderie machine sur notre équipement. Pour une application sur bord ou zones courbées, les zones <em>Côté</em> et <em>Bord</em> sont optimales.
+        </div>
+
+        <button class="pg-apply-btn" onclick="applyPgSelection()">Appliquer la sélection</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
