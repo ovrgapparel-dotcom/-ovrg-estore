@@ -585,7 +585,7 @@ footer .footer-admin {
   <div class="mockup-card">
     <div class="view-tabs">
       <button class="view-btn active" id="front-btn" onclick="switchView('front')">Devant</button>
-      <button class="view-btn" id="side-btn" onclick="switchView('side')">Côté</button>
+      <button class="view-btn" id="side-btn" onclick="switchView('sleeve-left')">Côté</button>
       <button class="view-btn" id="back-btn" onclick="switchView('back')">Dos</button>
       <button class="view-btn" id="btn-3d" onclick="switchView('3d')" style="background: linear-gradient(135deg, var(--primary), #d94d1a); color: white; border: none; box-shadow: 0 4px 10px rgba(255,107,53,0.3);">✨ Vue 3D</button>
     </div>
@@ -1124,7 +1124,7 @@ function initSupabase() {
 // ============================================================
 async function loadSettings() {
   try {
-    const { data, error } = await sbClient.from('showcase_settings').select('*').eq('id', 3).single();
+    const { data, error } = await sbClient.from('showcase_settings').select('*').eq('id', 4).single();
     if (error && error.code !== 'PGRST116') throw error;
     if (data) {
       if (data.global_colors && data.global_colors.length) {
@@ -1365,7 +1365,11 @@ function setProductType(type) {
   // Rebuild zone buttons for the new product type
   renderZoneButtons();
 
-  updateShirtImagesForColor(selectedColor);
+  if (globalSettings.global_colors) {
+    renderColorOptions(globalSettings.global_colors);
+  } else {
+    updateShirtImagesForColor(selectedColor);
+  }
 
   if (window.load3DModel) {
     const modelUrl = type === 'jacket' ? '/jacket.glb' : '/hoodie.glb';
@@ -1752,8 +1756,24 @@ let selectedColor = '#ffffff';
 function renderColorOptions(colors) {
   const row = document.getElementById('colorRow');
   if (!row) return;
-  row.innerHTML = colors.map((c,i) => `<button class="color-swatch${i===0?' selected':''}" style="background:${c}" data-color="${c}" title="${COLOR_NAMES[c]||c}"></button>`).join('');
-  selectedColor = colors[0];
+
+  let availableColors = colors;
+  if (globalSettings.color_mockups) {
+    availableColors = colors.filter(c => {
+      const m = globalSettings.color_mockups.find(mock => mock.hex.toLowerCase() === c.toLowerCase());
+      if (!m) return false;
+      if (productType === 'jacket') return m.jacket_front || m.jacket_side || m.jacket_back;
+      return m.hoodie_front || m.hoodie_side || m.hoodie_back;
+    });
+  }
+  if (availableColors.length === 0) availableColors = colors; // fallback if none match
+
+  row.innerHTML = availableColors.map((c,i) => `<button class="color-swatch${i===0?' selected':''}" style="background:${c}" data-color="${c}" title="${COLOR_NAMES[c]||c}"></button>`).join('');
+  
+  if (!availableColors.includes(selectedColor)) {
+    selectedColor = availableColors[0];
+  }
+  
   if (window.setShirtColor) window.setShirtColor(selectedColor);
   updateShirtImagesForColor(selectedColor);
 }
@@ -2244,7 +2264,7 @@ async function saveHeadwearSettings() {
 
   const global_colors = pendingColorMockups.map(m => m.hex);
   const payload = {
-    id: 3,
+    id: 4,
     global_colors: global_colors,
     color_mockups: pendingColorMockups
   };
@@ -2283,11 +2303,13 @@ function updateShirtImagesForColor(hex) {
 
   if (productType === 'jacket') {
     SHIRT_IMAGES.front = match.jacket_front || null;
-    SHIRT_IMAGES.side  = match.jacket_side  || null;
+    SHIRT_IMAGES['sleeve-left']  = match.jacket_side  || null;
+    SHIRT_IMAGES['sleeve-right'] = match.jacket_side  || null;
     SHIRT_IMAGES.back  = match.jacket_back  || null;
   } else {
     SHIRT_IMAGES.front = match.hoodie_front || null;
-    SHIRT_IMAGES.side  = match.hoodie_side  || null;
+    SHIRT_IMAGES['sleeve-left']  = match.hoodie_side  || null;
+    SHIRT_IMAGES['sleeve-right'] = match.hoodie_side  || null;
     SHIRT_IMAGES.back  = match.hoodie_back  || null;
   }
   loadShirtImages();
