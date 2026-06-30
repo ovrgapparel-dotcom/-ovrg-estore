@@ -1,6 +1,8 @@
 const fs = require('fs');
 const showcaseStr = fs.readFileSync('showcase.html', 'utf8');
 let headwearStr = fs.readFileSync('headwear.html', 'utf8');
+// Fallback table name if PRINTS_TABLE is mis‑configured
+const DEFAULT_PRINTS_TABLE = 'showcase_prints';
 
 // Extract functions from showcase.html between
 // //  UTILS
@@ -142,7 +144,45 @@ async function loadAdminPrints() {
     if (error) throw error;
     renderAdminPrintList(data || []);
   } catch(e) {
+    // Fallback to default prints table if configured one fails
+    if (PRINTS_TABLE !== DEFAULT_PRINTS_TABLE) {
+      console.warn('Primary prints table failed, falling back to default:', DEFAULT_PRINTS_TABLE);
+      try {
+        const { data, error } = await sbClient.from(DEFAULT_PRINTS_TABLE).select('*').order('id', { ascending: true });
+        if (error) throw error;
+        renderAdminPrintList(data || []);
+        // Update UI to reflect fallback usage
+        showToast('Info', \`Utilisation de la table par défaut (\${DEFAULT_PRINTS_TABLE})\`);
+        return;
+      } catch (fallbackErr) {
+        console.error('Fallback prints load failed:', fallbackErr);
+      }
+    }
     list.innerHTML = \`<p style="color:#f87171;text-align:center;padding:2rem">Table non configurée.</p>\`;
+  }
+}
+
+// Helper to create the prints table via Supabase RPC (requires appropriate permission)
+async function createPrintsTable() {
+  const CREATE_TABLE_SQL = \`
+    create table if not exists \${PRINTS_TABLE} (
+      id bigserial primary key,
+      name text not null,
+      image_url text not null,
+      category text,
+      price integer,
+      stock integer,
+      colors jsonb,
+      active boolean default true
+    );\`;
+  try {
+    const { error } = await sbClient.rpc('run_sql', { sql: CREATE_TABLE_SQL });
+    if (error) throw error;
+    showToast('Succès', 'Table des imprimés créée avec succès.');
+    await loadAdminPrints();
+  } catch (err) {
+    console.error('Create table error:', err);
+    showToast('Erreur', 'Impossible de créer la table. Vérifiez les permissions.', '#ef4444');
   }
 }
 

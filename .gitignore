@@ -10,6 +10,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 logger.js
-
-.vercel
+.vercel
+dist/
 *.glb

@@ -1,0 +1,3246 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La boutique OVRG - Mode Streetwear Premium à Abidjan</title>
+  <meta name="description"
+    content="Découvrez La boutique OVRG, votre destination pour la mode streetwear premium à Abidjan.">
+  <meta name="theme-color" content="#FF6B35">
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="OVRG">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <!-- Service Worker registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').then(function (reg) {
+          console.log('SW registered:', reg.scope);
+        }).catch(function (e) { console.warn('SW registration failed:', e); });
+      });
+    }
+  </script>
+
+  <script>
+    const SUPABASE_URL = 'https://mihpdlhbijlvbdcqvzdw.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paHBkbGhiaWpsdmJkY3F2emR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDkzMTgsImV4cCI6MjA4Nzk4NTMxOH0.X-2XjKKi3enHck1KBtlga-RiVjXN3BS5EhW3fnF3oTE';
+    const STORAGE_BUCKET = 'product-images';
+    const PRODUCTS_TABLE = 'products';
+  </script>
+
+  <style>
+    :root {
+      --primary: #FF6B35;
+      --primary-dark: #e55a2b;
+      --dark: #0d0d0d;
+      --dark2: #1a1a1a;
+      --gray: #888;
+      --light: #f5f4f1;
+      --white: #ffffff;
+      --border: #e8e5e0;
+      --success: #22c55e;
+      --info: #3b82f6;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--white);
+      color: var(--dark);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: var(--dark);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 2px solid var(--primary);
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+    }
+
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      color: var(--white);
+      letter-spacing: 0.08em;
+      text-decoration: none;
+    }
+
+    .logo span {
+      color: var(--primary);
+    }
+
+    nav a {
+      color: #ccc;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin: 0 1rem;
+      transition: color 0.2s;
+    }
+
+    nav a:hover {
+      color: var(--primary);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .btn-icon {
+      background: transparent;
+      border: 1px solid #444;
+      color: #aaa;
+      padding: 0.5rem 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .cart-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.2s;
+    }
+
+    .cart-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .cart-badge {
+      background: white;
+      color: var(--primary);
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero {
+      background: var(--dark);
+      padding: 4rem 1.5rem 5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: 'OVRG';
+      position: absolute;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 25vw;
+      color: rgba(255, 107, 53, 0.04);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      letter-spacing: 0.1em;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: var(--primary);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.35rem 1rem;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(3.5rem, 9vw, 7rem);
+      color: var(--white);
+      letter-spacing: 0.05em;
+      line-height: 0.95;
+      margin-bottom: 1.2rem;
+    }
+
+    .hero h1 span {
+      color: var(--primary);
+    }
+
+    .hero p {
+      color: #aaa;
+      font-size: 1.05rem;
+      max-width: 500px;
+      margin: 0 auto 2rem;
+    }
+
+    .hero-cta {
+      display: inline-block;
+      background: var(--primary);
+      color: white;
+      padding: 0.9rem 2.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+
+    .hero-cta:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .catalogue {
+      padding: 4rem 1.5rem;
+      background: var(--light);
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      letter-spacing: 0.04em;
+      color: var(--dark);
+      line-height: 1;
+    }
+
+    .filter-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 2.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-tab {
+      background: white;
+      border: 1.5px solid var(--border);
+      color: var(--gray);
+      padding: 0.5rem 1.2rem;
+      border-radius: 30px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .filter-tab:hover,
+    .filter-tab.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .products-grid {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.25s, box-shadow 0.25s;
+      border: 1px solid var(--border);
+    }
+
+    .product-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .product-img-wrap {
+      position: relative;
+      height: 280px;
+      background: #f0ede8;
+      overflow: hidden;
+    }
+
+    .product-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+
+    .product-card:hover .product-img-wrap img {
+      transform: scale(1.04);
+    }
+
+    .product-img-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f0ede8, #e8e3dc);
+    }
+
+    .product-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: var(--primary);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+    }
+
+    .product-quick-view {
+      position: absolute;
+      bottom: -44px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: bottom 0.25s ease;
+    }
+
+    .product-card:hover .product-quick-view {
+      bottom: 12px;
+    }
+
+    .product-info {
+      padding: 1.1rem;
+    }
+
+    .product-cat {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gray);
+      margin-bottom: 0.3rem;
+    }
+
+    .product-name {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--dark);
+      margin-bottom: 0.6rem;
+    }
+
+    .product-pricing {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .product-price {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .product-old {
+      font-size: 0.85rem;
+      color: var(--gray);
+      text-decoration: line-through;
+    }
+
+    .product-discount {
+      background: #fff0eb;
+      color: var(--primary);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .btn-add-cart {
+      width: 100%;
+      background: var(--dark);
+      color: white;
+      border: none;
+      padding: 0.7rem;
+      border-radius: 7px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    .btn-add-cart:hover {
+      background: var(--primary);
+    }
+
+    .loading-grid {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .skeleton {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .skeleton-img {
+      height: 280px;
+      background: linear-gradient(90deg, #f0ede8 25%, #e8e3dc 50%, #f0ede8 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    .skeleton-line {
+      height: 14px;
+      margin: 12px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #f0ede8 25%, #e8e3dc 50%, #f0ede8 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    .skeleton-line.short {
+      width: 60%;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 200;
+      overflow-y: auto;
+      padding: 1rem;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .overlay.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: white;
+      border-radius: 16px;
+      max-width: 960px;
+      width: 100%;
+      margin: 2rem auto;
+      overflow: hidden;
+      animation: modalIn 0.25s ease;
+    }
+
+    @keyframes modalIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.97);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .modal-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-top h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-close {
+      background: #f0f0f0;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .btn-close:hover {
+      background: #e0e0e0;
+    }
+
+    .modal-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    @media (max-width: 768px) {
+      .modal-body {
+        grid-template-columns: 1fr;
+      }
+
+      nav {
+        display: none;
+      }
+    }
+
+    .modal-gallery {
+      padding: 1.5rem;
+      background: var(--light);
+    }
+
+    .main-img {
+      width: 100%;
+      height: 360px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #e8e3dc;
+      margin-bottom: 0.75rem;
+    }
+
+    .main-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .main-img-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+      opacity: 0.15;
+    }
+
+    .thumb-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
+
+    .thumb {
+      height: 80px;
+      border-radius: 6px;
+      background: #e8e3dc;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    .thumb.active {
+      border-color: var(--primary);
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .thumb-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      opacity: 0.2;
+    }
+
+    .modal-info {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      max-height: 520px;
+    }
+
+    .modal-cat {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 0.4rem;
+    }
+
+    .modal-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.04em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    .modal-pricing {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .modal-price {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .modal-old {
+      font-size: 1rem;
+      color: var(--gray);
+      text-decoration: line-through;
+    }
+
+    .modal-disc {
+      background: #fff0eb;
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 5px;
+    }
+
+    .modal-desc {
+      color: #555;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.2rem;
+    }
+
+    .size-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .size-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--dark);
+      margin-bottom: 0.5rem;
+    }
+
+    .sizes {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .size-btn {
+      border: 1.5px solid var(--border);
+      background: white;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+
+    .size-btn:hover,
+    .size-btn.selected {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: white;
+    }
+
+    .qty-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .qty-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .qty-ctrl {
+      display: flex;
+      align-items: center;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .qty-ctrl button {
+      background: none;
+      border: none;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: background 0.15s;
+    }
+
+    .qty-ctrl button:hover {
+      background: var(--light);
+    }
+
+    .qty-ctrl input {
+      width: 48px;
+      text-align: center;
+      border: none;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      padding: 0.4rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .qty-ctrl input:focus {
+      outline: none;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .btn-primary {
+      background: var(--dark);
+      color: white;
+      border: none;
+      padding: 0.85rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary);
+    }
+
+    .btn-paypal {
+      background: #003087;
+      color: #00b4d8;
+      border: none;
+      padding: 0.85rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-paypal:hover {
+      opacity: 0.9;
+    }
+
+    .btn-wave {
+      background: #1e90ff;
+      color: white;
+      border: none;
+      padding: 0.85rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-wave:hover {
+      opacity: 0.9;
+    }
+
+    .btn-yango {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.85rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-yango:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-whatsapp {
+      background: #25D366;
+      color: white;
+      border: none;
+      padding: 0.85rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: opacity 0.2s;
+    }
+
+    .btn-whatsapp:hover {
+      opacity: 0.9;
+    }
+
+    .cart-panel {
+      position: fixed;
+      right: -420px;
+      top: 0;
+      height: 100%;
+      width: 420px;
+      max-width: 100vw;
+      background: white;
+      z-index: 300;
+      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.15);
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cart-panel.open {
+      right: 0;
+    }
+
+    .cart-header {
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cart-header h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    .cart-items {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 1.5rem;
+    }
+
+    .cart-empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--gray);
+    }
+
+    .cart-empty .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .cart-item {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cart-item-img {
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      background: var(--light);
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      opacity: 0.3;
+    }
+
+    .cart-item-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 1;
+    }
+
+    .cart-item-info {
+      flex: 1;
+    }
+
+    .cart-item-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .cart-item-meta {
+      font-size: 0.8rem;
+      color: var(--gray);
+    }
+
+    .cart-item-price {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-top: 0.4rem;
+    }
+
+    .cart-item-remove {
+      background: none;
+      border: none;
+      color: var(--gray);
+      cursor: pointer;
+      font-size: 1.1rem;
+      align-self: flex-start;
+      transition: color 0.2s;
+    }
+
+    .cart-item-remove:hover {
+      color: #e33;
+    }
+
+    .cart-footer {
+      padding: 1.2rem 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .cart-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .cart-total-amount {
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .checkout-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 400;
+      overflow-y: auto;
+      padding: 1rem;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .checkout-overlay.open {
+      display: flex;
+    }
+
+    .checkout-box {
+      background: white;
+      border-radius: 16px;
+      max-width: 700px;
+      width: 100%;
+      margin: 2rem auto;
+      overflow: hidden;
+      animation: modalIn 0.25s ease;
+    }
+
+    .checkout-header {
+      background: var(--dark);
+      padding: 1.5rem 2rem;
+      color: white;
+    }
+
+    .checkout-header h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.05em;
+    }
+
+    .checkout-header p {
+      color: #aaa;
+      font-size: 0.9rem;
+      margin-top: 0.2rem;
+    }
+
+    .checkout-body {
+      padding: 2rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media(max-width: 500px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--dark);
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      padding: 0.75rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+    }
+
+    .payment-section {
+      margin-bottom: 1.5rem;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .payment-header {
+      background: var(--light);
+      padding: 0.75rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--dark);
+    }
+
+    .payment-options {
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+
+    .payment-option {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .payment-option:hover {
+      border-color: var(--primary);
+    }
+
+    .payment-option.selected {
+      border-color: var(--primary);
+      background: #fff5f2;
+    }
+
+    .payment-option input[type=radio] {
+      accent-color: var(--primary);
+    }
+
+    .payment-option .pay-label {
+      font-weight: 600;
+      font-size: 0.9rem;
+      flex: 1;
+    }
+
+    .payment-option .pay-icon {
+      font-size: 1.3rem;
+    }
+
+    .order-summary {
+      background: var(--light);
+      border-radius: 10px;
+      padding: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .order-summary h4 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      padding: 0.3rem 0;
+      color: #555;
+    }
+
+    .summary-row.total {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--dark);
+      border-top: 1px solid var(--border);
+      margin-top: 0.5rem;
+      padding-top: 0.75rem;
+    }
+
+    .btn-checkout {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-checkout:hover {
+      background: var(--primary-dark);
+    }
+
+    .login-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 600;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-overlay.open {
+      display: flex;
+    }
+
+    .login-box {
+      background: var(--dark2);
+      border-radius: 16px;
+      max-width: 420px;
+      width: 90%;
+      padding: 2.5rem;
+      border: 1px solid #333;
+      animation: modalIn 0.25s ease;
+      text-align: center;
+    }
+
+    .login-box .login-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.5rem;
+      color: var(--primary);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    .login-box h3 {
+      color: #aaa;
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 2rem;
+    }
+
+    .login-field {
+      margin-bottom: 1rem;
+    }
+
+    .login-field input {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      background: #111;
+      border: 1.5px solid #333;
+      border-radius: 8px;
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+    }
+
+    .login-field input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .btn-login {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.9rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: background 0.2s;
+    }
+
+    .btn-login:hover {
+      background: var(--primary-dark);
+    }
+
+    .login-error {
+      color: #f87171;
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+      min-height: 1.2rem;
+    }
+
+    .btn-cancel-login {
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-top: 1rem;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .btn-cancel-login:hover {
+      color: #aaa;
+    }
+
+    .admin-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 500;
+      overflow-y: auto;
+      padding: 1rem;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .admin-overlay.open {
+      display: flex;
+    }
+
+    .admin-box {
+      background: var(--dark2);
+      border-radius: 16px;
+      max-width: 960px;
+      width: 100%;
+      margin: 2rem auto;
+      overflow: hidden;
+      color: white;
+      animation: modalIn 0.25s ease;
+    }
+
+    .admin-hdr {
+      background: var(--dark);
+      padding: 1.2rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--primary);
+    }
+
+    .admin-hdr-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .admin-hdr h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.05em;
+      color: var(--primary);
+    }
+
+    .admin-user {
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    .admin-tabs {
+      display: flex;
+      border-bottom: 1px solid #333;
+      padding: 0 2rem;
+    }
+
+    .admin-tab {
+      padding: 1rem 1.2rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #888;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .admin-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .admin-content {
+      padding: 2rem;
+    }
+
+    .admin-product-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .admin-product-item {
+      background: #222;
+      border-radius: 10px;
+      padding: 1.2rem;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .admin-product-thumb {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      background: #333;
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      opacity: 0.4;
+    }
+
+    .admin-product-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 1;
+    }
+
+    .admin-product-meta {
+      flex: 1;
+    }
+
+    .admin-product-meta h4 {
+      font-size: 0.95rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .admin-product-meta p {
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+
+    .admin-product-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .admin-product-actions button {
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .btn-edit {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-delete {
+      background: #333;
+      color: #aaa;
+      transition: all 0.2s;
+    }
+
+    .btn-delete:hover {
+      background: #c33;
+      color: white;
+    }
+
+    .admin-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .admin-form label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #aaa;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    .admin-form input,
+    .admin-form textarea,
+    .admin-form select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: #111;
+      border: 1.5px solid #333;
+      border-radius: 8px;
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+
+    .admin-form input:focus,
+    .admin-form textarea:focus,
+    .admin-form select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .admin-form textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media(max-width: 600px) {
+      .admin-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .admin-form-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .btn-save {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-save:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-cancel-admin {
+      background: #333;
+      color: #aaa;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .img-slots {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+    }
+
+    .img-slot {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      background: #111;
+      border: 2px dashed #444;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .img-slot:hover {
+      border-color: var(--primary);
+    }
+
+    .img-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .img-slot-label {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 0.6rem;
+      color: #666;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 2px 0;
+    }
+
+    .img-slot-clear {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      background: rgba(200, 0, 0, 0.8);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 0.6rem;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .img-slot:hover .img-slot-clear {
+      display: flex;
+    }
+
+    .img-slot-icon {
+      font-size: 1.8rem;
+      opacity: 0.2;
+    }
+
+    .upload-progress {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: white;
+    }
+
+    .upload-progress.show {
+      display: flex;
+    }
+
+    .supabase-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+
+    .supabase-status.connected {
+      background: rgba(34, 197, 94, 0.1);
+      color: #22c55e;
+    }
+
+    .supabase-status.disconnected {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+    }
+
+    .supabase-status.loading {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+    }
+
+    .contact-section {
+      padding: 4rem 1.5rem;
+      background: white;
+    }
+
+    .contact-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: start;
+    }
+
+    @media(max-width: 768px) {
+      .contact-inner {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+    }
+
+    .contact-info h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 3rem;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      margin-bottom: 1rem;
+    }
+
+    .contact-info h2 span {
+      color: var(--primary);
+    }
+
+    .contact-info p {
+      color: var(--gray);
+      margin-bottom: 1.5rem;
+    }
+
+    .contact-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .contact-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--dark);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .contact-link:hover {
+      color: var(--primary);
+    }
+
+    .contact-link .cl-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--light);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .newsletter-form h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.5rem;
+    }
+
+    .newsletter-form p {
+      color: var(--gray);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .nf-group {
+      margin-bottom: 0.75rem;
+    }
+
+    .nf-group input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+    }
+
+    .nf-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+    }
+
+    .btn-subscribe {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.85rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-subscribe:hover {
+      background: var(--primary-dark);
+    }
+
+    footer {
+      background: var(--dark);
+      padding: 3rem 1.5rem 2rem;
+      color: #aaa;
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 3rem;
+      margin-bottom: 2rem;
+    }
+
+    @media(max-width: 768px) {
+      .footer-inner {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+    }
+
+    .footer-brand .logo {
+      font-size: 2.5rem;
+      display: inline-block;
+      margin-bottom: 0.75rem;
+    }
+
+    .footer-brand p {
+      font-size: 0.85rem;
+      line-height: 1.7;
+    }
+
+    .footer-col h4 {
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .footer-col ul {
+      list-style: none;
+    }
+
+    .footer-col ul li {
+      margin-bottom: 0.5rem;
+    }
+
+    .footer-col a {
+      color: #888;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+
+    .footer-col a:hover {
+      color: var(--primary);
+    }
+
+    .footer-bottom {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding-top: 1.5rem;
+      border-top: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    @media(max-width: 600px) {
+      .footer-bottom {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+      }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--dark);
+      color: white;
+      border-left: 4px solid var(--success);
+      padding: 1rem 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      z-index: 999;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.4s ease;
+      max-width: 320px;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast .toast-title {
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .toast .toast-body {
+      font-size: 0.85rem;
+      color: #ccc;
+    }
+
+    .paypal-hidden {
+      display: none;
+    }
+
+    .privacy-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 600;
+      overflow-y: auto;
+      padding: 1.5rem;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .privacy-overlay.open {
+      display: flex;
+    }
+
+    .privacy-box {
+      background: white;
+      border-radius: 16px;
+      max-width: 780px;
+      width: 100%;
+      margin: 2rem auto;
+      overflow: hidden;
+      animation: modalIn 0.25s ease;
+      font-size: 0.92rem;
+      line-height: 1.75;
+      color: #333;
+    }
+
+    .privacy-header {
+      background: var(--dark);
+      padding: 1.8rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid var(--primary);
+    }
+
+    .privacy-header h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.06em;
+      color: white;
+    }
+
+    .privacy-header p {
+      color: #aaa;
+      font-size: 0.8rem;
+      margin-top: 0.2rem;
+    }
+
+    .privacy-body {
+      padding: 2.5rem;
+    }
+
+    .privacy-body h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 0.05em;
+      color: var(--dark);
+      margin: 1.8rem 0 0.6rem;
+      border-left: 3px solid var(--primary);
+      padding-left: 0.75rem;
+    }
+
+    .privacy-body h3:first-child {
+      margin-top: 0;
+    }
+
+    .privacy-body p {
+      margin-bottom: 0.75rem;
+      color: #444;
+    }
+
+    .privacy-body ul {
+      padding-left: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .privacy-body ul li {
+      margin-bottom: 0.4rem;
+      color: #444;
+    }
+
+    .privacy-body a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .privacy-body a:hover {
+      text-decoration: underline;
+    }
+
+    .privacy-footer {
+      background: var(--light);
+      padding: 1.2rem 2.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .privacy-footer p {
+      font-size: 0.8rem;
+      color: var(--gray);
+    }
+
+    .chat-widget {
+      position: fixed;
+      bottom: 1.75rem;
+      right: 1.75rem;
+      z-index: 9000;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.75rem;
+    }
+
+    .chat-channels {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.6rem;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .chat-channels.open {
+      opacity: 1;
+      pointer-events: all;
+      transform: translateY(0);
+    }
+
+    .chat-channel-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.55rem 1rem 0.55rem 0.75rem;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: white;
+      text-decoration: none;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+      transition: transform 0.2s, box-shadow 0.2s;
+      white-space: nowrap;
+    }
+
+    .chat-channel-btn:hover {
+      transform: translateX(-4px);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+    }
+
+    .chat-channel-btn .ch-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .chat-channel-btn .ch-label {
+      line-height: 1;
+    }
+
+    .chat-channel-btn .ch-sub {
+      font-size: 0.7rem;
+      font-weight: 400;
+      opacity: 0.85;
+      display: block;
+    }
+
+    .btn-whatsapp-float {
+      background: linear-gradient(135deg, #25D366, #128C7E);
+    }
+
+    .btn-telegram-float {
+      background: linear-gradient(135deg, #2AABEE, #1A7BB5);
+    }
+
+    .btn-messenger-float {
+      background: linear-gradient(135deg, #0084FF, #6B3FA0);
+    }
+
+    .chat-toggle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 24px rgba(255, 107, 53, 0.45);
+      transition: background 0.2s, transform 0.3s;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .chat-toggle:hover {
+      background: var(--primary-dark);
+      transform: scale(1.05);
+    }
+
+    .chat-toggle .icon-chat,
+    .chat-toggle .icon-close {
+      position: absolute;
+      font-size: 1.5rem;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .chat-toggle .icon-close {
+      opacity: 0;
+      transform: rotate(-90deg);
+      font-size: 1.2rem;
+    }
+
+    .chat-toggle.open .icon-chat {
+      opacity: 0;
+      transform: rotate(90deg);
+    }
+
+    .chat-toggle.open .icon-close {
+      opacity: 1;
+      transform: rotate(0deg);
+    }
+
+    .chat-toggle::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 107, 53, 0.45);
+      animation: chatPulse 2s infinite;
+    }
+
+    @keyframes chatPulse {
+      0% {
+        transform: scale(1);
+        opacity: 0.7;
+      }
+
+      70% {
+        transform: scale(1.3);
+        opacity: 0;
+      }
+
+      100% {
+        transform: scale(1.3);
+        opacity: 0;
+      }
+    }
+
+    .chat-toggle.open::after {
+      animation: none;
+    }
+
+    .chat-tooltip {
+      position: absolute;
+      right: 70px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--dark);
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .chat-toggle:hover .chat-tooltip {
+      opacity: 1;
+    }
+
+    .chat-tooltip::after {
+      content: '';
+      position: absolute;
+      right: -5px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 5px solid transparent;
+      border-right: none;
+      border-left-color: var(--dark);
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="header-inner">
+      <a href="#" class="logo">OVRG<span>.</span></a>
+      <nav>
+        <a href="showcase.html" style="color: var(--primary); font-weight: 700;">✨ Showcase</a>
+        <a href="#catalogue"
+          onclick="event.preventDefault();document.getElementById('catalogue').scrollIntoView({behavior:'smooth'})">Collection</a>
+        <a href="#contact"
+          onclick="event.preventDefault();document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Contact</a>
+        <a href="https://www.instagram.com/ovrgapparel" target="_blank">Instagram</a>
+        <a href="https://pin.it/6SwliNSis" target="_blank">Pinterest</a>
+      </nav>
+      <div class="header-actions">
+        <button class="cart-btn" onclick="toggleCart()">🛍 Panier <span class="cart-badge"
+            id="cartCount">0</span></button>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-tag">Nouvelle Collection 2026</div>
+    <h1>OVRG<br><span>Apparel</span></h1>
+    <p>Mode streetwear premium à Abidjan. Livraison rapide, style exclusif.</p>
+    <a href="#catalogue" class="hero-cta"
+      onclick="event.preventDefault();document.getElementById('catalogue').scrollIntoView({behavior:'smooth'})">Découvrir
+      la Collection</a>
+  </section>
+
+  <section class="catalogue" id="catalogue">
+    <div class="section-header">
+      <div class="section-label">Notre Collection</div>
+      <h2 class="section-title">CATALOGUE</h2>
+    </div>
+    <div class="filter-tabs" id="filterTabs">
+      <button class="filter-tab active" onclick="filterProducts('all', this)">Tout</button>
+      <button class="filter-tab" onclick="filterProducts('t-shirt', this)">T-Shirts</button>
+      <button class="filter-tab" onclick="filterProducts('ensemble', this)">Ensembles</button>
+    </div>
+    <div id="productsContainer">
+      <div class="loading-grid" id="loadingGrid">
+        <div class="skeleton">
+          <div class="skeleton-img"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+        <div class="skeleton">
+          <div class="skeleton-img"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+        <div class="skeleton">
+          <div class="skeleton-img"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+        <div class="skeleton">
+          <div class="skeleton-img"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+        <div class="skeleton">
+          <div class="skeleton-img"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+        <div class="skeleton">
+          <div class="skeleton-img"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+      </div>
+      <div class="products-grid" id="productsGrid" style="display:none"></div>
+    </div>
+  </section>
+
+  <section class="contact-section" id="contact">
+    <div class="contact-inner">
+      <div class="contact-info">
+        <h2>OVRG<br><span>Apparel</span></h2>
+        <p>Nous avons à cœur de vous offrir non seulement des vêtements, mais une véritable expérience d'achat.</p>
+        <div class="contact-links">
+          <a href="tel:+2250799108108" class="contact-link"><span class="cl-icon">📞</span> +225 07 99 10 81 08</a>
+          <a href="mailto:ovrg.apparel@gmail.com" class="contact-link"><span class="cl-icon">✉️</span>
+            ovrg.apparel@gmail.com</a>
+          <a href="https://wa.me/c/2250799108108" target="_blank" class="contact-link"><span class="cl-icon">💬</span>
+            WhatsApp</a>
+          <a href="https://www.instagram.com/ovrgapparel" target="_blank" class="contact-link"><span
+              class="cl-icon">📷</span> @ovrgapparel</a>
+          <a href="https://pin.it/6SwliNSis" target="_blank" class="contact-link"><span class="cl-icon">📌</span>
+            Pinterest</a>
+          <a href="https://www.facebook.com/OvrgApparel" target="_blank" class="contact-link"><span
+              class="cl-icon">f</span> Facebook</a>
+        </div>
+      </div>
+      <div class="newsletter-form">
+        <h3>Restez Informé</h3>
+        <p>Inscrivez-vous pour recevoir nos dernières collections et offres exclusives.</p>
+        <form action="https://formsubmit.co/orvg.apparel@gmail.com" method="POST" onsubmit="handleNewsletter(event)">
+          <input type="hidden" name="_subject" value="Nouvelle inscription newsletter - La boutique OVRG">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="_autoresponse" value="Merci! Vous êtes inscrit(e) à la newsletter OVRG.">
+          <input type="hidden" name="_captcha" value="false">
+          <div class="nf-group"><input type="text" name="name" placeholder="Nom complet" required></div>
+          <div class="nf-group"><input type="email" name="email" placeholder="votre.email@exemple.com" required></div>
+          <div class="nf-group"><input type="tel" name="phone" placeholder="+225 XX XX XX XX" required></div>
+          <button type="submit" class="btn-subscribe">S'inscrire</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="#" class="logo">OVRG<span style="color:var(--primary)">.</span></a>
+        <p>La boutique OVRG offre les meilleures créations mode streetwear avec livraison rapide à Abidjan.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="showcase.html">Showcase</a></li>
+          <li><a href="#catalogue"
+              onclick="event.preventDefault();document.getElementById('catalogue').scrollIntoView({behavior:'smooth'})">Produits</a>
+          </li>
+          <li><a href="#contact"
+              onclick="event.preventDefault();document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Contact</a>
+          </li>
+          <li><a href="#" onclick="event.preventDefault();openPrivacy()">Confidentialité</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="tel:+2250799108108">+225 07 99 10 81 08</a></li>
+          <li><a href="mailto:ovrg.apparel@gmail.com">ovrg.apparel@gmail.com</a></li>
+          <li>Abidjan, Côte d'Ivoire</li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Suivez-nous</h4>
+        <ul>
+          <li><a href="https://www.instagram.com/ovrgapparel" target="_blank">Instagram</a></li>
+          <li><a href="https://pin.it/6SwliNSis" target="_blank">Pinterest</a></li>
+          <li><a href="https://www.facebook.com/OvrgApparel" target="_blank">Facebook</a></li>
+          <li><a href="https://www.tiktok.com/@ovrgapparel" target="_blank">TikTok</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 La boutique OVRG. Tous droits réservés.</span>
+      <span>Made with ❤ in Abidjan <button id="adminToggleBtn" onclick="handleAdminClick()" title=""
+          style="background:none;border:none;cursor:pointer;color:#1a1a1a;font-size:0.6rem;margin-left:0.5rem;opacity:0.15;transition:opacity 0.3s;padding:2px 4px;border-radius:3px;"
+          onmouseenter="this.style.opacity='0.5'" onmouseleave="this.style.opacity='0.15'">⚙</button></span>
+    </div>
+  </footer>
+  <!-- PRODUCT DETAIL OVERLAY -->
+  <div class="overlay" id="productOverlay" onclick="handleOverlayClick(event,'productOverlay')">
+    <div class="modal-box" id="productModalBox">
+      <div class="modal-top">
+        <h3 id="modalCat">Produit</h3>
+        <button class="btn-close" onclick="closeProduct()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-gallery">
+          <div class="main-img" id="mainImgWrap">
+            <div class="main-img-placeholder" id="mainImgPlaceholder">👕</div>
+          </div>
+          <div class="thumb-row" id="thumbRow"></div>
+        </div>
+        <div class="modal-info">
+          <div class="modal-cat" id="modalCatLabel"></div>
+          <h2 class="modal-name" id="modalName">—</h2>
+          <div class="modal-pricing">
+            <span class="modal-price" id="modalPrice">—</span>
+            <span class="modal-old" id="modalOld"></span>
+            <span class="modal-disc" id="modalDisc"></span>
+          </div>
+          <p class="modal-desc" id="modalDesc">—</p>
+          <div class="size-section" id="sizeSection">
+            <div class="size-label">Taille</div>
+            <div class="sizes" id="sizeBtns"></div>
+          </div>
+          <div class="qty-section">
+            <span class="qty-label">Quantité</span>
+            <div class="qty-ctrl">
+              <button onclick="changeQty(-1)">−</button>
+              <input type="number" id="qtyInput" value="1" min="1" max="99">
+              <button onclick="changeQty(1)">+</button>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-primary" onclick="addToCartFromModal()">🛍 Ajouter au panier</button>
+            <button class="btn-paypal" onclick="payWithPayPal()">💳 Payer avec PayPal</button>
+            <button class="btn-wave" onclick="payWithWave()">🌊 Payer avec Wave</button>
+            <button class="btn-yango" onclick="buyViaYango()">🚗 Commander via Yango</button>
+            <button class="btn-whatsapp" onclick="buyViaWhatsApp()">💬 Commander via WhatsApp</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CART PANEL -->
+  <div class="cart-panel" id="cartPanel">
+    <div class="cart-header">
+      <h3>Mon Panier</h3>
+      <button class="btn-close" onclick="toggleCart()">✕</button>
+    </div>
+    <div class="cart-items" id="cartItems">
+      <div class="cart-empty">
+        <div class="empty-icon">🛍</div>
+        <p>Votre panier est vide</p>
+      </div>
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total"><span>Total</span><span class="cart-total-amount" id="cartTotal">0 FCFA</span></div>
+      <button class="btn-checkout" onclick="openCheckout()">Passer la commande →</button>
+    </div>
+  </div>
+
+  <!-- CHECKOUT OVERLAY -->
+  <div class="checkout-overlay" id="checkoutOverlay" onclick="handleOverlayClick(event,'checkoutOverlay')">
+    <div class="checkout-box">
+      <div class="checkout-header">
+        <h2>Finaliser la Commande</h2>
+        <p>La boutique OVRG — Abidjan, Côte d'Ivoire</p>
+      </div>
+      <div class="checkout-body">
+        <form id="checkoutForm" onsubmit="submitOrder(event)">
+          <input type="hidden" name="_subject" id="orderSubject">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="_autoresponse" id="orderAutoResponse">
+          <input type="hidden" name="_captcha" value="false">
+          <input type="hidden" name="order_details" id="orderDetails">
+          <input type="hidden" name="payment_method" id="checkoutPaymentMethod">
+          <div class="form-grid">
+            <div class="form-group"><label>Prénom *</label><input type="text" name="first_name" placeholder="Prénom"
+                required></div>
+            <div class="form-group"><label>Nom *</label><input type="text" name="last_name" placeholder="Nom" required>
+            </div>
+            <div class="form-group"><label>Email *</label><input type="email" name="email"
+                placeholder="email@exemple.com" required></div>
+            <div class="form-group"><label>Téléphone *</label><input type="tel" name="phone"
+                placeholder="+225 XX XX XX XX" required></div>
+            <div class="form-group full"><label>Adresse de livraison</label><input type="text" name="address"
+                placeholder="Quartier, commune, Abidjan"></div>
+            <div class="form-group full"><label>Note (optionnel)</label><input type="text" name="note"
+                placeholder="Instructions spéciales..."></div>
+          </div>
+          <div class="order-summary">
+            <h4>Récapitulatif</h4>
+            <div id="checkoutSummaryItems"></div>
+            <div class="summary-row total"><span>Total</span><span id="checkoutTotalDisplay">—</span></div>
+          </div>
+          <div class="payment-section">
+            <div class="payment-header">Mode de paiement</div>
+            <div class="payment-options">
+              <label class="payment-option selected" id="payOptPaypal"><input type="radio" name="payment" value="paypal"
+                  checked onchange="selectPayment('paypal')"><span class="pay-icon">💳</span><span
+                  class="pay-label">PayPal</span></label>
+              <label class="payment-option" id="payOptWave"><input type="radio" name="payment" value="wave"
+                  onchange="selectPayment('wave')"><span class="pay-icon">🌊</span><span
+                  class="pay-label">Wave</span></label>
+              <label class="payment-option" id="payOptYango"><input type="radio" name="payment" value="yango"
+                  onchange="selectPayment('yango')"><span class="pay-icon">🚗</span><span class="pay-label">Yango
+                  Delivery (payer à la livraison)</span></label>
+              <label class="payment-option" id="payOptWhatsapp"><input type="radio" name="payment" value="whatsapp"
+                  onchange="selectPayment('whatsapp')"><span class="pay-icon">💬</span><span
+                  class="pay-label">WhatsApp</span></label>
+            </div>
+          </div>
+          <button type="submit" class="btn-checkout">Confirmer la commande →</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN LOGIN OVERLAY -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-box">
+      <div class="login-logo">OVRG.</div>
+      <h3>Accès Administrateur</h3>
+      <div class="login-field"><input type="email" id="loginEmail" placeholder="Email admin" autocomplete="email"></div>
+      <div class="login-field"><input type="password" id="loginPassword" placeholder="Mot de passe"
+          autocomplete="current-password"></div>
+      <button class="btn-login" onclick="doLogin()">Se connecter</button>
+      <div class="login-error" id="loginError"></div>
+      <button class="btn-cancel-login" onclick="closeLogin()">Annuler</button>
+    </div>
+  </div>
+
+  <!-- ADMIN PANEL OVERLAY -->
+  <div class="admin-overlay" id="adminOverlay" onclick="handleOverlayClick(event,'adminOverlay')">
+    <div class="admin-box">
+      <div class="admin-hdr">
+        <div class="admin-hdr-left">
+          <h2>Admin — OVRG</h2>
+          <span class="admin-user" id="adminUserLabel"></span>
+        </div>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn-cancel-admin" onclick="doLogout()" style="font-size:0.8rem">Déconnexion</button>
+          <button class="btn-close" style="background:#333;color:white" onclick="closeAdmin()">✕</button>
+        </div>
+      </div>
+      <div id="supabaseStatus" class="supabase-status loading" style="margin:1rem 2rem 0">⟳ Connexion à Supabase...
+      </div>
+      <div class="admin-tabs">
+        <div class="admin-tab active" onclick="showAdminTab('products', this)">Produits</div>
+        <div class="admin-tab" onclick="showAdminTab('add', this)">+ Ajouter</div>
+      </div>
+      <div class="admin-content">
+        <div id="adminTabProducts">
+          <div class="admin-product-list" id="adminProductList">
+            <p style="color:#666;text-align:center;padding:2rem">Chargement...</p>
+          </div>
+        </div>
+        <div id="adminTabAdd" style="display:none">
+          <div class="admin-form">
+            <h3 id="adminFormTitle"
+              style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.5rem">
+              + Nouveau produit</h3>
+            <input type="hidden" id="editProductId" value="">
+            <div class="admin-grid">
+              <div><label>Nom du produit</label><input type="text" id="adminName" placeholder="T-Shirt OVRG Classic">
+              </div>
+              <div><label>Catégorie</label><select id="adminCat">
+                  <option value="t-shirt">T-Shirts</option>
+                  <option value="ensemble">Ensembles</option>
+                </select></div>
+              <div><label>Prix (FCFA)</label><input type="number" id="adminPrice" placeholder="15000"></div>
+              <div><label>Prix original (FCFA)</label><input type="number" id="adminOldPrice" placeholder="20000"></div>
+            </div>
+            <div><label>Description</label><textarea id="adminDesc" placeholder="Description du produit..."></textarea>
+            </div>
+            <div><label>Tailles (séparées par virgule)</label><input type="text" id="adminSizes"
+                placeholder="S, M, L, XL, XXL"></div>
+            <div><label>Badge</label><input type="text" id="adminBadge"
+                placeholder="Nouveau, Promo, Édition Limitée..."></div>
+            <div>
+              <label>Photos (1 principale + 4 supplémentaires)</label>
+              <p style="font-size:0.75rem;color:#666;margin-bottom:0.5rem">Cliquez sur un emplacement pour uploader.
+                Sauvegardées dans Supabase Storage.</p>
+              <div class="img-slots" id="adminImgSlots"></div>
+            </div>
+            <div class="admin-form-actions">
+              <button class="btn-save" id="btnSaveLabel" onclick="saveProduct()">💾 Enregistrer dans Supabase</button>
+              <button class="btn-cancel-admin" onclick="cancelEditProduct()">Annuler</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRIVACY POLICY MODAL -->
+  <div class="privacy-overlay" id="privacyOverlay" onclick="if(event.target===this)closePrivacy()">
+    <div class="privacy-box">
+      <div class="privacy-header">
+        <div>
+          <h2>Politique de Confidentialité</h2>
+          <p>La boutique OVRG — Dernière mise à jour : janvier 2026</p>
+        </div>
+        <button class="btn-close" style="background:#333;color:white;flex-shrink:0" onclick="closePrivacy()">✕</button>
+      </div>
+      <div class="privacy-body">
+        <h3>1. Qui sommes-nous ?</h3>
+        <p><strong>La boutique OVRG</strong> est une boutique de mode streetwear premium basée à Abidjan, Côte d'Ivoire.
+        </p>
+        <ul>
+          <li><strong>Email :</strong> ovrg.apparel@gmail.com</li>
+          <li><strong>Téléphone / WhatsApp :</strong> +225 07 99 10 81 08</li>
+          <li><strong>Adresse :</strong> Abidjan, Côte d'Ivoire</li>
+        </ul>
+        <h3>2. Données collectées</h3>
+        <p>Nous collectons uniquement les données que vous nous fournissez volontairement : nom, email, téléphone,
+          adresse de livraison.</p>
+        <h3>3. Utilisation des données</h3>
+        <p>Vos données sont utilisées exclusivement pour traiter votre commande, organiser la livraison, et vous envoyer
+          des confirmations.</p>
+        <h3>4. Partage des données</h3>
+        <p>Données partagées uniquement avec : Yango Delivery, PayPal/Wave, FormSubmit, Supabase — tous nécessaires à
+          l'exécution de votre commande.</p>
+        <h3>5. Durée de conservation</h3>
+        <p>Données de commande conservées pendant <strong>24 mois</strong>. Données newsletter jusqu'à désinscription.
+        </p>
+        <h3>6. Vos droits</h3>
+        <p>Vous disposez des droits d'accès, rectification, effacement, opposition et désinscription. Contact :
+          ovrg.apparel@gmail.com</p>
+        <h3>7. Sécurité</h3>
+        <p>Données stockées via <strong>Supabase</strong> (certifié SOC 2 Type II), avec chiffrement HTTPS/TLS.</p>
+      </div>
+      <div class="privacy-footer">
+        <p>© 2026 La boutique OVRG — Tous droits réservés — Abidjan, Côte d'Ivoire</p>
+        <button class="btn-checkout" style="width:auto;padding:0.6rem 1.5rem" onclick="closePrivacy()">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <form id="paypalCartForm" target="_blank" action="https://www.paypal.com/cgi-bin/webscr" method="post"
+    class="paypal-hidden">
+    <input type="hidden" name="business" value="ovrg.apparel@gmail.com">
+    <input type="hidden" name="cmd" value="_cart">
+    <input type="hidden" name="upload" value="1">
+    <input type="hidden" name="currency_code" value="USD">
+  </form>
+
+  <div class="toast" id="toast">
+    <div class="toast-title">✅ <span id="toastTitle">Succès</span></div>
+    <div class="toast-body" id="toastBody"></div>
+  </div>
+
+  <div class="chat-widget" id="chatWidget">
+    <div class="chat-channels" id="chatChannels">
+      <a class="chat-channel-btn btn-whatsapp-float" href="https://wa.me/2250799108108?text=Bonjour%20OVRG!"
+        target="_blank" rel="noopener">
+        <span class="ch-icon">💬</span><span class="ch-label">WhatsApp<span class="ch-sub">Réponse rapide</span></span>
+      </a>
+      <a class="chat-channel-btn btn-telegram-float" href="https://t.me/+2250799108108" target="_blank" rel="noopener">
+        <span class="ch-icon">✈️</span><span class="ch-label">Telegram<span class="ch-sub">+225 07 99 108
+            108</span></span>
+      </a>
+      <a class="chat-channel-btn btn-messenger-float" href="https://m.me/imakeimage" target="_blank" rel="noopener">
+        <span class="ch-icon">💙</span><span class="ch-label">Messenger<span class="ch-sub">Facebook</span></span>
+      </a>
+    </div>
+    <button class="chat-toggle" id="chatToggle" onclick="toggleChat()" aria-label="Support en ligne">
+      <span class="chat-tooltip">Support</span>
+      <span class="icon-chat">💬</span>
+      <span class="icon-close">✕</span>
+    </button>
+  </div>
+  <!-- PRODUCT DETAIL OVERLAY -->
+  <div class="overlay" id="productOverlay" onclick="handleOverlayClick(event,'productOverlay')">
+    <div class="modal-box" id="productModalBox">
+      <div class="modal-top">
+        <h3 id="modalCat">Produit</h3>
+        <button class="btn-close" onclick="closeProduct()">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-gallery">
+          <div class="main-img" id="mainImgWrap">
+            <div class="main-img-placeholder" id="mainImgPlaceholder">&#x1F455;</div>
+          </div>
+          <div class="thumb-row" id="thumbRow"></div>
+        </div>
+        <div class="modal-info">
+          <div class="modal-cat" id="modalCatLabel"></div>
+          <h2 class="modal-name" id="modalName">&#x2014;</h2>
+          <div class="modal-pricing">
+            <span class="modal-price" id="modalPrice">&#x2014;</span>
+            <span class="modal-old" id="modalOld"></span>
+            <span class="modal-disc" id="modalDisc"></span>
+          </div>
+          <p class="modal-desc" id="modalDesc">&#x2014;</p>
+          <div class="size-section" id="sizeSection">
+            <div class="size-label">Taille</div>
+            <div class="sizes" id="sizeBtns"></div>
+          </div>
+          <div class="qty-section">
+            <span class="qty-label">Quantit&#xe9;</span>
+            <div class="qty-ctrl">
+              <button onclick="changeQty(-1)">&#x2212;</button>
+              <input type="number" id="qtyInput" value="1" min="1" max="99">
+              <button onclick="changeQty(1)">+</button>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-primary" onclick="addToCartFromModal()">&#x1F6CD; Ajouter au panier</button>
+            <button class="btn-paypal" onclick="payWithPayPal()">&#x1F4B3; Payer avec PayPal</button>
+            <button class="btn-wave" onclick="payWithWave()">&#x1F30A; Payer avec Wave</button>
+            <button class="btn-yango" onclick="buyViaYango()">&#x1F697; Commander via Yango</button>
+            <button class="btn-whatsapp" onclick="buyViaWhatsApp()">&#x1F4AC; Commander via WhatsApp</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CART PANEL -->
+  <div class="cart-panel" id="cartPanel">
+    <div class="cart-header">
+      <h3>Mon Panier</h3>
+      <button class="btn-close" onclick="toggleCart()">&#x2715;</button>
+    </div>
+    <div class="cart-items" id="cartItems">
+      <div class="cart-empty">
+        <div class="empty-icon">&#x1F6CD;</div>
+        <p>Votre panier est vide</p>
+      </div>
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total"><span>Total</span><span class="cart-total-amount" id="cartTotal">0 FCFA</span></div>
+      <button class="btn-checkout" onclick="openCheckout()">Passer la commande &#x2192;</button>
+    </div>
+  </div>
+
+  <!-- CHECKOUT OVERLAY -->
+  <div class="checkout-overlay" id="checkoutOverlay" onclick="handleOverlayClick(event,'checkoutOverlay')">
+    <div class="checkout-box">
+      <div class="checkout-header">
+        <h2>Finaliser la Commande</h2>
+        <p>La boutique OVRG &#x2014; Abidjan, C&#xf4;te d'Ivoire</p>
+      </div>
+      <div class="checkout-body">
+        <form id="checkoutForm" onsubmit="submitOrder(event)">
+          <input type="hidden" name="_subject" id="orderSubject">
+          <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="_autoresponse" id="orderAutoResponse">
+          <input type="hidden" name="_captcha" value="false">
+          <input type="hidden" name="order_details" id="orderDetails">
+          <input type="hidden" name="payment_method" id="checkoutPaymentMethod">
+          <div class="form-grid">
+            <div class="form-group"><label>Pr&#xe9;nom *</label><input type="text" name="first_name"
+                placeholder="Pr&#xe9;nom" required></div>
+            <div class="form-group"><label>Nom *</label><input type="text" name="last_name" placeholder="Nom" required>
+            </div>
+            <div class="form-group"><label>Email *</label><input type="email" name="email"
+                placeholder="email@exemple.com" required></div>
+            <div class="form-group"><label>T&#xe9;l&#xe9;phone *</label><input type="tel" name="phone"
+                placeholder="+225 XX XX XX XX" required></div>
+            <div class="form-group full"><label>Adresse de livraison</label><input type="text" name="address"
+                placeholder="Quartier, commune, Abidjan"></div>
+            <div class="form-group full"><label>Note (optionnel)</label><input type="text" name="note"
+                placeholder="Instructions sp&#xe9;ciales..."></div>
+          </div>
+          <div class="order-summary">
+            <h4>R&#xe9;capitulatif</h4>
+            <div id="checkoutSummaryItems"></div>
+            <div class="summary-row total"><span>Total</span><span id="checkoutTotalDisplay">&#x2014;</span>
+            </div>
+          </div>
+          <div class="payment-section">
+            <div class="payment-header">Mode de paiement</div>
+            <div class="payment-options">
+              <label class="payment-option selected" id="payOptPaypal"><input type="radio" name="payment" value="paypal"
+                  checked onchange="selectPayment('paypal')"><span class="pay-icon">&#x1F4B3;</span><span
+                  class="pay-label">PayPal</span></label>
+              <label class="payment-option" id="payOptWave"><input type="radio" name="payment" value="wave"
+                  onchange="selectPayment('wave')"><span class="pay-icon">&#x1F30A;</span><span
+                  class="pay-label">Wave</span></label>
+              <label class="payment-option" id="payOptYango"><input type="radio" name="payment" value="yango"
+                  onchange="selectPayment('yango')"><span class="pay-icon">&#x1F697;</span><span class="pay-label">Yango
+                  Delivery (payer &#xe0; la livraison)</span></label>
+              <label class="payment-option" id="payOptWhatsapp"><input type="radio" name="payment" value="whatsapp"
+                  onchange="selectPayment('whatsapp')"><span class="pay-icon">&#x1F4AC;</span><span
+                  class="pay-label">WhatsApp</span></label>
+            </div>
+          </div>
+          <button type="submit" class="btn-checkout">Confirmer la commande &#x2192;</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    var sbClient = null;
+    var currentUser = null;
+    var products = [];
+    var activeFilter = 'all';
+    var adminImgSlots = ['', '', '', '', ''];
+    var selectedPayment = 'paypal';
+    var currentProduct = null;
+    var cart = [];
+
+    function initSupabase() {
+      try {
+        var _sb = window['supabase'] || window['supabaseJs'];
+        if (!_sb || typeof _sb.createClient !== 'function') throw new Error('Supabase library not loaded');
+        sbClient = _sb.createClient(SUPABASE_URL, SUPABASE_ANON, {
+          auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, storage: window.localStorage }
+        });
+        sbClient.auth.onAuthStateChange(function (event, session) { currentUser = session ? session.user : null; updateAdminUI(); });
+        return true;
+      } catch (e) { console.error('Supabase init error:', e); return false; }
+    }
+
+    function setSupabaseStatus(state, msg) {
+      var el = document.getElementById('supabaseStatus');
+      el.className = 'supabase-status ' + state; el.textContent = msg;
+    }
+
+    async function loadProducts() {
+      var tries = 0;
+      while (!sbClient && tries < 10) { await new Promise(function (r) { setTimeout(r, 300); }); tries++; }
+      if (!sbClient) { products = getDefaultProducts(); showLoadedCatalogue(); showToast('Mode d\u00e9mo', 'Connexion Supabase impossible.', '#f59e0b'); return; }
+      try {
+        var res = await sbClient.from(PRODUCTS_TABLE).select('*').order('id', { ascending: true });
+        if (res.error) throw res.error;
+        products = res.data || []; showLoadedCatalogue();
+      } catch (e) { products = getDefaultProducts(); showLoadedCatalogue(); showToast('Mode d\u00e9mo', 'Supabase non configur\u00e9 \u2014 donn\u00e9es de d\u00e9mo.', '#f59e0b'); }
+    }
+
+    function showLoadedCatalogue() {
+      document.getElementById('loadingGrid').style.display = 'none';
+      document.getElementById('productsGrid').style.display = 'grid';
+      renderCatalogue(activeFilter);
+    }
+
+    function getDefaultProducts() {
+      return [
+        { id: 1, name: 'T-Shirt OVRG Classic', cat: 't-shirt', price: 15000, old_price: 20000, description: 'Un t-shirt classique aux couleurs OVRG. Coton de qualit\u00e9 sup\u00e9rieure.', badge: 'Nouveau', sizes: ['S', 'M', 'L', 'XL', 'XXL'], imgs: [] },
+        { id: 2, name: 'T-Shirt Streetwear', cat: 't-shirt', price: 15000, old_price: 20000, description: 'T-shirt streetwear tendance. Parfait pour un look casual.', badge: 'Promo', sizes: ['XS', 'S', 'M', 'L', 'XL'], imgs: [] },
+        { id: 3, name: 'Ensemble Sportif', cat: 'ensemble', price: 35000, old_price: 40000, description: 'Ensemble complet pour le sport et le quotidien.', badge: '\u00c9dition Limit\u00e9e', sizes: ['S', 'M', 'L', 'XL', 'XXL'], imgs: [] },
+        { id: 4, name: 'T-Shirt Premium', cat: 't-shirt', price: 15000, old_price: 20000, description: 'T-shirt premium en coton de qualit\u00e9 sup\u00e9rieure.', badge: '', sizes: ['S', 'M', 'L', 'XL'], imgs: [] },
+        { id: 5, name: 'Ensemble Casual', cat: 'ensemble', price: 35000, old_price: 40000, description: 'Ensemble casual parfait pour tous les jours.', badge: '', sizes: ['S', 'M', 'L', 'XL', 'XXL'], imgs: [] },
+        { id: 6, name: 'T-Shirt \u00c9l\u00e9gant', cat: 't-shirt', price: 15000, old_price: 20000, description: 'T-shirt \u00e9l\u00e9gant pour occasions sp\u00e9ciales.', badge: '', sizes: ['XS', 'S', 'M', 'L', 'XL'], imgs: [] }
+      ];
+    }
+
+    function renderCatalogue(filter) {
+      filter = filter || 'all';
+      activeFilter = filter;
+      var grid = document.getElementById('productsGrid');
+      var filtered = filter === 'all' ? products : products.filter(function (p) { return p.cat === filter; });
+      if (!filtered.length) { grid.innerHTML = '<p style="text-align:center;color:#888;padding:3rem;grid-column:1/-1">Aucun produit dans cette cat\u00e9gorie.</p>'; return; }
+      grid.innerHTML = filtered.map(function (p) {
+        var disc = p.old_price ? Math.round((1 - p.price / p.old_price) * 100) : 0;
+        var imgSrc = p.imgs && p.imgs[0];
+        var imgHtml = imgSrc ? '<img src="' + imgSrc + '" alt="' + p.name + '" loading="lazy">' : '<div class="product-img-placeholder"><span style="font-size:4rem;opacity:0.15">\ud83d\udc55</span></div>';
+        var badgeHtml = p.badge ? '<span class="product-badge">' + p.badge + '</span>' : '';
+        var discHtml = p.old_price ? '<span class="product-old">' + fmt(p.old_price) + '</span><span class="product-discount">-' + disc + '%</span>' : '';
+        return '<article class="product-card" onclick="openProduct(' + p.id + ')" tabindex="0">' +
+          '<div class="product-img-wrap">' + imgHtml + badgeHtml +
+          '<button class="product-quick-view" onclick="event.stopPropagation();openProduct(' + p.id + ')">Voir d\u00e9tails \u2192</button></div>' +
+          '<div class="product-info">' +
+          '<div class="product-cat">' + (p.cat === 't-shirt' ? 'T-Shirts' : 'Ensembles') + '</div>' +
+          '<h3 class="product-name">' + p.name + '</h3>' +
+          '<div class="product-pricing"><span class="product-price">' + fmt(p.price) + '</span>' + discHtml + '</div>' +
+          '<button class="btn-add-cart" onclick="event.stopPropagation();quickAddToCart(' + p.id + ')">+ Ajouter au panier</button>' +
+          '</div></article>';
+      }).join('');
+    }
+
+    function filterProducts(filter, btn) {
+      document.querySelectorAll('.filter-tab').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active'); renderCatalogue(filter);
+    }
+
+    function openProduct(id) {
+      var p = products.find(function (x) { return x.id === id; }); if (!p) return;
+      currentProduct = p;
+      document.getElementById('modalCat').textContent = p.name;
+      document.getElementById('modalCatLabel').textContent = p.cat === 't-shirt' ? 'T-Shirts' : 'Ensembles';
+      document.getElementById('modalName').textContent = p.name;
+      document.getElementById('modalPrice').textContent = fmt(p.price);
+      var disc = p.old_price ? Math.round((1 - p.price / p.old_price) * 100) : 0;
+      document.getElementById('modalOld').textContent = p.old_price ? fmt(p.old_price) : '';
+      document.getElementById('modalDisc').textContent = disc ? '-' + disc + '%' : '';
+      document.getElementById('modalDesc').textContent = p.description || '';
+      document.getElementById('qtyInput').value = 1;
+      var mainWrap = document.getElementById('mainImgWrap');
+      mainWrap.innerHTML = p.imgs && p.imgs[0] ? '<img src="' + p.imgs[0] + '" alt="' + p.name + '">' : '<div class="main-img-placeholder">\ud83d\udc55</div>';
+      document.getElementById('thumbRow').innerHTML = [0, 1, 2, 3].map(function (i) {
+        var src = p.imgs && p.imgs[i + 1];
+        return '<div class="thumb ' + (i === 0 ? 'active' : '') + '" onclick="selectThumb(this,\'' + (src || '') + '\')">' +
+          (src ? '<img src="' + src + '" alt="Photo ' + (i + 2) + '">' : '<div class="thumb-placeholder">\ud83d\udc55</div>') + '</div>';
+      }).join('');
+      document.getElementById('sizeBtns').innerHTML = (p.sizes || []).map(function (s, i) {
+        return '<button class="size-btn' + (i === 0 ? ' selected' : '') + '" onclick="selectSize(this)">' + s + '</button>';
+      }).join('');
+      document.getElementById('sizeSection').style.display = p.sizes && p.sizes.length ? '' : 'none';
+      document.getElementById('productOverlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function selectThumb(el, src) {
+      document.querySelectorAll('.thumb').forEach(function (t) { t.classList.remove('active'); }); el.classList.add('active');
+      document.getElementById('mainImgWrap').innerHTML = src ? '<img src="' + src + '" alt="">' : '<div class="main-img-placeholder">\ud83d\udc55</div>';
+    }
+    function selectSize(btn) { document.querySelectorAll('.size-btn').forEach(function (b) { b.classList.remove('selected'); }); btn.classList.add('selected'); }
+    function closeProduct() { document.getElementById('productOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+    function changeQty(d) { var inp = document.getElementById('qtyInput'); inp.value = Math.max(1, parseInt(inp.value || 1) + d); }
+    function handleOverlayClick(e, id) {
+      if (e.target.id === id) {
+        if (id === 'productOverlay') closeProduct();
+        else if (id === 'checkoutOverlay') closeCheckout();
+        else if (id === 'adminOverlay') closeAdmin();
+      }
+    }
+
+    function quickAddToCart(id) { var p = products.find(function (x) { return x.id === id; }); if (p) addCartItem(p, 1, p.sizes && p.sizes[0] || ''); }
+    function addToCartFromModal() {
+      if (!currentProduct) return;
+      var qty = parseInt(document.getElementById('qtyInput').value || 1);
+      var sel = document.querySelector('.size-btn.selected');
+      var size = sel ? sel.textContent : '';
+      addCartItem(currentProduct, qty, size); closeProduct(); toggleCart();
+    }
+    function addCartItem(p, qty, size) {
+      var key = p.id + '-' + size;
+      var ex = cart.find(function (c) { return c.key === key; });
+      if (ex) ex.qty += qty;
+      else cart.push({ key: key, id: p.id, name: p.name, price: p.price, qty: qty, size: size, img: p.imgs && p.imgs[0] || '' });
+      renderCart(); showToast('Ajout\u00e9! \ud83d\udecd', p.name + ' ajout\u00e9 au panier.');
+    }
+    function removeFromCart(key) { cart = cart.filter(function (c) { return c.key !== key; }); renderCart(); }
+    function renderCart() {
+      var total = cart.reduce(function (s, c) { return s + c.price * c.qty; }, 0);
+      document.getElementById('cartCount').textContent = cart.reduce(function (s, c) { return s + c.qty; }, 0);
+      document.getElementById('cartTotal').textContent = fmt(total);
+      var el = document.getElementById('cartItems');
+      if (!cart.length) { el.innerHTML = '<div class="cart-empty"><div class="empty-icon">\ud83d\udecd</div><p>Votre panier est vide</p></div>'; return; }
+      el.innerHTML = cart.map(function (c) {
+        return '<div class="cart-item">' +
+          '<div class="cart-item-img">' + (c.img ? '<img src="' + c.img + '" alt="' + c.name + '">' : '\ud83d\udc55') + '</div>' +
+          '<div class="cart-item-info"><div class="cart-item-name">' + c.name + '</div>' +
+          '<div class="cart-item-meta">' + (c.size ? 'Taille: ' + c.size + ' \u00b7 ' : '') + 'Qt\u00e9: ' + c.qty + '</div>' +
+          '<div class="cart-item-price">' + fmt(c.price * c.qty) + '</div></div>' +
+          '<button class="cart-item-remove" onclick="removeFromCart(\'' + c.key + '\')">&#x2715;</button></div>';
+      }).join('');
+    }
+    function toggleCart() { document.getElementById('cartPanel').classList.toggle('open'); }
+
+    function openCheckout() {
+      if (!cart.length) { showToast('Panier vide', "Ajoutez des articles d'abord.", '#f59e0b'); return; }
+      document.getElementById('cartPanel').classList.remove('open');
+      var total = cart.reduce(function (s, c) { return s + c.price * c.qty; }, 0);
+      document.getElementById('checkoutSummaryItems').innerHTML = cart.map(function (c) {
+        return '<div class="summary-row"><span>' + c.name + (c.size ? ' (' + c.size + ')' : '') + ' \u00d7' + c.qty + '</span><span>' + fmt(c.price * c.qty) + '</span></div>';
+      }).join('');
+      document.getElementById('checkoutTotalDisplay').textContent = fmt(total);
+      document.getElementById('orderDetails').value = cart.map(function (c) { return c.name + (c.size ? ' (' + c.size + ')' : '') + ' \u00d7' + c.qty + ': ' + fmt(c.price * c.qty); }).join(' | ') + ' | TOTAL: ' + fmt(total);
+      document.getElementById('checkoutOverlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeCheckout() { document.getElementById('checkoutOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+    function selectPayment(m) {
+      selectedPayment = m;
+      document.getElementById('checkoutPaymentMethod').value = m;
+      ['Paypal', 'Wave', 'Yango', 'Whatsapp'].forEach(function (x) { document.getElementById('payOpt' + x).classList.remove('selected'); });
+      var map = { paypal: 'Paypal', wave: 'Wave', yango: 'Yango', whatsapp: 'Whatsapp' };
+      document.getElementById('payOpt' + map[m]).classList.add('selected');
+    }
+    function submitOrder(e) {
+      e.preventDefault();
+      var f = e.target;
+      var name = f.first_name.value + ' ' + f.last_name.value;
+      var total = cart.reduce(function (s, c) { return s + c.price * c.qty; }, 0);
+      document.getElementById('orderSubject').value = 'Commande OVRG \u2014 ' + name;
+      document.getElementById('orderAutoResponse').value = 'Bonjour ' + name + '! Commande re\u00e7ue. Total: ' + fmt(total) + '. Nous vous contacterons sous 24h. Merci!';
+      var data = new FormData(f);
+      fetch('https://formsubmit.co/ajax/orvg.apparel@gmail.com', { method: 'POST', headers: { 'Accept': 'application/json' }, body: data }).catch(function () { });
+      if (selectedPayment === 'paypal') redirectPayPal(total);
+      else if (selectedPayment === 'wave') { window.open('https://pay.wave.com/m/M_ci_1F_--SCMirUC/c/ci/', '_blank'); finishOrder(name); }
+      else if (selectedPayment === 'yango') { window.open('https://buy.yango.com/store/caede4e7-d634-4b4f-8a0f-f54e255ed1f7', '_blank'); finishOrder(name); }
+      else if (selectedPayment === 'whatsapp') {
+        var items = cart.map(function (c) { return '\u2022 ' + c.name + (c.size ? ' (' + c.size + ')' : '') + ' \u00d7' + c.qty + ': ' + fmt(c.price * c.qty); }).join('%0A');
+        window.open('https://wa.me/2250799108108?text=Bonjour OVRG! Commande:%0A%0AClient: ' + name + '%0A%0A' + items + '%0A%0ATotal: ' + fmt(total), '_blank');
+        finishOrder(name);
+      }
+    }
+    function redirectPayPal(total) {
+      var pf = document.getElementById('paypalCartForm');
+      pf.querySelectorAll('.dyn').forEach(function (el) { el.remove(); });
+      cart.forEach(function (c, i) {
+        [['item_name_' + (i + 1), c.name + (c.size ? ' (' + c.size + ')' : '')], ['amount_' + (i + 1), fmtUSD(c.price)], ['quantity_' + (i + 1), c.qty]].forEach(function (pair) {
+          var inp = document.createElement('input'); inp.type = 'hidden'; inp.name = pair[0]; inp.value = pair[1]; inp.className = 'dyn'; pf.appendChild(inp);
+        });
+      });
+      pf.submit(); finishOrder('');
+    }
+    function finishOrder(name) { closeCheckout(); cart = []; renderCart(); showToast('Commande confirm\u00e9e! \ud83c\udf89', 'Merci ' + name + '! Nous vous contacterons sous 24h.'); }
+
+    function payWithPayPal() {
+      if (!currentProduct) return;
+      var qty = parseInt(document.getElementById('qtyInput').value || 1);
+      var sel = document.querySelector('.size-btn.selected');
+      var size = sel ? sel.textContent : '';
+      var pf = document.getElementById('paypalCartForm');
+      pf.querySelectorAll('.dyn').forEach(function (el) { el.remove(); });
+      [['item_name_1', currentProduct.name + (size ? ' (' + size + ')' : '')], ['amount_1', fmtUSD(currentProduct.price)], ['quantity_1', qty]].forEach(function (pair) {
+        var i = document.createElement('input'); i.type = 'hidden'; i.name = pair[0]; i.value = pair[1]; i.className = 'dyn'; pf.appendChild(i);
+      });
+      pf.submit();
+    }
+    function payWithWave() { window.open('https://pay.wave.com/m/M_ci_1F_--SCMirUC/c/ci/', '_blank'); }
+    function buyViaYango() { window.open('https://buy.yango.com/store/caede4e7-d634-4b4f-8a0f-f54e255ed1f7', '_blank'); }
+    function buyViaWhatsApp() {
+      if (!currentProduct) return;
+      var qty = parseInt(document.getElementById('qtyInput').value || 1);
+      var sel = document.querySelector('.size-btn.selected');
+      var size = sel ? sel.textContent : '';
+      var msg = 'Bonjour, je suis int\u00e9ress\u00e9(e) par: ' + currentProduct.name + (size ? ' (' + size + ')' : '') + ' \u00d7' + qty + ' \u2014 ' + fmt(currentProduct.price * qty);
+      window.open('https://wa.me/2250799108108?text=' + encodeURIComponent(msg), '_blank');
+    }
+
+    function handleAdminClick() { if (currentUser) openAdmin(); else openLogin(); }
+    function openLogin() {
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginError').textContent = '';
+      document.getElementById('loginOverlay').classList.add('open');
+    }
+    function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
+    async function doLogin() {
+      var email = document.getElementById('loginEmail').value.trim();
+      var password = document.getElementById('loginPassword').value;
+      document.getElementById('loginError').textContent = '';
+      if (!email || !password) { document.getElementById('loginError').textContent = 'Veuillez remplir tous les champs.'; return; }
+      try {
+        await sbClient.auth.signOut().catch(function () { });
+        var res = await sbClient.auth.signInWithPassword({ email: email, password: password });
+        if (res.error) throw res.error;
+        currentUser = res.data.user; closeLogin(); openAdmin();
+      } catch (e) { document.getElementById('loginError').textContent = 'Email ou mot de passe incorrect.'; }
+    }
+    async function doLogout() { await sbClient.auth.signOut(); currentUser = null; closeAdmin(); showToast('D\u00e9connect\u00e9', 'Session admin termin\u00e9e.'); }
+    function updateAdminUI() {
+      var btn = document.getElementById('adminToggleBtn'); if (!btn) return;
+      if (currentUser) { btn.textContent = '\u2699\u25cf'; btn.style.color = '#22c55e'; btn.style.opacity = '0.4'; }
+      else { btn.textContent = '\u2699'; btn.style.color = '#1a1a1a'; btn.style.opacity = '0.15'; }
+    }
+
+    function openAdmin() {
+      renderAdminImgSlots();
+      document.getElementById('adminOverlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      loadAdminProducts(); checkSupabaseConnection();
+    }
+    function closeAdmin() { document.getElementById('adminOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+    async function checkSupabaseConnection() {
+      try {
+        var res = await sbClient.from(PRODUCTS_TABLE).select('id').limit(1);
+        if (res.error) throw res.error;
+        setSupabaseStatus('connected', '\u2713 Connect\u00e9 \u00e0 Supabase \u2014 donn\u00e9es en temps r\u00e9el');
+      } catch (e) { setSupabaseStatus('disconnected', '\u2717 Supabase non configur\u00e9 \u2014 voir instructions en haut du fichier'); }
+    }
+    async function loadAdminProducts() {
+      var list = document.getElementById('adminProductList');
+      list.innerHTML = '<p style="color:#666;text-align:center;padding:2rem">Chargement...</p>';
+      try {
+        var res = await sbClient.from(PRODUCTS_TABLE).select('*').order('id');
+        if (res.error) throw res.error;
+        products = res.data || []; renderCatalogue(activeFilter); renderAdminProductList();
+      } catch (e) { list.innerHTML = '<p style="color:#f87171;text-align:center;padding:2rem">Erreur: base de donn\u00e9es non configur\u00e9e.</p>'; }
+    }
+    function renderAdminProductList() {
+      document.getElementById('adminProductList').innerHTML = products.length ? products.map(function (p) {
+        var disc = p.old_price ? Math.round((1 - p.price / p.old_price) * 100) : 0;
+        var thumb = p.imgs && p.imgs[0] ? '<img src="' + p.imgs[0] + '" alt="' + p.name + '">' : '\ud83d\udc55';
+        var badge = p.badge ? '<span style="background:var(--primary);color:white;font-size:0.65rem;padding:1px 7px;border-radius:10px;font-weight:600;margin-left:4px">' + p.badge + '</span>' : '';
+        var priceInfo = '<span style="color:white;font-weight:700">' + fmt(p.price) + '</span>' + (p.old_price ? ' <span style="text-decoration:line-through">' + fmt(p.old_price) + '</span> <span style="color:var(--primary)">-' + disc + '%</span>' : '');
+        return '<div class="admin-product-item">' +
+          '<div class="admin-product-thumb">' + thumb + '</div>' +
+          '<div class="admin-product-meta"><h4>' + p.name + badge + '</h4>' +
+          '<p>' + priceInfo + ' \u00b7 ' + (p.cat === 't-shirt' ? 'T-Shirts' : 'Ensembles') + ' \u00b7 ' + ((p.sizes || []).join(', ') || '\u2014') + '</p></div>' +
+          '<div class="admin-product-actions">' +
+          '<button class="btn-edit" onclick="editProduct(' + p.id + ')">\u270f Modifier</button>' +
+          '<button class="btn-delete" onclick="deleteProduct(' + p.id + ')">\ud83d\uddd1 Supprimer</button></div></div>';
+      }).join('') : '<div style="text-align:center;padding:3rem;color:#555"><div style="font-size:2.5rem;margin-bottom:1rem">\ud83d\udce6</div><p>Aucun produit. Cliquez <strong style="color:var(--primary)">+ Ajouter</strong>.</p></div>';
+    }
+    function editProduct(id) {
+      var p = products.find(function (x) { return x.id === id; }); if (!p) return;
+      document.getElementById('editProductId').value = id;
+      document.getElementById('adminName').value = p.name;
+      document.getElementById('adminCat').value = p.cat;
+      document.getElementById('adminPrice').value = p.price;
+      document.getElementById('adminOldPrice').value = p.old_price || '';
+      document.getElementById('adminDesc').value = p.description || '';
+      document.getElementById('adminSizes').value = (p.sizes || []).join(', ');
+      document.getElementById('adminBadge').value = p.badge || '';
+      adminImgSlots = (p.imgs || []).concat(['', '', '', '', '']).slice(0, 5);
+      renderAdminImgSlots();
+      document.getElementById('adminFormTitle').textContent = '\u270f Modifier \u2014 ' + p.name;
+      document.getElementById('btnSaveLabel').textContent = '\ud83d\udcbe Mettre \u00e0 jour';
+      showAdminTab('add', document.querySelectorAll('.admin-tab')[1]);
+    }
+    async function deleteProduct(id) {
+      if (!confirm('Supprimer ce produit d\u00e9finitivement?')) return;
+      try {
+        var res = await sbClient.from(PRODUCTS_TABLE).delete().eq('id', id);
+        if (res.error) throw res.error;
+        products = products.filter(function (p) { return p.id !== id; });
+        renderAdminProductList(); renderCatalogue(activeFilter);
+        showToast('Supprim\u00e9', 'Produit retir\u00e9 du catalogue Supabase.');
+      } catch (e) { showToast('Erreur', 'Impossible de supprimer.', '#ef4444'); }
+    }
+    async function saveProduct() {
+      var name = document.getElementById('adminName').value.trim();
+      var cat = document.getElementById('adminCat').value;
+      var price = parseInt(document.getElementById('adminPrice').value);
+      var old_price = parseInt(document.getElementById('adminOldPrice').value) || null;
+      var description = document.getElementById('adminDesc').value.trim();
+      var sizes = document.getElementById('adminSizes').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+      var badge = document.getElementById('adminBadge').value.trim();
+      var imgs = adminImgSlots.filter(Boolean);
+      var editId = document.getElementById('editProductId').value;
+      if (!name || !price) { showToast('Champs requis', 'Nom et prix sont obligatoires.', '#f59e0b'); return; }
+      var payload = { name: name, cat: cat, price: price, old_price: old_price, description: description, badge: badge, sizes: sizes, imgs: imgs };
+      try {
+        if (editId) {
+          var res = await sbClient.from(PRODUCTS_TABLE).update(payload).eq('id', parseInt(editId));
+          if (res.error) throw res.error;
+        } else {
+          var res2 = await sbClient.from(PRODUCTS_TABLE).insert(payload);
+          if (res2.error) throw res2.error;
+        }
+        await loadAdminProducts(); cancelEditProduct();
+        showAdminTab('products', document.querySelectorAll('.admin-tab')[0]);
+        showToast('Enregistr\u00e9! \u2713', '"' + name + '" mis \u00e0 jour dans Supabase.');
+      } catch (e) { showToast('Erreur Supabase', e.message || 'V\u00e9rifiez la configuration.', '#ef4444'); }
+    }
+    function cancelEditProduct() {
+      document.getElementById('editProductId').value = '';
+      document.getElementById('adminName').value = '';
+      document.getElementById('adminCat').value = 't-shirt';
+      document.getElementById('adminPrice').value = '';
+      document.getElementById('adminOldPrice').value = '';
+      document.getElementById('adminDesc').value = '';
+      document.getElementById('adminSizes').value = 'S, M, L, XL, XXL';
+      document.getElementById('adminBadge').value = '';
+      adminImgSlots = ['', '', '', '', ''];
+      renderAdminImgSlots();
+      document.getElementById('adminFormTitle').textContent = '+ Nouveau produit';
+      document.getElementById('btnSaveLabel').textContent = '\ud83d\udcbe Enregistrer dans Supabase';
+    }
+    function showAdminTab(tab, el) {
+      document.querySelectorAll('.admin-tab').forEach(function (t) { t.classList.remove('active'); }); el.classList.add('active');
+      document.getElementById('adminTabProducts').style.display = tab === 'products' ? '' : 'none';
+      document.getElementById('adminTabAdd').style.display = tab === 'add' ? '' : 'none';
+    }
+    function renderAdminImgSlots() {
+      var labels = ['Principale', 'Photo 2', 'Photo 3', 'Photo 4', 'Photo 5'];
+      document.getElementById('adminImgSlots').innerHTML = adminImgSlots.map(function (src, i) {
+        return '<div class="img-slot" id="slot_' + i + '">' +
+          (src ? '<img src="' + src + '" alt="Slot ' + (i + 1) + '" id="slotImg_' + i + '">' : '<div class="img-slot-icon">\ud83d\udcf7</div>') +
+          '<span class="img-slot-label">' + labels[i] + '</span>' +
+          (src ? '<button class="img-slot-clear" onclick="clearSlot(event,' + i + ')">&#x2715;</button>' : '') +
+          '<div class="upload-progress" id="slotProgress_' + i + '">\u21bb Upload...</div>' +
+          '<input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2" onchange="uploadImageToStorage(event,' + i + ')">' +
+          '</div>';
+      }).join('');
+    }
+    function clearSlot(e, i) { e.stopPropagation(); adminImgSlots[i] = ''; renderAdminImgSlots(); }
+    async function uploadImageToStorage(event, slotIndex) {
+      var file = event.target.files[0]; if (!file) return;
+      var prog = document.getElementById('slotProgress_' + slotIndex);
+      if (prog) prog.classList.add('show');
+      try {
+        var userRes = await sbClient.auth.getUser();
+        if (!userRes.data.user) throw new Error('Non authentifi\u00e9');
+        var ext = file.name.split('.').pop();
+        var path = 'products/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
+        var upRes = await sbClient.storage.from(STORAGE_BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+        if (upRes.error) throw upRes.error;
+        var urlData = sbClient.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+        adminImgSlots[slotIndex] = urlData.data.publicUrl;
+        renderAdminImgSlots();
+        showToast('Photo upload\u00e9e \u2713', 'Image sauvegard\u00e9e dans Supabase Storage.');
+      } catch (e) {
+        if (prog) prog.classList.remove('show');
+        if (e.message && (e.message.includes('bucket') || e.message.includes('Bucket') || e.message.includes('not found'))) {
+          var reader = new FileReader();
+          reader.onload = function (ev) { adminImgSlots[slotIndex] = ev.target.result; renderAdminImgSlots(); showToast('Photo charg\u00e9e (locale)', 'Cr\u00e9ez le bucket "product-images" dans Supabase Storage.', '#f59e0b'); };
+          reader.readAsDataURL(file);
+        } else { showToast('Erreur upload', e.message || 'V\u00e9rifiez le bucket.', '#ef4444'); }
+      }
+    }
+
+    function handleNewsletter(e) {
+      e.preventDefault();
+      var name = e.target.name.value;
+      fetch('https://formsubmit.co/ajax/ovrg.apparel@gmail.com', { method: 'POST', headers: { 'Accept': 'application/json' }, body: new FormData(e.target) }).catch(function () { });
+      showToast('Inscription r\u00e9ussie! \ud83c\udf89', 'Bienvenue ' + name + '!');
+      e.target.reset();
+    }
+    function openPrivacy() { document.getElementById('privacyOverlay').classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function closePrivacy() { document.getElementById('privacyOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+
+    function fmt(n) { return Number(n).toLocaleString('fr-FR') + ' FCFA'; }
+    function fmtUSD(n) { return (n / 655).toFixed(2); }
+    function showToast(title, body, borderColor) {
+      borderColor = borderColor || '#22c55e';
+      var t = document.getElementById('toast');
+      t.style.borderLeftColor = borderColor;
+      document.getElementById('toastTitle').textContent = title;
+      document.getElementById('toastBody').textContent = body;
+      t.classList.add('show'); clearTimeout(t._timer);
+      t._timer = setTimeout(function () { t.classList.remove('show'); }, 4500);
+    }
+    function toggleChat() {
+      var toggle = document.getElementById('chatToggle');
+      var channels = document.getElementById('chatChannels');
+      var isOpen = channels.classList.contains('open');
+      toggle.classList.toggle('open', !isOpen); channels.classList.toggle('open', !isOpen);
+    }
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      var lEmail = document.getElementById('loginEmail');
+      var lPass = document.getElementById('loginPassword');
+      if (lEmail) lEmail.addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+      if (lPass) lPass.addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+      initSupabase();
+      await loadProducts();
+      renderCart();
+      try {
+        var sessRes = await sbClient.auth.getSession();
+        if (sessRes.error && (sessRes.error.message || '').includes('Refresh Token')) { await sbClient.auth.signOut(); currentUser = null; }
+        else { currentUser = sessRes.data.session ? sessRes.data.session.user : null; }
+        updateAdminUI();
+      } catch (e) {
+        try { await sbClient.auth.signOut(); } catch (_) { }
+        currentUser = null; updateAdminUI();
+      }
+      document.addEventListener('click', function (e) {
+        var panel = document.getElementById('cartPanel');
+        if (panel && panel.classList.contains('open') && !panel.contains(e.target) && !e.target.closest('.cart-btn')) panel.classList.remove('open');
+        var widget = document.getElementById('chatWidget');
+        if (widget && !widget.contains(e.target)) {
+          document.getElementById('chatToggle').classList.remove('open');
+          document.getElementById('chatChannels').classList.remove('open');
+        }
+      });
+    });
+  </script>
+  <script type="application/ld+json">
+{"@context":"https://schema.org","@type":"LocalBusiness","name":"La boutique OVRG","telephone":"+225079910810","email":"ovrgapparel@gmail.com","address":{"@type":"PostalAddress","addressLocality":"Abidjan","addressCountry":"CI"},"url":"https://laboutiqueovrg.com"}
+</script>
+</body>
+
+</html>

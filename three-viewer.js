@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 
 // ─── GLOBALS ────────────────────────────────────────────────────────────────
@@ -27,6 +30,11 @@ let _hwScale       = 0.42;   // 0–1 fraction of model height
 const IS_HEADWEAR = window.location.pathname.toLowerCase().includes('headwear');
 const IS_OUTERWEAR = window.location.pathname.toLowerCase().includes('outerwear');
 
+// Dummy extension to satisfy GLTFLoader for KHR_materials_pbrSpecularGlossiness
+class DummySpecularGlossinessExtension {
+  constructor(parser) {}
+}
+
 // ─── MODEL LOADER ────────────────────────────────────────────────────────────
 window.load3DModel = function (modelUrl) {
   currentModelUrl = modelUrl;
@@ -45,7 +53,11 @@ window.load3DModel = function (modelUrl) {
     _clearHwOverlay();
   }
 
-  new GLTFLoader().load(modelUrl, (gltf) => {
+  const gltfLoader = new GLTFLoader();
+  gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+  gltfLoader.register(parser => new DummySpecularGlossinessExtension(parser));
+
+  gltfLoader.load(modelUrl, (gltf) => {
     if (currentModelUrl !== modelUrl) return;   // stale load
 
     const model = gltf.scene;
@@ -124,7 +136,8 @@ export function initThreeViewer() {
   controls.autoRotateSpeed = 1.0;
   controls.addEventListener('start', () => { controls.autoRotate = false; });
 
-  // Lighting – bright and flat so white model reads white
+
+
   scene.add(new THREE.AmbientLight(0xffffff, 2.0));
   const d1 = new THREE.DirectionalLight(0xffffff, 1.0);
   d1.position.set(1, 2, 3); scene.add(d1);
