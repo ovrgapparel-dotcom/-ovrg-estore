@@ -1326,9 +1326,9 @@ function switchView(view) {
 function handleAdminClick() {
   // If a user is authenticated, open the admin panel; otherwise, show the login overlay.
   if (currentUser) {
-    document.getElementById('adminOverlay').classList.add('open');
+    openAdmin();
   } else {
-    document.getElementById('loginOverlay').classList.add('open');
+    openLogin();
   }
 }
 
