@@ -1315,6 +1315,9 @@ function switchView(view) {
     if (el) el.style.display = v === view ? 'block' : 'none';
   });
 
+  // Rebuild zone buttons so they filter to the current view
+  renderZoneButtons();
+
   if (view !== '3d') {
     if (shirtSource[view]) {
       recolorShirt(view);
@@ -1393,7 +1396,10 @@ function getActiveZone() {
 function renderZoneButtons() {
   const grid = document.getElementById('zoneGrid');
   if (!grid) return;
-  const zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.jacket;
+  let zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.jacket;
+  if (currentView && currentView !== '3d') {
+    zones = zones.filter(z => z.id.startsWith(currentView) || (currentView.startsWith('sleeve') && z.id.startsWith('sleeve')));
+  }
   grid.innerHTML = zones.map(z => `
     <button class="size-btn${z.id === activeZoneId ? ' selected' : ''}"
             data-zone="${z.id}"
@@ -2319,19 +2325,27 @@ function updateShirtImagesForColor(hex) {
 function buildOrderItem() {
   if (!selectedPrint) return null;
   const price = selectedPrint.price != null ? selectedPrint.price : globalSettings.headwearBasePrice;
+  const placementLabelMap = {
+    'front': 'Devant',
+    'back': 'Dos',
+    'sleeve-left': 'Manche gauche',
+    'sleeve-right': 'Manche droite'
+  };
+  const zone = getActiveZone();
+  const placementLabel = zone ? zone.label : (placementLabelMap[printPlacement] || printPlacement);
   return {
-    key: `showcase-headwear-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${printSize}`,
-    id: `showcase-${selectedPrint.id}`,
-    name: `${productType === 'cap' ? 'Casquette' : 'Bob'} OVRG — ${selectedPrint.name}`,
+    key: `outerwear-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${printSize}`,
+    id: `outerwear-${selectedPrint.id}`,
+    name: `${productType === 'jacket' ? 'Veste' : 'Hoodie'} OVRG — ${selectedPrint.name}`,
     price: price,
     qty: 1,
     size: selectedSize,
     color: selectedColor,
     img: selectedPrint.image_url || '',
-    type: 'showcase',
+    type: 'outerwear',
     customization: {
       placement: printPlacement,
-      placementLabel: printPlacement === 'front' ? 'Devant' : 'Côté',
+      placementLabel: placementLabel,
       scale: printSize === 'small' ? 'Petit' : 'Grand',
       blend: 100
     }
@@ -2354,13 +2368,13 @@ function orderViaWhatsApp() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
   const c = item.customization;
-  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'cap' ? 'veste' : 'hoodie'}:%0A%0A`+
-              `🎨 Imprimé: ${selectedPrint.name}%0A`+
-              `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}%0A`+
-              `📏 Taille: ${item.size}%0A`+
-              `📍 Position: ${c.placementLabel}%0A`+
+  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'jacket' ? 'veste' : 'hoodie'}:\n\n`+
+              `🎨 Imprimé: ${selectedPrint.name}\n`+
+              `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}\n`+
+              `📏 Taille: ${item.size}\n`+
+              `📍 Position: ${c.placementLabel}\n`+
               `💰 Prix: ${fmt(item.price)}`;
-  window.open(`https://wa.me/2250799108108?text=${msg}`, '_blank');
+  window.open(`https://wa.me/2250799108108?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 function goToCheckout() {

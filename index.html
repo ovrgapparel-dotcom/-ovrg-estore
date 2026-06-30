@@ -2228,9 +2228,9 @@
       <nav>
         <a href="#catalogue"
           onclick="event.preventDefault();document.getElementById('catalogue').scrollIntoView({behavior:'smooth'})">Collection</a>
-        <a href="showcase.html" style="color: var(--primary); font-weight: 700;">✨ Showcase</a>
-        <a href="headwear.html" style="color: var(--primary); font-weight: 700;">🧢 Bobs & Hats</a>
-        <a href="outerwear.html" style="color: var(--primary); font-weight: 700;">🧥 Vestes & Hoodies</a>
+        <a href="showcase.html" style="color: var(--primary); font-weight: 700;">Showcase</a>
+        <a href="headwear.html" style="color: var(--primary); font-weight: 700;">Bobs & Hats</a>
+        <a href="outerwear.html" style="color: var(--primary); font-weight: 700;">Vestes & Hoodies</a>
         <a href="#contact"
           onclick="event.preventDefault();document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Contact</a>
       </nav>
@@ -2259,8 +2259,8 @@
       <button class="filter-tab active" onclick="filterProducts('all', this)">Tout</button>
       <button class="filter-tab" onclick="filterProducts('t-shirt', this)">T-Shirts</button>
       <button class="filter-tab" onclick="filterProducts('ensemble', this)">Ensembles</button>
-      <a href="headwear.html" class="filter-tab headwear-link" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Casquettes & Bobs ✨</a>
-      <a href="outerwear.html" class="filter-tab headwear-link" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Vestes & Hoodies ✨</a>
+      <a href="headwear.html" class="filter-tab headwear-link" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Casquettes & Bobs</a>
+      <a href="outerwear.html" class="filter-tab headwear-link" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Vestes & Hoodies</a>
     </div>
     <div id="productsContainer">
       <div class="loading-grid" id="loadingGrid">
@@ -2375,8 +2375,8 @@
     <div class="footer-bottom">
       <span>© 2026 La boutique OVRG. Tous droits réservés.</span>
       <span>Made with ❤ in Abidjan <button id="adminToggleBtn" onclick="handleAdminClick()" title=""
-          style="background:none;border:none;cursor:pointer;color:#1a1a1a;font-size:0.6rem;margin-left:0.5rem;opacity:0.15;transition:opacity 0.3s;padding:2px 4px;border-radius:3px;"
-          onmouseenter="this.style.opacity='0.5'" onmouseleave="this.style.opacity='0.15'">⚙</button></span>
+          style="background:none;border:none;cursor:pointer;color:#888;font-size:0.6rem;margin-left:0.5rem;opacity:0.3;transition:opacity 0.3s;padding:2px 4px;border-radius:3px;"
+          onmouseenter="this.style.opacity='0.8'" onmouseleave="this.style.opacity='0.3'">⚙</button></span>
     </div>
   </footer>
   <!-- PRODUCT DETAIL OVERLAY -->
@@ -2789,6 +2789,12 @@
     var selectedPayment = 'paypal';
     var currentProduct = null;
     var cart = [];
+    try { cart = JSON.parse(localStorage.getItem('ovrg_cart') || '[]'); } catch(e) {}
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'ovrg_cart') {
+        try { cart = JSON.parse(e.newValue || '[]'); renderCart(); } catch(err) {}
+      }
+    });
 
     function initSupabase() {
       try {
@@ -2922,6 +2928,7 @@
     }
     function removeFromCart(key) { cart = cart.filter(function (c) { return c.key !== key; }); renderCart(); }
     function renderCart() {
+      localStorage.setItem('ovrg_cart', JSON.stringify(cart));
       var total = cart.reduce(function (s, c) { return s + c.price * c.qty; }, 0);
       document.getElementById('cartCount').textContent = cart.reduce(function (s, c) { return s + c.qty; }, 0);
       document.getElementById('cartTotal').textContent = fmt(total);
@@ -2971,8 +2978,8 @@
       else if (selectedPayment === 'wave') { window.open('https://pay.wave.com/m/M_ci_1F_--SCMirUC/c/ci/', '_blank'); finishOrder(name); }
       else if (selectedPayment === 'yango') { window.open('https://buy.yango.com/store/caede4e7-d634-4b4f-8a0f-f54e255ed1f7', '_blank'); finishOrder(name); }
       else if (selectedPayment === 'whatsapp') {
-        var items = cart.map(function (c) { return '\u2022 ' + c.name + (c.size ? ' (' + c.size + ')' : '') + ' \u00d7' + c.qty + ': ' + fmt(c.price * c.qty); }).join('%0A');
-        window.open('https://wa.me/2250799108108?text=Bonjour OVRG! Commande:%0A%0AClient: ' + name + '%0A%0A' + items + '%0A%0ATotal: ' + fmt(total), '_blank');
+        var items = cart.map(function (c) { return '\u2022 ' + c.name + (c.size ? ' (' + c.size + ')' : '') + ' \u00d7' + c.qty + ': ' + fmt(c.price * c.qty); }).join('\n');
+        window.open('https://wa.me/2250799108108?text=' + encodeURIComponent('Bonjour OVRG! Commande:\n\nClient: ' + name + '\n\n' + items + '\n\nTotal: ' + fmt(total)), '_blank');
         finishOrder(name);
       }
     }
@@ -3035,7 +3042,7 @@
     function updateAdminUI() {
       var btn = document.getElementById('adminToggleBtn'); if (!btn) return;
       if (currentUser) { btn.textContent = '\u2699\u25cf'; btn.style.color = '#22c55e'; btn.style.opacity = '0.4'; }
-      else { btn.textContent = '\u2699'; btn.style.color = '#1a1a1a'; btn.style.opacity = '0.15'; }
+      else { btn.textContent = '\u2699'; btn.style.color = '#888'; btn.style.opacity = '0.3'; }
     }
 
     function openAdmin() {

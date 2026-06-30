@@ -7,6 +7,8 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         showcase: resolve(__dirname, 'showcase.html'),
+        headwear: resolve(__dirname, 'headwear.html'),
+        outerwear: resolve(__dirname, 'outerwear.html'),
       },
     },
   },

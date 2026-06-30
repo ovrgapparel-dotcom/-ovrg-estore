@@ -1290,6 +1290,9 @@ function switchView(view) {
     if (el) el.style.display = v === view ? 'block' : 'none';
   });
 
+  // Rebuild zone buttons so they filter to the current view
+  renderZoneButtons();
+
   if (view !== '3d') {
     if (shirtSource[view]) {
       recolorShirt(view);
@@ -1364,7 +1367,10 @@ function getActiveZone() {
 function renderZoneButtons() {
   const grid = document.getElementById('zoneGrid');
   if (!grid) return;
-  const zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.cap;
+  let zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.cap;
+  if (currentView && currentView !== '3d') {
+    zones = zones.filter(z => z.id.startsWith(currentView));
+  }
   grid.innerHTML = zones.map(z => `
     <button class="size-btn${z.id === activeZoneId ? ' selected' : ''}"
             data-zone="${z.id}"
@@ -2354,13 +2360,13 @@ function orderViaWhatsApp() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
   const c = item.customization;
-  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'cap' ? 'casquette' : 'bob'}:%0A%0A`+
-              `🎨 Imprimé: ${selectedPrint.name}%0A`+
-              `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}%0A`+
-              `📏 Taille: ${item.size}%0A`+
-              `📍 Position: ${c.placementLabel}%0A`+
+  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'cap' ? 'casquette' : 'bob'}:\n\n`+
+              `🎨 Imprimé: ${selectedPrint.name}\n`+
+              `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}\n`+
+              `📏 Taille: ${item.size}\n`+
+              `📍 Position: ${c.placementLabel}\n`+
               `💰 Prix: ${fmt(item.price)}`;
-  window.open(`https://wa.me/2250799108108?text=${msg}`, '_blank');
+  window.open(`https://wa.me/2250799108108?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 function goToCheckout() {
@@ -2746,5 +2752,7 @@ function pgHandleLeave() {
   </div>
 </div>
 
+
 </body>
 </html>
+

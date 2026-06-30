@@ -8,15 +8,7 @@
 <meta name="theme-color" content="#FF6B35">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
-      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/"
-    }
-  }
-</script>
+
 
 <!-- ╔══════════════════════════════════════════════════════════════╗
      ║  SUPABASE SETUP — same project as the main e-store            ║
@@ -557,6 +549,16 @@ footer .footer-admin {
 }
 .pg-trigger:hover { background: rgba(255,107,53,0.18); border-color: rgba(255,107,53,0.7); }
 </style>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
+      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/"
+    }
+  }
+</script>
+  <script type="module" crossorigin src="/assets/three-viewer-dJPVUF2F.js"></script>
 </head>
 <body>
 
@@ -887,7 +889,6 @@ footer .footer-admin {
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
 <!-- 3D VIEWER MODULE -->
-<script type="module" src="three-viewer.js"></script>
 
 <script>
 // ============================================================
@@ -1290,6 +1291,9 @@ function switchView(view) {
     if (el) el.style.display = v === view ? 'block' : 'none';
   });
 
+  // Rebuild zone buttons so they filter to the current view
+  renderZoneButtons();
+
   if (view !== '3d') {
     if (shirtSource[view]) {
       recolorShirt(view);
@@ -1364,7 +1368,10 @@ function getActiveZone() {
 function renderZoneButtons() {
   const grid = document.getElementById('zoneGrid');
   if (!grid) return;
-  const zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.cap;
+  let zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.cap;
+  if (currentView && currentView !== '3d') {
+    zones = zones.filter(z => z.id.startsWith(currentView));
+  }
   grid.innerHTML = zones.map(z => `
     <button class="size-btn${z.id === activeZoneId ? ' selected' : ''}"
             data-zone="${z.id}"
@@ -2354,13 +2361,13 @@ function orderViaWhatsApp() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
   const c = item.customization;
-  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'cap' ? 'casquette' : 'bob'}:%0A%0A`+
-              `🎨 Imprimé: ${selectedPrint.name}%0A`+
-              `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}%0A`+
-              `📏 Taille: ${item.size}%0A`+
-              `📍 Position: ${c.placementLabel}%0A`+
+  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'cap' ? 'casquette' : 'bob'}:\n\n`+
+              `🎨 Imprimé: ${selectedPrint.name}\n`+
+              `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}\n`+
+              `📏 Taille: ${item.size}\n`+
+              `📍 Position: ${c.placementLabel}\n`+
               `💰 Prix: ${fmt(item.price)}`;
-  window.open(`https://wa.me/2250799108108?text=${msg}`, '_blank');
+  window.open(`https://wa.me/2250799108108?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 function goToCheckout() {
@@ -2746,5 +2753,7 @@ function pgHandleLeave() {
   </div>
 </div>
 
+
 </body>
 </html>
+

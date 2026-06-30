@@ -1510,15 +1510,15 @@ function orderViaWhatsApp() {
   const colorNames = {'#ffffff':'Blanc','#1a1a1a':'Noir','#e63946':'Rouge','#457b9d':'Bleu','#2a9d8f':'Vert','#f4a261':'Orange'};
   const colorName = colorNames[selectedColor] || selectedColor;
   const c = item.customization;
-  const msg = `Bonjour OVRG! Je voudrais commander un t-shirt personnalisé:%0A%0A`+
-              `🎨 Imprimé: ${item.name.replace('T-Shirt OVRG — ','')}%0A`+
-              `👕 Couleur: ${colorName}%0A`+
-              `📏 Taille: ${item.size}%0A`+
-              `📍 Position du print: ${c.placementLabel}%0A`+
-              `🔍 Taille du print: ${c.scale}%25%0A`+
-              `🧵 Effet tissu: ${c.blend}%25%0A`+
+  const msg = `Bonjour OVRG! Je voudrais commander un t-shirt personnalisé:\n\n`+
+              `🎨 Imprimé: ${item.name.replace('T-Shirt OVRG — ','')}\n`+
+              `👕 Couleur: ${colorName}\n`+
+              `📏 Taille: ${item.size}\n`+
+              `📍 Position du print: ${c.placementLabel}\n`+
+              `🔍 Taille du print: ${c.scale}%\n`+
+              `🧵 Effet tissu: ${c.blend}%\n`+
               `💰 Prix: ${fmt(item.price)}`;
-  window.open(`https://wa.me/2250799108108?text=${msg}`, '_blank');
+  window.open(`https://wa.me/2250799108108?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 function goToCheckout() {
