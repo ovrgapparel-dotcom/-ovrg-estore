@@ -32,7 +32,7 @@ const IS_OUTERWEAR = window.location.pathname.toLowerCase().includes('outerwear'
 
 // Dummy extension to satisfy GLTFLoader for KHR_materials_pbrSpecularGlossiness
 class DummySpecularGlossinessExtension {
-  constructor(parser) {}
+  constructor(parser) { this.name = 'KHR_materials_pbrSpecularGlossiness'; }
 }
 
 // ─── MODEL LOADER ────────────────────────────────────────────────────────────
