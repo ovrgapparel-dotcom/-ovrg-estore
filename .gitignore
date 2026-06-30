@@ -13,3 +13,4 @@ logger.js
 .vercel
 dist/
 *.glb
+scratch/

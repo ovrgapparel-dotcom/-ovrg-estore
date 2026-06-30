@@ -396,7 +396,7 @@ footer .footer-admin {
     }
   }
 </script>
-  <script type="module" crossorigin src="/assets/three-viewer-C4qaCOR4.js"></script>
+  <script type="module" crossorigin src="/assets/three-viewer-BcYkrURD.js"></script>
 </head>
 <body>
 
@@ -810,7 +810,8 @@ function switchProduct(product) {
   if (!['tshirt','cap','bob'].includes(product)) return;
   currentProduct = product;
   // Update model URL based on product type
-  const modelUrl = product === 'tshirt' ? '/scene.gltf' : (product === 'cap' ? '/cap.glb' : '/bob.glb');
+  const SUPABASE_MODEL_URL = 'https://mihpdlhbijlvbdcqvzdw.supabase.co/storage/v1/object/public/product-images/models';
+  const modelUrl = product === 'tshirt' ? '/scene.gltf' : (product === 'cap' ? `${SUPABASE_MODEL_URL}/cap.glb` : `${SUPABASE_MODEL_URL}/bucket.glb`);
   window.load3DModel(modelUrl);
   // Reset view to front
   switchView('front');
@@ -2240,6 +2241,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 });
+
+window.setProductType = typeof setProductType !== "undefined" ? setProductType : undefined;
+window.switchView = typeof switchView !== "undefined" ? switchView : undefined;
+window.setShirtColor = typeof setShirtColor !== "undefined" ? setShirtColor : undefined;
+window.openAdmin = typeof openAdmin !== "undefined" ? openAdmin : undefined;
+window.closeAdmin = typeof closeAdmin !== "undefined" ? closeAdmin : undefined;
+window.saveCustomText = typeof saveCustomText !== "undefined" ? saveCustomText : undefined;
+window.selectPrint = typeof selectPrint !== "undefined" ? selectPrint : undefined;
+window.switchProduct = typeof switchProduct !== "undefined" ? switchProduct : undefined;
 </script>
 </body>
 </html>

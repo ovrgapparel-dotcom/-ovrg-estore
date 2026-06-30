@@ -144,7 +144,8 @@ export function initThreeViewer() {
   const d2 = new THREE.DirectionalLight(0xffffff, 0.4);
   d2.position.set(-2, 0, -2); scene.add(d2);
 
-  const startUrl = IS_HEADWEAR ? '/cap.glb' : (IS_OUTERWEAR ? '/jacket.glb' : '/scene.gltf');
+  const SUPABASE_MODEL_URL = 'https://mihpdlhbijlvbdcqvzdw.supabase.co/storage/v1/object/public/product-images/models';
+  const startUrl = IS_HEADWEAR ? `${SUPABASE_MODEL_URL}/cap.glb` : (IS_OUTERWEAR ? `${SUPABASE_MODEL_URL}/jacket.glb` : '/scene.gltf');
   window.load3DModel(startUrl);
 
   new ResizeObserver(_onResize).observe(container);

@@ -558,7 +558,7 @@ footer .footer-admin {
     }
   }
 </script>
-  <script type="module" crossorigin src="/assets/three-viewer-C4qaCOR4.js"></script>
+  <script type="module" crossorigin src="/assets/three-viewer-BcYkrURD.js"></script>
 </head>
 <body>
 
@@ -1347,7 +1347,9 @@ function setProductType(type) {
   updateShirtImagesForColor(selectedColor);
 
   if (window.load3DModel) {
-    const modelUrl = type === 'cap' ? '/cap.glb' : '/bucket.glb';
+    const modelUrl = type === 'cap' 
+      ? 'https://mihpdlhbijlvbdcqvzdw.supabase.co/storage/v1/object/public/product-images/models/cap.glb' 
+      : 'https://mihpdlhbijlvbdcqvzdw.supabase.co/storage/v1/object/public/product-images/models/bucket.glb';
     window.load3DModel(modelUrl);
   }
 }
