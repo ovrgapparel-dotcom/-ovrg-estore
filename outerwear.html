@@ -1375,9 +1375,7 @@ function setProductType(type) {
   }
 
   if (window.load3DModel) {
-    const modelUrl = type === 'jacket'
-      ? 'https://mihpdlhbijlvbdcqvzdw.supabase.co/storage/v1/object/public/product-images/models/jacket.glb'
-      : 'https://mihpdlhbijlvbdcqvzdw.supabase.co/storage/v1/object/public/product-images/models/hoodie.glb';
+    const modelUrl = type === 'jacket' ? '/jacket.glb' : '/hoodie.glb';
     window.load3DModel(modelUrl);
   }
 }

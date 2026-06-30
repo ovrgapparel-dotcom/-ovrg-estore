@@ -1,46 +1,47 @@
 /**
  * upload-models.cjs
- * Uploads cap.glb, bucket.glb, jacket.glb, hoodie.glb to Supabase Storage
- * using the service role key (or anon key + public policy).
+ * Uploads all .glb models to Supabase Storage (product-images/models/)
  * Run: node upload-models.cjs
  */
-const fs = require('fs');
+const fs   = require('fs');
 const path = require('path');
 const https = require('https');
 
 const SUPABASE_URL = 'https://mihpdlhbijlvbdcqvzdw.supabase.co';
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paHBkbGhiaWpsdmJkY3F2emR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDkzMTgsImV4cCI6MjA4Nzk4NTMxOH0.X-2XjKKi3enHck1KBtlga-RiVjXN3BS5EhW3fnF3oTE';
-const BUCKET = 'product-images';
+const ANON_KEY     = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paHBkbGhiaWpsdmJkY3F2emR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDkzMTgsImV4cCI6MjA4Nzk4NTMxOH0.X-2XjKKi3enHck1KBtlga-RiVjXN3BS5EhW3fnF3oTE';
+const BUCKET       = 'product-images';
 
+// All models live in public/
 const MODELS = [
-  { name: 'cap.glb',     src: path.join(__dirname, 'public', 'cap.glb') },
-  { name: 'bucket.glb',  src: path.join(__dirname, 'public', 'bucket.glb') },
-  { name: 'jacket.glb',  src: path.join(__dirname, 'jacket.glb') },
-  { name: 'hoodie.glb',  src: path.join(__dirname, 'hoodie.glb') },
+  { name: 'cap.glb',    src: path.join(__dirname, 'public', 'cap.glb') },
+  { name: 'bucket.glb', src: path.join(__dirname, 'public', 'bucket.glb') },
+  { name: 'jacket.glb', src: path.join(__dirname, 'public', 'jacket.glb') },
+  { name: 'hoodie.glb', src: path.join(__dirname, 'public', 'hoodie.glb') },
+  { name: 'tshirt.glb', src: path.join(__dirname, 'public', 'tshirt.glb') },
 ];
 
-function uploadFile(localPath, storagePath, authToken) {
+function uploadFile(localPath, storagePath) {
   return new Promise((resolve, reject) => {
     if (!fs.existsSync(localPath)) {
       reject(new Error(`File not found: ${localPath}`));
       return;
     }
     const fileBuffer = fs.readFileSync(localPath);
-    const fileSize = fileBuffer.length;
-    console.log(`  Uploading ${storagePath} (${(fileSize/1024/1024).toFixed(1)} MB)...`);
+    const fileSize   = fileBuffer.length;
+    console.log(`  Uploading ${path.basename(localPath)} (${(fileSize/1024/1024).toFixed(2)} MB) → ${storagePath}...`);
 
     const url = new URL(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${storagePath}`);
     const options = {
       hostname: url.hostname,
-      path: url.pathname,
-      method: 'POST',
+      path:     url.pathname,
+      method:   'POST',
       headers: {
-        'Authorization': `Bearer ${authToken}`,
-        'Content-Type': 'model/gltf-binary',
+        'Authorization': `Bearer ${ANON_KEY}`,
+        'apikey':        ANON_KEY,
+        'Content-Type':  'model/gltf-binary',
         'Content-Length': fileSize,
-        'x-upsert': 'true',
-        'apikey': ANON_KEY,
-      }
+        'x-upsert':      'true',
+      },
     };
 
     const req = https.request(options, (res) => {
@@ -62,39 +63,26 @@ function uploadFile(localPath, storagePath, authToken) {
 }
 
 async function main() {
-  console.log('=== OVRG Model Upload Script ===\n');
-  console.log('Using anon key (requires public INSERT policy on storage bucket).\n');
-
+  console.log('=== OVRG Model Upload to Supabase ===\n');
   const results = [];
+
   for (const model of MODELS) {
     const storagePath = `models/${model.name}`;
     try {
-      const result = await uploadFile(model.src, storagePath, ANON_KEY);
-      console.log(`  ✅ ${model.name} -> ${result.publicUrl}`);
-      results.push({ name: model.name, url: result.publicUrl, ok: true });
+      const result = await uploadFile(model.src, storagePath);
+      console.log(`  ✅ ${model.name} → ${result.publicUrl}`);
+      results.push({ ...result, name: model.name, ok: true });
     } catch (err) {
       console.error(`  ❌ ${model.name}: ${err.message}`);
       results.push({ name: model.name, error: err.message, ok: false });
     }
   }
 
-  console.log('\n=== RESULTS ===');
+  console.log('\n=== SUMMARY ===');
   results.forEach(r => {
-    if (r.ok) console.log(`${r.name}: ${r.url}`);
-    else console.log(`${r.name}: FAILED - ${r.error}`);
+    if (r.ok) console.log(`✅ ${r.name}: ${r.publicUrl}`);
+    else       console.log(`❌ ${r.name}: FAILED — ${r.error}`);
   });
-
-  // Print the three-viewer.js MODEL_URLS constant
-  const successURLs = results.filter(r => r.ok);
-  if (successURLs.length > 0) {
-    console.log('\n=== Paste into three-viewer.js ===');
-    console.log('const MODEL_URLS = {');
-    successURLs.forEach(r => {
-      const key = r.name.replace('.glb', '');
-      console.log(`  '${key}': '${r.url}',`);
-    });
-    console.log('};');
-  }
 }
 
 main().catch(console.error);
