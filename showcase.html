@@ -1144,21 +1144,9 @@ function recolorShirt(side) {
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-  // Draw the base shirt image (always a white/neutral mockup)
+  // Draw the uploaded colour-specific mockup directly — no tinting needed
   ctx.drawImage(img, 0, 0, w, h);
 
-  // Apply colour tint via multiply composite — makes white shirt become the target colour
-  // while preserving fabric shading/texture from the greyscale luminance values.
-  const col = (typeof selectedColor !== 'undefined' && selectedColor) ? selectedColor : '#ffffff';
-  if (col && col !== '#ffffff') {
-    ctx.save();
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.fillStyle = col;
-    ctx.fillRect(0, 0, w, h);
-    ctx.restore();
-  }
-
-  // Re-analyse fabric data so the print blend uses the tinted result
   analyzeFabric(side);
   scheduleRender();
 }
