@@ -556,6 +556,13 @@ footer .footer-admin {
   font-family: inherit; transition: all 0.2s; letter-spacing: 0.03em;
 }
 .pg-trigger:hover { background: rgba(255,107,53,0.18); border-color: rgba(255,107,53,0.7); }
+
+.gallery-tabs { display: flex; gap: 1rem; }
+.gallery-tab { background: none; border: none; font-family: inherit; font-size: 1rem; color: #aaa; cursor: pointer; padding-bottom: 0.3rem; border-bottom: 2px solid transparent; transition: all 0.2s; font-weight: 600; }
+.gallery-tab:hover { color: var(--dark); }
+.gallery-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.zone-tag { display: inline-block; font-size: 0.65rem; background: #eee; padding: 2px 6px; border-radius: 10px; margin-right: 4px; font-weight: 700; color: #555; text-transform: uppercase; }
+
 </style>
 </head>
 <body>
@@ -616,11 +623,20 @@ footer .footer-admin {
       <div class="no-print-msg" id="noPrintMsg">Sélectionnez une broderie ci-dessous</div>
     </div>
 
+    
     <div class="print-gallery">
-      <h3>Bibliothèque d'imprimés <span id="printCount" style="color:var(--gray);font-weight:400;font-size:0.85rem"></span></h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); margin-bottom:1rem; padding-bottom:0.5rem">
+        <div class="gallery-tabs">
+          <button class="gallery-tab active" id="tabPrints" onclick="setDesignTab('print')">🎨 Imprimés</button>
+          <button class="gallery-tab" id="tabEmbroideries" onclick="setDesignTab('embroidery')">🧵 Broderies</button>
+        </div>
+        <span id="printCount" style="color:var(--gray);font-weight:400;font-size:0.85rem"></span>
+      </div>
       <div class="print-grid" id="printGrid">
         <div class="print-thumb-none" style="grid-column:1/-1">Chargement…</div>
       </div>
+    </div>
+
     </div>
   </div>
 
@@ -792,6 +808,12 @@ footer .footer-admin {
           </div>
           <div class="admin-grid2">
             <div>
+              
+              <label>Type de design</label>
+              <select id="printType" style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:6px; margin-bottom: 1rem; background: var(--light); font-family: inherit;">
+                <option value="print">🎨 Imprimé</option>
+                <option value="embroidery">🧵 Broderie</option>
+              </select>
               <label>Catégorie / Badge</label>
               <input type="text" id="printCategory" placeholder="Édition Limitée, Nouveau, etc." value="Édition Limitée">
             </div>
@@ -1173,15 +1195,70 @@ async function loadPrints() {
   }
 }
 
+/* replaced by update script */
+
+// ============================================================
+//  IMAGE PRE-LOAD CACHE — prevents async race in 2D renderer
+// ============================================================
+const _printImageCache = {};   // url → HTMLImageElement (fully loaded)
+
+function _preloadImage(url) {
+  if (!url || _printImageCache[url]) return Promise.resolve(_printImageCache[url] || null);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = () => { _printImageCache[url] = img; resolve(img); };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+// Map zone id → 2D canvas side
+function getZoneSide(zoneId) {
+  if (!zoneId) return 'front';
+  if (zoneId === 'back' || zoneId === 'back-center') return 'back';
+  if (zoneId === 'sleeve-left')  return 'sleeve-left';
+  if (zoneId === 'sleeve-right') return 'sleeve-right';
+  return 'front';
+}
+
+// ── MULTI-ZONE ENGINE ──
+let activeDesignTab = 'print'; // 'print' or 'embroidery'
+window.zoneCustomizations = window.zoneCustomizations || {};
+
+function setDesignTab(tab) {
+  activeDesignTab = tab;
+  document.getElementById('tabPrints').classList.toggle('active', tab === 'print');
+  document.getElementById('tabEmbroideries').classList.toggle('active', tab === 'embroidery');
+  renderPrintGrid();
+}
+
+
+function getDesignType(p) {
+  if (p.design_type) return p.design_type;
+  if (p.category && p.category.startsWith('Broderie')) return 'embroidery';
+  return 'print';
+}
+
+function getFilteredPrints() {
+  return prints.filter(p => getDesignType(p) === activeDesignTab);
+}
+
+// Override renderPrintGrid
 function renderPrintGrid() {
   const grid = document.getElementById('printGrid');
-  if (document.getElementById('printCount')) document.getElementById('printCount').textContent = `(${prints.length})`;
-  if (!prints.length) {
-    grid.innerHTML = `<div class="print-thumb-none" style="grid-column:1/-1">Aucun imprimé disponible pour le moment.</div>`;
+  const filtered = getFilteredPrints();
+  if (document.getElementById('printCount')) document.getElementById('printCount').textContent = `(${filtered.length})`;
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="print-thumb-none" style="grid-column:1/-1">Aucun design disponible dans cette catégorie.</div>`;
     return;
   }
-  grid.innerHTML = prints.map(p => `
-    <div class="print-thumb${selectedPrint && selectedPrint.id===p.id ? ' selected':''}" onclick='selectPrint(${JSON.stringify(p).replace(/'/g,"&#39;")})'>
+  
+  const currentConfig = window.zoneCustomizations[activeZoneId] || {};
+  const activePrintId = currentConfig.print && currentConfig.print.id;
+
+  grid.innerHTML = filtered.map(p => `
+    <div class="print-thumb${activePrintId === p.id ? ' selected':''}" onclick='selectPrint(${JSON.stringify(p).replace(/'/g,"&#39;")})'>
       ${p.image_url
         ? `<img src="${p.image_url}" alt="${p.name}">`
         : `<div class="print-thumb-none">${p.name}</div>`}
@@ -1189,40 +1266,116 @@ function renderPrintGrid() {
     </div>`).join('');
 }
 
+// Override selectPrint — pre-loads the image so the 2D renderer gets it synchronously
 function selectPrint(p) {
-  selectedPrint = p;
-  document.getElementById('printInfo').innerHTML = `<span>Broderie sélectionnée : <strong>${p.name}</strong>${p.category ? ' • ' + p.category : ''}</span>`;
-  document.getElementById('printCustomize').style.display = '';
-  renderZoneButtons();   // rebuild zone selector for current product type
-
-  updatePrice();
-
-  if (window.applyHeadwearPrint && (decorMode === 'embroidery' || decorMode === 'both')) {
-    window.applyHeadwearPrint(p.image_url || null);
+  if (!window.zoneCustomizations[activeZoneId]) {
+    window.zoneCustomizations[activeZoneId] = {};
   }
+  const config = window.zoneCustomizations[activeZoneId];
 
-  // Load print image into sides.img for 2D overlays
-  if (p.image_url) {
-    const img = new Image();
-    img.crossOrigin = 'Anonymous';
-    img.src = p.image_url;
-    img.onload = () => {
-      sides.front.img = img;
-      sides['sleeve-left'].img = img;
-      sides['sleeve-right'].img = img;
-      sides.back.img = img;
-      scheduleRender();
-    };
+  if (config.print && config.print.id === p.id) {
+    // Toggle off
+    config.print   = null;
+    config.printUrl = null;
+    config.printImg = null;
   } else {
-    sides.front.img = null;
-    sides['sleeve-left'].img = null;
-    sides['sleeve-right'].img = null;
-    sides.back.img = null;
-    scheduleRender();
+    // Select — pre-load image into cache then re-render
+    config.print    = p;
+    config.printUrl = p.image_url || null;
+    config.printImg = _printImageCache[p.image_url] || null;
+    config.type     = getDesignType(p);
+    if (p.image_url && !_printImageCache[p.image_url]) {
+      _preloadImage(p.image_url).then(img => {
+        if (img && config.print && config.print.id === p.id) {
+          config.printImg = img;
+          scheduleRender();
+        }
+      });
+    }
   }
 
+  if (!config.print && !config.labelText) {
+    delete window.zoneCustomizations[activeZoneId];
+  }
+
+  if (window.setZoneCustomization) {
+    if (window.zoneCustomizations[activeZoneId]) {
+      window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
+    } else {
+      window.clearZoneCustomization(activeZoneId);
+    }
+  }
+
+  updateZoneUI();
+  updatePrice();
   renderPrintGrid();
+  scheduleRender();
 }
+
+
+function updateZoneUI() {
+  const config = window.zoneCustomizations[activeZoneId] || {};
+  const hasPrint = !!config.print;
+  const p = config.print;
+  
+  if (hasPrint) {
+    const icon = config.type === 'embroidery' ? '🧵' : '🎨';
+    const typeName = config.type === 'embroidery' ? 'Broderie' : 'Imprimé';
+    document.getElementById('printInfo').innerHTML = `<span>${icon}</span> <span>${typeName} (${activeZoneId}) : <strong>${p.name}</strong></span>`;
+  } else {
+    document.getElementById('printInfo').innerHTML = `<span>✨</span> <span>Aucun design sur cette zone</span>`;
+  }
+  
+  document.getElementById('printCustomize').style.display = '';
+  renderZoneButtons();
+}
+
+// Override updatePrice for multi-zone
+function updatePrice() {
+  let total = globalSettings.headwearBasePrice || 9000;
+  
+  // Surcharges per zone
+  for (const zoneId in window.zoneCustomizations) {
+    const config = window.zoneCustomizations[zoneId];
+    if (config.print) {
+      if (config.type === 'embroidery') {
+        total += 9000;
+      } else {
+        total += (config.print.price != null ? config.print.price : 10000);
+      }
+    }
+    if (config.labelText) {
+      const chars = config.labelText.replace(/\s/g, '').length;
+      total += chars * 150;
+    }
+  }
+  
+  document.getElementById('priceMain').textContent = fmt(total);
+}
+
+// Intercept scheduleRender — syncs 2D canvas with zone customizations
+// Uses the pre-load cache so s.img is always a loaded HTMLImageElement (no async race).
+const originalScheduleRender = scheduleRender;
+scheduleRender = function() {
+  // Reset all side images
+  sides.front.img               = null;
+  sides['sleeve-left'].img      = null;
+  sides['sleeve-right'].img     = null;
+  sides.back.img                = null;
+
+  // For every active zone, map its cached image to the correct 2D side
+  for (const zoneId in window.zoneCustomizations) {
+    const cfg  = window.zoneCustomizations[zoneId];
+    if (!cfg || !cfg.print || !cfg.print.image_url) continue;
+    const side = getZoneSide(zoneId);
+    if (!sides[side]) continue;
+    // Use cached image (already loaded) — falls back to null if still loading
+    sides[side].img = _printImageCache[cfg.print.image_url] || cfg.printImg || null;
+  }
+
+  originalScheduleRender();
+};
+
 
 
 // ── DECORATION MODE ─────────────────────────────────────────────────────
@@ -1663,7 +1816,8 @@ function renderDesign(side) {
 
 // Draw a print image into a region of tmpCtx, respecting aspect ratio + padding
 function _renderImageToCtx(tmpCtx, img, x, y, w, h, padding = 0.05) {
-  if (!img) return;
+  if (!img || !img.complete || img.naturalWidth === 0) return;
+
   const pw = w * (1 - padding * 2);
   const ph = h * (1 - padding * 2);
   const ir = img.naturalWidth / img.naturalHeight;
@@ -2081,7 +2235,11 @@ async function uploadPrintImage(event) {
 
 async function savePrint() {
   const name = document.getElementById('printName').value.trim();
-  const category = document.getElementById('printCategory').value.trim();
+  let category = document.getElementById('printCategory').value.trim();
+    const type = document.getElementById('printType') ? document.getElementById('printType').value : 'print';
+    if (type === 'embroidery' && !category.startsWith('Broderie')) {
+      category = 'Broderie: ' + category;
+    }
   const price = parseInt(document.getElementById('printPrice').value, 10);
   const stock = parseInt(document.getElementById('printStock').value, 10);
   const colors = Array.from(document.querySelectorAll('#adminColorRow input:checked')).map(i => i.value);
@@ -2111,6 +2269,9 @@ function editPrint(id) {
   document.getElementById('editPrintId').value = id;
   document.getElementById('printName').value = p.name || '';
   document.getElementById('printCategory').value = p.category || '';
+  if(document.getElementById('printType')) {
+    document.getElementById('printType').value = (p.category && p.category.startsWith('Broderie')) ? 'embroidery' : 'print';
+  }
   document.getElementById('printPrice').value = p.price != null ? p.price : 9000;
   document.getElementById('printStock').value = p.stock != null ? p.stock : 100;
   const colors = p.colors || [];
@@ -2135,6 +2296,7 @@ function resetPrintForm() {
   document.getElementById('editPrintId').value = '';
   document.getElementById('printName').value = '';
   document.getElementById('printCategory').value = 'Édition Limitée';
+  if(document.getElementById('printType')) document.getElementById('printType').value = 'print';
   document.getElementById('printPrice').value = '9000';
   document.getElementById('printStock').value = '100';
   renderAdminColorCheckboxes(globalSettings.global_colors);

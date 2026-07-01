@@ -787,6 +787,12 @@ footer .footer-admin {
           </div>
           <div class="admin-grid2">
             <div>
+              
+              <label>Type de design</label>
+              <select id="printType" style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:6px; margin-bottom: 1rem; background: var(--light); font-family: inherit;">
+                <option value="print">🎨 Imprimé</option>
+                <option value="embroidery">🧵 Broderie</option>
+              </select>
               <label>Catégorie / Badge</label>
               <input type="text" id="printCategory" placeholder="Édition Limitée, Nouveau, etc." value="Édition Limitée">
             </div>
@@ -1141,7 +1147,14 @@ async function loadPrints() {
       .eq('active', true)
       .order('id', { ascending: true });
     if (error) throw error;
-    prints = data || [];
+    
+    // Filter to only embroideries
+    prints = (data || []).filter(p => {
+      if (p.design_type) return p.design_type === 'embroidery';
+      if (p.category && p.category.startsWith('Broderie')) return true;
+      return false;
+    });
+    
     renderPrintGrid();
   } catch(e) {
     console.error('Load prints error:', e);
@@ -1438,14 +1451,30 @@ function setEmbroiderySize(sz) {
   _sync3DOverlay();
 }
 
-// Push zone + size to the 3D overlay
+// Push zone + size to the 3D overlay — fully re-applies the current print to the active zone
+// so that zone-change and size-change are both reflected in the 3D viewer.
 function _sync3DOverlay() {
   const z    = getActiveZone();
   const mult = scaleMultiplier;
-  // Convert canvas px (600×600 base) to fraction of canvas size
-  const scaleFrac = (z.w * mult) / 600;   // fraction of model bounding box
+  const scaleFrac = (z.w * mult) / 600;
+
   if (window.setHeadwearDecalScale) window.setHeadwearDecalScale(scaleFrac * 100);
+
+  // Re-apply the current print / label to the newly active zone
+  if (window.applyHeadwearPrint || window.applyHeadwearLabel) {
+    const showPrint = (decorMode === 'embroidery' || decorMode === 'both');
+    const showLabel = (decorMode === 'label'       || decorMode === 'both');
+    const print_ = typeof selectedPrint !== 'undefined' ? selectedPrint : null;
+    if (showPrint && print_ && window.applyHeadwearPrint) {
+      window.applyHeadwearPrint(print_.image_url || null);
+    } else if (showLabel && window.applyHeadwearLabel) {
+      const txt   = document.getElementById('customLabelInput')?.value?.trim() || '';
+      const color = document.getElementById('customLabelColor')?.value || '#ffffff';
+      window.applyHeadwearLabel(txt, color);
+    }
+  }
 }
+
 
 // ── CANVAS RENDER — showcase pipeline, adapted for zone-based headwear ─────────
 // Uses the FLOATING OVERLAY canvas (s.wrap / s.canvas) identical to showcase.html.
@@ -1984,15 +2013,22 @@ function showAdminTab(tab, el) {
 
 async function loadAdminPrints() {
   const list = document.getElementById('adminPrintList');
-  list.innerHTML = `<p style="color:#666;text-align:center;padding:2rem">Chargement...</p>`;
+  list.innerHTML = `<p style="color:#666;text-align:center;padding:2rem">Chargement des broderies...</p>`;
   try {
     const { data, error } = await sbClient.from(PRINTS_TABLE).select('*').order('id', { ascending: true });
     if (error) throw error;
-    renderAdminPrintList(data || []);
+    // Filter to only show broderies/embroideries in the headwear admin panel
+    const embroideries = (data || []).filter(p => {
+      if (p.design_type && p.design_type === 'embroidery') return true;
+      if (p.category && p.category.startsWith('Broderie')) return true;
+      return false;
+    });
+    renderAdminPrintList(embroideries);
   } catch(e) {
     list.innerHTML = `<p style="color:#f87171;text-align:center;padding:2rem">Table non configurée.</p>`;
   }
 }
+
 
 let adminPrintsData = []; 
 
@@ -2001,8 +2037,8 @@ function renderAdminPrintList(items) {
   const list = document.getElementById('adminPrintList');
   if (!items.length) {
     list.innerHTML = `<div style="text-align:center;padding:2.5rem;color:#555">
-      <div style="font-size:2.2rem;margin-bottom:0.8rem">🎨</div>
-      <p>Aucun imprimé.</p>
+      <div style="font-size:2.2rem;margin-bottom:0.8rem">🧵</div>
+      <p>Aucune broderie. Ajoutez-en une via "+ Ajouter une broderie".</p>
     </div>`;
     return;
   }
@@ -2083,7 +2119,11 @@ async function uploadPrintImage(event) {
 
 async function savePrint() {
   const name = document.getElementById('printName').value.trim();
-  const category = document.getElementById('printCategory').value.trim();
+  let category = document.getElementById('printCategory').value.trim();
+    const type = document.getElementById('printType') ? document.getElementById('printType').value : 'print';
+    if (type === 'embroidery' && !category.startsWith('Broderie')) {
+      category = 'Broderie: ' + category;
+    }
   const price = parseInt(document.getElementById('printPrice').value, 10);
   const stock = parseInt(document.getElementById('printStock').value, 10);
   const colors = Array.from(document.querySelectorAll('#adminColorRow input:checked')).map(i => i.value);
@@ -2113,6 +2153,9 @@ function editPrint(id) {
   document.getElementById('editPrintId').value = id;
   document.getElementById('printName').value = p.name || '';
   document.getElementById('printCategory').value = p.category || '';
+  if(document.getElementById('printType')) {
+    document.getElementById('printType').value = (p.category && p.category.startsWith('Broderie')) ? 'embroidery' : 'print';
+  }
   document.getElementById('printPrice').value = p.price != null ? p.price : 9000;
   document.getElementById('printStock').value = p.stock != null ? p.stock : 100;
   const colors = p.colors || [];
@@ -2137,6 +2180,7 @@ function resetPrintForm() {
   document.getElementById('editPrintId').value = '';
   document.getElementById('printName').value = '';
   document.getElementById('printCategory').value = 'Édition Limitée';
+  if(document.getElementById('printType')) document.getElementById('printType').value = 'print';
   document.getElementById('printPrice').value = '9000';
   document.getElementById('printStock').value = '100';
   renderAdminColorCheckboxes(globalSettings.global_colors);
@@ -2367,6 +2411,199 @@ function orderViaWhatsApp() {
               `📍 Position: ${c.placementLabel}\n`+
               `💰 Prix: ${fmt(item.price)}`;
   window.open(`https://wa.me/2250799108108?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function goToCheckout() {
+  const item = buildOrderItem();
+  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
+  addToCartShowcase();
+  setTimeout(() => { window.location.href = '/#catalogue'; }, 150);
+}
+
+
+
+function updateAdminUI() {
+  const btn = document.getElementById('adminToggleBtn');
+  if (!btn) return;
+  if (currentUser) { btn.textContent = '⚙●'; btn.style.color = '#22c55e'; btn.style.opacity = '0.4'; }
+  else { btn.textContent = '⚙'; btn.style.color = '#1a1a1a'; btn.style.opacity = '0.15'; }
+}
+
+function openLogin() {
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('loginOverlay').classList.add('open');
+}
+
+function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  document.getElementById('loginError').textContent = '';
+  if (!email || !password) { document.getElementById('loginError').textContent = 'Veuillez remplir tous les champs.'; return; }
+  if (!sbClient) {
+    document.getElementById('loginError').textContent = 'Connexion à Supabase indisponible. Rechargez la page et réessayez.';
+    return;
+  }
+  try {
+    await sbClient.auth.signOut().catch(()=>{});
+    const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    currentUser = data.user;
+    closeLogin();
+    openAdmin();
+  } catch(e) {
+    console.error('Login error:', e);
+    document.getElementById('loginError').textContent = 'Email ou mot de passe incorrect.';
+  }
+}
+
+async function doLogout() {
+  await sbClient.auth.signOut().catch(()=>{});
+  currentUser = null;
+  closeAdmin();
+  showToast('Déconnecté', 'Session admin terminée.');
+}
+
+function openAdmin() {
+  document.getElementById('adminOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  checkSupabaseConnection();
+  loadAdminPrints();
+}
+
+function closeAdmin() {
+  document.getElementById('adminOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function checkSupabaseConnection() {
+  const el = document.getElementById('supabaseStatus');
+  try {
+    const { error } = await sbClient.from(PRINTS_TABLE).select('id').limit(1);
+    if (error) throw error;
+    el.className = 'supabase-status connected';
+    el.textContent = '✓ Connecté à Supabase — table showcase_prints prête';
+  } catch(e) {
+    el.className = 'supabase-status disconnected';
+    el.textContent = '✗ Table showcase_prints introuvable — exécutez le SQL fourni dans le code source';
+  }
+}
+
+function showAdminTab(tab, el) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('adminTabList').style.display = tab==='list' ? '' : 'none';
+  document.getElementById('adminTabAdd').style.display = tab==='add' ? '' : 'none';
+  const settingsTab = document.getElementById('adminTabSettings');
+  if (settingsTab) settingsTab.style.display = tab==='settings' ? '' : 'none';
+  if (tab === 'settings') loadAdminSettingsUI();
+}
+
+async function loadAdminPrints() {
+  const list = document.getElementById('adminPrintList');
+  list.innerHTML = `<p style="color:#666;text-align:center;padding:2rem">Chargement des broderies...</p>`;
+  const _filterBroderies = (data) => (data || []).filter(p => {
+    if (p.design_type && p.design_type === 'embroidery') return true;
+    if (p.category && p.category.startsWith('Broderie')) return true;
+    return false;
+  });
+  try {
+    const { data, error } = await sbClient.from(PRINTS_TABLE).select('*').order('id', { ascending: true });
+    if (error) throw error;
+    renderAdminPrintList(_filterBroderies(data));
+  } catch(e) {
+    // Fallback to default prints table if configured one fails
+    if (PRINTS_TABLE !== DEFAULT_PRINTS_TABLE) {
+      console.warn('Primary prints table failed, falling back to default:', DEFAULT_PRINTS_TABLE);
+      try {
+        const { data, error } = await sbClient.from(DEFAULT_PRINTS_TABLE).select('*').order('id', { ascending: true });
+        if (error) throw error;
+        renderAdminPrintList(_filterBroderies(data));
+        showToast('Info', `Utilisation de la table par défaut (${DEFAULT_PRINTS_TABLE})`);
+        return;
+      } catch (fallbackErr) {
+        console.error('Fallback prints load failed:', fallbackErr);
+      }
+    }
+    list.innerHTML = `<p style="color:#f87171;text-align:center;padding:2rem">Table non configurée.</p>`;
+  }
+}
+
+
+// Helper to create the prints table via Supabase RPC (requires appropriate permission)
+async function createPrintsTable() {
+  const CREATE_TABLE_SQL = `
+    create table if not exists ${PRINTS_TABLE} (
+      id bigserial primary key,
+      name text not null,
+      image_url text not null,
+      category text,
+      price integer,
+      stock integer,
+      colors jsonb,
+      active boolean default true
+    );`;
+  try {
+    const { error } = await sbClient.rpc('run_sql', { sql: CREATE_TABLE_SQL });
+    if (error) throw error;
+    showToast('Succès', 'Table des imprimés créée avec succès.');
+    await loadAdminPrints();
+  } catch (err) {
+    console.error('Create table error:', err);
+    showToast('Erreur', 'Impossible de créer la table. Vérifiez les permissions.', '#ef4444');
+  }
+}
+
+
+
+function buildOrderItem() {
+  if (!selectedPrint) return null;
+  const price = selectedPrint.price != null ? selectedPrint.price : globalSettings.headwearBasePrice;
+  return {
+    key: `showcase-headwear-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${printSize}`,
+    id: `showcase-${selectedPrint.id}`,
+    name: `${productType === 'cap' ? 'Casquette' : 'Bob'} OVRG — ${selectedPrint.name}`,
+    price: price,
+    qty: 1,
+    size: selectedSize,
+    color: selectedColor,
+    img: selectedPrint.image_url || '',
+    type: 'showcase',
+    customization: {
+      placement: printPlacement,
+      placementLabel: printPlacement === 'front' ? 'Devant' : 'Côté',
+      scale: printSize === 'small' ? 'Petit' : 'Grand',
+      blend: 100
+    }
+  };
+}
+
+function addToCartShowcase() {
+  const item = buildOrderItem();
+  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
+  let cart = [];
+  try { cart = JSON.parse(localStorage.getItem('ovrg_cart') || '[]'); } catch(e) {}
+  const existing = cart.find(c => c.key === item.key);
+  if (existing) existing.qty += 1;
+  else cart.push(item);
+  localStorage.setItem('ovrg_cart', JSON.stringify(cart));
+  showToast('Ajouté au panier! 🛍', `${item.name} ajouté.`);
+}
+
+function orderViaWhatsApp() {
+  const item = buildOrderItem();
+  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
+  const c = item.customization;
+  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'cap' ? 'casquette' : 'bob'}:%0A%0A`+
+              `🎨 Imprimé: ${selectedPrint.name}%0A`+
+              `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}%0A`+
+              `📏 Taille: ${item.size}%0A`+
+              `📍 Position: ${c.placementLabel}%0A`+
+              `💰 Prix: ${fmt(item.price)}`;
+  window.open(`https://wa.me/2250799108108?text=${msg}`, '_blank');
 }
 
 function goToCheckout() {

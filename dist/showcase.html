@@ -9,7 +9,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   // Custom error logger removed.
-
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
+      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/"
+    }
+  }
+</script>
 
 <!-- ╔══════════════════════════════════════════════════════════════╗
      ║  SUPABASE SETUP — same project as the main e-store            ║
@@ -386,17 +394,17 @@ footer .footer-admin {
   color: #1a1a1a; font-size: 0.6rem; margin-left: 0.5rem; opacity: 0.15;
   transition: opacity 0.3s; padding: 2px 4px; border-radius: 3px;
 }
+
+.gallery-tabs { display: flex; gap: 1rem; }
+.gallery-tab { background: none; border: none; font-family: inherit; font-size: 1rem; color: #aaa; cursor: pointer; padding-bottom: 0.3rem; border-bottom: 2px solid transparent; transition: all 0.2s; font-weight: 600; }
+.gallery-tab:hover { color: var(--dark); }
+.gallery-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.zone-selector { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.zone-btn { background: #eee; border: 1px solid #ccc; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #555; }
+.zone-btn:hover { background: #e0e0e0; }
+.zone-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
 </style>
-<script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
-      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/"
-    }
-  }
-</script>
-  <script type="module" crossorigin src="/assets/three-viewer-B1gDKZYC.js"></script>
 </head>
 <body>
 
@@ -445,11 +453,26 @@ footer .footer-admin {
       <div class="no-print-msg" id="noPrintMsg">Sélectionnez un imprimé ci-dessous ↓</div>
     </div>
 
+    
     <div class="print-gallery">
-      <h3>Bibliothèque d'imprimés <span id="printCount" style="color:var(--gray);font-weight:400;font-size:0.85rem"></span></h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.5rem">
+        <div class="zone-selector">
+          <button class="zone-btn active" id="zoneFrontBtn" onclick="setActiveZone('front')">Devant</button>
+          <button class="zone-btn" id="zoneBackBtn" onclick="setActiveZone('back')">Dos</button>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); margin-bottom:1rem; padding-bottom:0.5rem">
+        <div class="gallery-tabs">
+          <button class="gallery-tab active" id="tabPrints" onclick="setDesignTab('print')">🎨 Imprimés</button>
+          <button class="gallery-tab" id="tabEmbroideries" onclick="setDesignTab('embroidery')">🧵 Broderies</button>
+        </div>
+        <span id="printCount" style="color:var(--gray);font-weight:400;font-size:0.85rem"></span>
+      </div>
       <div class="print-grid" id="printGrid">
         <div class="print-thumb-none" style="grid-column:1/-1">Chargement…</div>
       </div>
+    </div>
+
     </div>
   </div>
 
@@ -606,6 +629,12 @@ footer .footer-admin {
           </div>
           <div class="admin-grid2">
             <div>
+              
+              <label>Type de design</label>
+              <select id="printType" style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:6px; margin-bottom: 1rem; background: var(--light); font-family: inherit;">
+                <option value="print">🎨 Imprimé</option>
+                <option value="embroidery">🧵 Broderie</option>
+              </select>
               <label>Catégorie / Badge</label>
               <input type="text" id="printCategory" placeholder="Édition Limitée, Nouveau, etc." value="Édition Limitée">
             </div>
@@ -784,8 +813,201 @@ footer .footer-admin {
 <script data-cfasync="false" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- 3D VIEWER MODULE -->
+<script type="module" src="three-viewer.js"></script>
 
 <script>
+
+// ── MULTI-ZONE ENGINE ──
+let activeDesignTab = 'print'; // 'print' or 'embroidery'
+let activeZoneId = 'front';
+window.zoneCustomizations = window.zoneCustomizations || {};
+
+function setDesignTab(tab) {
+  activeDesignTab = tab;
+  document.getElementById('tabPrints').classList.toggle('active', tab === 'print');
+  document.getElementById('tabEmbroideries').classList.toggle('active', tab === 'embroidery');
+  renderPrintGrid();
+}
+
+function setActiveZone(zone) {
+  activeZoneId = zone;
+  document.getElementById('zoneFrontBtn').classList.toggle('active', zone === 'front');
+  document.getElementById('zoneBackBtn').classList.toggle('active', zone === 'back');
+  
+  // Sync the 3D model view
+  if (zone === 'front') {
+    switchView('front');
+    printPreset = 'center'; // reset preset for 3d viewer
+  } else {
+    switchView('back');
+    printPreset = 'back-center';
+  }
+
+  // Reload size/color UI from per-zone state
+  const zConfig = window.zoneCustomizations[zone] || {};
+  const zPrint  = zConfig.print;
+  if (zPrint) {
+    const pColors = (Array.isArray(zPrint.colors) && zPrint.colors.length) ? zPrint.colors : globalSettings.global_colors;
+    const pSizes  = (Array.isArray(zPrint.sizes)  && zPrint.sizes.length)  ? zPrint.sizes  : ['S','M','L','XL','XXL'];
+    renderColorOptions(pColors);
+    renderSizeOptions(pSizes);
+  }
+  
+  updateZoneUI();
+  renderPrintGrid();
+}
+
+function getDesignType(p) {
+  if (p.design_type) return p.design_type;
+  if (p.category && p.category.startsWith('Broderie')) return 'embroidery';
+  return 'print';
+}
+
+function getFilteredPrints() {
+  return prints.filter(p => getDesignType(p) === activeDesignTab);
+}
+
+// Override renderPrintGrid
+function renderPrintGrid() {
+  const grid = document.getElementById('printGrid');
+  const filtered = getFilteredPrints();
+  if (document.getElementById('printCount')) document.getElementById('printCount').textContent = `(${filtered.length})`;
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="print-thumb-none" style="grid-column:1/-1">Aucun design disponible dans cette catégorie.</div>`;
+    return;
+  }
+  
+  const currentConfig = window.zoneCustomizations[activeZoneId] || {};
+  const activePrintId = currentConfig.print && currentConfig.print.id;
+
+  grid.innerHTML = filtered.map(p => `
+    <div class="print-thumb${activePrintId === p.id ? ' selected':''}" onclick='selectPrint(${JSON.stringify(p).replace(/'/g,"&#39;")})'>
+      ${p.image_url
+        ? `<img src="${p.image_url}" alt="${p.name}">`
+        : `<div class="print-thumb-none">${p.name}</div>`}
+      <span class="pname">${p.name}</span>
+    </div>`).join('');
+}
+
+// Override selectPrint
+function selectPrint(p) {
+  if (!window.zoneCustomizations[activeZoneId]) {
+    window.zoneCustomizations[activeZoneId] = {};
+  }
+  const config = window.zoneCustomizations[activeZoneId];
+  
+  if (config.print && config.print.id === p.id) {
+    // Toggle off
+    config.print = null;
+    config.printUrl = null;
+  } else {
+    // Select
+    config.print = p;
+    config.printUrl = p.image_url || null;
+    config.type = getDesignType(p);
+  }
+  
+  if (!config.print) {
+    delete window.zoneCustomizations[activeZoneId];
+  }
+  
+  if (window.setZoneCustomization) {
+    if (window.zoneCustomizations[activeZoneId]) {
+      window.zoneCustomizations[activeZoneId].preset = printPreset;
+      window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
+    } else {
+      window.clearZoneCustomization && window.clearZoneCustomization(activeZoneId);
+    }
+  }
+
+  // Set colors/sizes — guard against null arrays
+  const pColors = (p && Array.isArray(p.colors) && p.colors.length) ? p.colors : globalSettings.global_colors;
+  const pSizes  = (p && Array.isArray(p.sizes)  && p.sizes.length)  ? p.sizes  : ['S','M','L','XL','XXL'];
+  renderColorOptions(pColors);
+  renderSizeOptions(pSizes);
+
+  updateZoneUI();
+  updatePrice();
+  renderPrintGrid();
+  scheduleRender();
+}
+
+function updateZoneUI() {
+  const config = window.zoneCustomizations[activeZoneId] || {};
+  const hasPrint = !!config.print;
+  const p = config.print;
+  
+  if (hasPrint) {
+    const icon = config.type === 'embroidery' ? '🧵' : '🎨';
+    const typeName = config.type === 'embroidery' ? 'Broderie' : 'Imprimé';
+    document.getElementById('printInfo').innerHTML = `<span>${icon}</span> <span>${typeName} (${activeZoneId}) : <strong>${p.name}</strong></span>`;
+  } else {
+    document.getElementById('printInfo').innerHTML = `<span>✨</span> <span>Aucun design sur cette zone</span>`;
+  }
+  
+  document.getElementById('noPrintMsg').style.display = hasPrint && !p.image_url ? 'block' : 'none';
+  if (hasPrint && !p.image_url) document.getElementById('noPrintMsg').textContent = "Aperçu indisponible pour ce design.";
+  
+  document.getElementById('printCustomize').style.display = '';
+  // hide old embroidery toggle
+  const embSec = document.getElementById('embroiderySection');
+  if (embSec) embSec.style.display = 'none'; 
+}
+
+// Override updatePrice for multi-zone
+function updatePrice() {
+  let total = SHOWCASE_PRICE; // base T-shirt price
+  
+  for (const zoneId in window.zoneCustomizations) {
+    const config = window.zoneCustomizations[zoneId];
+    if (config.print) {
+      if (config.type === 'embroidery') {
+        total += 9000;
+      } else {
+        // Only charge for print if price is different from 18000? 
+        // Wait, standard T-shirt includes 1 print in the 18000 FCFA. 
+        // If they have multiple zones, maybe charge extra?
+        // Let's just add the print's price, and subtract base if it's the first one?
+        // Actually, user said: jacket and hoodie share the same prints library.
+        // T-shirt price logic: 18000 base.
+        total += (config.print.price != null ? config.print.price : 10000) - 18000; 
+        if (total < SHOWCASE_PRICE) total = SHOWCASE_PRICE; // ensure at least base
+      }
+    }
+  }
+  
+  document.getElementById('priceMain').textContent = fmt(total);
+}
+
+// ── Zone-aware render: update 2D canvas from zoneCustomizations ──
+function _syncZoneImagesAndRender() {
+  const pendingLoads = [];
+
+  ['front','back'].forEach(zone => {
+    const zCfg = window.zoneCustomizations[zone];
+    if (zCfg && zCfg.print && zCfg.print.image_url) {
+      if (!sides[zone].img || sides[zone].img.src !== zCfg.print.image_url) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        const p = new Promise(res => {
+          img.onload  = res;
+          img.onerror = res; // resolve even on error so render still fires
+        });
+        img.src = zCfg.print.image_url;
+        sides[zone].img = img;
+        pendingLoads.push(p);
+      }
+    } else {
+      sides[zone].img = null;
+    }
+  });
+
+  Promise.all(pendingLoads).then(() => {
+    renderDesign('front');
+    renderDesign('back');
+  });
+}
+
 // ============================================================
 //  STATE
 // ============================================================
@@ -921,10 +1143,26 @@ function recolorShirt(side) {
   const w = img.naturalWidth, h = img.naturalHeight;
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+  // Draw the base shirt image (always a white/neutral mockup)
   ctx.drawImage(img, 0, 0, w, h);
 
+  // Apply colour tint via multiply composite — makes white shirt become the target colour
+  // while preserving fabric shading/texture from the greyscale luminance values.
+  const col = (typeof selectedColor !== 'undefined' && selectedColor) ? selectedColor : '#ffffff';
+  if (col && col !== '#ffffff') {
+    ctx.save();
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = col;
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+  }
+
+  // Re-analyse fabric data so the print blend uses the tinted result
+  analyzeFabric(side);
   scheduleRender();
 }
+
 
 function recolorBothSides() {
   recolorShirt('front');
@@ -1033,112 +1271,30 @@ function getDefaultPrints() {
   ];
 }
 
-function renderPrintGrid() {
-  const grid = document.getElementById('printGrid');
-  document.getElementById('printCount').textContent = `(${prints.length})`;
-  if (!prints.length) {
-    grid.innerHTML = `<div class="print-thumb-none" style="grid-column:1/-1">Aucun imprimé disponible pour le moment.</div>`;
-    return;
-  }
-  grid.innerHTML = prints.map(p => `
-    <div class="print-thumb${selectedPrint && selectedPrint.id===p.id ? ' selected':''}" onclick='selectPrint(${JSON.stringify(p).replace(/'/g,"&#39;")})'>
-      ${p.image_url
-        ? `<img src="${p.image_url}" alt="${p.name}">`
-        : `<div class="print-thumb-none">${p.name}</div>`}
-      <span class="pname">${p.name}</span>
-    </div>`).join('');
-}
-
-function selectPrint(p) {
-  selectedPrint = p;
-  document.getElementById('printInfo').innerHTML = `<span>🎨</span> <span>Imprimé sélectionné : <strong>${p.name}</strong>${p.category ? ' • '+p.category : ''}</span>`;
-  document.getElementById('noPrintMsg').style.display = p.image_url ? 'none' : 'block';
-  if (!p.image_url) document.getElementById('noPrintMsg').textContent = "Aperçu indisponible pour cet imprimé démo.";
-
-  // Show customization controls now that a print is chosen
-  document.getElementById('printCustomize').style.display = p.image_url ? '' : 'none';
-  // Show embroidery option
-  document.getElementById('embroiderySection').style.display = '';
-  // Reset embroidery on new print selection
-  embroiderySelected = false;
-  const embBtn = document.getElementById('embroideryToggle');
-  if (embBtn) { embBtn.textContent = 'Ajouter broderie'; embBtn.classList.remove('selected'); }
-  const embStatus = document.getElementById('embroideryStatus');
-  if (embStatus) { embStatus.textContent = 'Non sélectionné'; embStatus.style.color = '#aaa'; }
-
-  // Apply this print's price
-  const price = p.price != null ? p.price : SHOWCASE_PRICE;
-  document.getElementById('priceMain').textContent = fmt(price);
-
-  // Apply this print's available colors
-  renderColorOptions(p.colors && p.colors.length ? p.colors : ['#ffffff','#1a1a1a','#e63946','#457b9d','#2a9d8f','#f4a261']);
-
-  // Apply this print's available sizes
-  renderSizeOptions(p.sizes && p.sizes.length ? p.sizes : ['S','M','L','XL','XXL']);
-
-  // Stock status
-  const stock = p.stock != null ? p.stock : null;
-  const stockNote = document.getElementById('stockNote');
-  const addBtn = document.querySelector('.btn-primary[onclick="addToCartShowcase()"]');
-  if (stock !== null && stock <= 0) {
-    stockNote.style.display = '';
-    stockNote.style.color = '#ef4444';
-    stockNote.textContent = '✗ Rupture de stock — indisponible pour le moment.';
-    if (addBtn) addBtn.disabled = true;
-  } else if (stock !== null && stock <= 5) {
-    stockNote.style.display = '';
-    stockNote.style.color = '#f59e0b';
-    stockNote.textContent = `⚠ Stock limité — il ne reste que ${stock} unité(s).`;
-    if (addBtn) addBtn.disabled = false;
-  } else {
-    stockNote.style.display = 'none';
-    if (addBtn) addBtn.disabled = false;
-  }
-
-  // Load image into both views
-  if (p.image_url) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      sides.front.img = img;
-      sides.back.img = img;
-      renderDesign('front'); renderDesign('back');
-    };
-    img.src = p.image_url;
-  } else {
-    sides.front.img = null; sides.back.img = null;
-    sides.front.wrap.style.display = 'none';
-    sides.back.wrap.style.display = 'none';
-  }
-  
-  if (window.applyPrintTexture) {
-    window.applyPrintTexture(p.image_url || null);
-    if (window.setPrintTransform) {
-      window.setPrintTransform({ scale: printScale, preset: printPreset, blend: printBlend });
-    }
-  }
-
-  renderPrintGrid();
-}
+/* replaced by update script */
 
 const COLOR_NAMES = {'#ffffff':'Blanc','#1a1a1a':'Noir','#e63946':'Rouge','#457b9d':'Bleu','#2a9d8f':'Vert','#f4a261':'Orange'};
 
 function renderColorOptions(colors) {
   const row = document.getElementById('colorRow');
-  // Preserve selectedColor if it exists in new list; otherwise default to first
-  const keepColor = colors.includes(selectedColor) ? selectedColor : colors[0];
+  // Read active zone's saved color; fall back to global then first
+  const savedColor = window.zoneCustomizations[activeZoneId]?.color || selectedColor;
+  const keepColor = colors.includes(savedColor) ? savedColor : colors[0];
   row.innerHTML = colors.map(c => `<button class="color-swatch${c===keepColor?' selected':''}" style="background:${c}" data-color="${c}" title="${COLOR_NAMES[c]||c}"></button>`).join('');
   selectedColor = keepColor;
+  if (window.zoneCustomizations[activeZoneId]) window.zoneCustomizations[activeZoneId].color = keepColor;
   updateShirtImagesForColor(selectedColor);
   if (window.setShirtColor) window.setShirtColor(selectedColor);
 }
 
 function renderSizeOptions(sizes) {
   const row = document.getElementById('sizeRow');
-  // Preserve selectedSize if it exists in new list; otherwise default to first
-  const keepSize = sizes.includes(selectedSize) ? selectedSize : sizes[0];
+  // Read active zone's saved size; fall back to global then first
+  const savedSize = window.zoneCustomizations[activeZoneId]?.size || selectedSize;
+  const keepSize = sizes.includes(savedSize) ? savedSize : sizes[0];
   row.innerHTML = sizes.map(s => `<button class="size-btn${s===keepSize?' selected':''}" data-size="${s}">${s}</button>`).join('');
   selectedSize = keepSize;
+  if (window.zoneCustomizations[activeZoneId]) window.zoneCustomizations[activeZoneId].size = keepSize;
 }
 
 // ============================================================
@@ -1149,6 +1305,8 @@ document.getElementById('colorRow').addEventListener('click', e => {
   if (!btn) return;
   selectedColor = btn.dataset.color;
   document.querySelectorAll('.color-swatch').forEach(b => b.classList.toggle('selected', b===btn));
+  // Save color to active zone
+  if (window.zoneCustomizations[activeZoneId]) window.zoneCustomizations[activeZoneId].color = selectedColor;
   updateShirtImagesForColor(selectedColor);
   if (window.setShirtColor) window.setShirtColor(selectedColor);
   // Re-apply current print onto newly colored shirt
@@ -1160,6 +1318,8 @@ document.getElementById('sizeRow').addEventListener('click', e => {
   if (!btn) return;
   selectedSize = btn.dataset.size;
   document.querySelectorAll('#sizeRow .size-btn').forEach(b => b.classList.toggle('selected', b===btn));
+  // Save size to active zone
+  if (window.zoneCustomizations[activeZoneId]) window.zoneCustomizations[activeZoneId].size = selectedSize;
 });
 
 // ============================================================
@@ -1167,28 +1327,42 @@ document.getElementById('sizeRow').addEventListener('click', e => {
 // ============================================================
 let _renderRAF = null;
 function scheduleRender() {
-  if (_renderRAF) return;
+  if (_renderRAF) cancelAnimationFrame(_renderRAF);
   _renderRAF = requestAnimationFrame(() => {
     _renderRAF = null;
-    if (sides.front.img) renderDesign('front');
-    if (sides.back.img) renderDesign('back');
+    // Sync 3D viewer transform
     if (window.setPrintTransform) {
       window.setPrintTransform({ scale: printScale, preset: printPreset, blend: printBlend });
     }
+    // Sync 2D canvas from zone state, waiting for image loads
+    _syncZoneImagesAndRender();
   });
 }
 
 document.getElementById('printScale').addEventListener('input', e => {
   printScale = parseInt(e.target.value) / 100;
   document.getElementById('printScaleValue').textContent = e.target.value + '%';
+  // Also store scale in active zone config
+  if (window.zoneCustomizations[activeZoneId]) {
+    window.zoneCustomizations[activeZoneId].scale = printScale;
+    if (window.setZoneCustomization) window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
+  }
   scheduleRender();
 });
 
 document.getElementById('placementGrid').addEventListener('click', e => {
   const btn = e.target.closest('.placement-btn');
   if (!btn) return;
-  printPreset = btn.dataset.preset;
+  // The preset key is zone-aware: back zone forces back-* prefix
+  printPreset = (activeZoneId === 'back' && !btn.dataset.preset.startsWith('back'))
+    ? 'back-' + btn.dataset.preset
+    : btn.dataset.preset;
   document.querySelectorAll('.placement-btn').forEach(b => b.classList.toggle('selected', b===btn));
+  // Also sync preset into zone config and 3D viewer
+  if (window.zoneCustomizations[activeZoneId]) {
+    window.zoneCustomizations[activeZoneId].preset = printPreset;
+    if (window.setZoneCustomization) window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
+  }
   scheduleRender();
 });
 
@@ -1210,6 +1384,21 @@ function switchView(side) {
   // Update tabs
   document.getElementById('front-btn').classList.toggle('active', side==='front');
   document.getElementById('back-btn').classList.toggle('active', side==='back');
+
+  // Sync UI with active zone state
+  if (side === 'front' || side === 'back') {
+    const zConfig = window.zoneCustomizations[side] || {};
+    if (zConfig.scale) {
+      printScale = zConfig.scale;
+      document.getElementById('printScale').value = printScale * 100;
+    }
+    if (zConfig.preset) {
+      printPreset = zConfig.preset;
+      document.querySelectorAll('.placement-grid button').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.preset === printPreset);
+      });
+    }
+  }
   
   const btn3d = document.getElementById('btn-3d');
   if (side === '3d') {
@@ -1236,11 +1425,15 @@ function renderDesign(side) {
   const wW = rect.width, wH = rect.height;
   if (wW < 10 || wH < 10) { requestAnimationFrame(() => renderDesign(side)); return; }
 
-  const cfg = PRESET_CONFIGS[printPreset] || PRESET_CONFIGS.center;
+  // Use the preset stored for this specific zone, falling back to the global one
+  const zonePreset = (window.zoneCustomizations[side] && window.zoneCustomizations[side].preset) ? window.zoneCustomizations[side].preset : printPreset;
+  // Strip 'back-' prefix since PRESET_CONFIGS keys don't have it
+  const lookupPreset = zonePreset.replace(/^back-/, '');
+  const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
 
-  // Apply user scale around the preset's box center
-  const w = cfg.w * printScale;
-  const h = cfg.h * printScale;
+  const zoneScale = (window.zoneCustomizations[side] && window.zoneCustomizations[side].scale) ? window.zoneCustomizations[side].scale : printScale;
+  const w = cfg.w * zoneScale;
+  const h = cfg.h * zoneScale;
   const top = cfg.top + (cfg.h - h) / 2;
   const left = cfg.left + (cfg.w - w) / 2;
 
@@ -1466,27 +1659,58 @@ const PLACEMENT_LABELS = {
 };
 
 function buildOrderItem() {
-  if (!selectedPrint) return null;
-  const basePrice = selectedPrint.price != null ? selectedPrint.price : SHOWCASE_PRICE;
-  const totalPrice = basePrice + (embroiderySelected ? EMBROIDERY_SURCHARGE : 0);
-  return {
-    key: `showcase-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPreset}-${Math.round(printScale*100)}-${Math.round(printBlend*100)}-${embroiderySelected?'emb':''}`,
-    id: `showcase-${selectedPrint.id}`,
-    name: `T-Shirt OVRG — ${selectedPrint.name}${embroiderySelected ? ' (Broderie)' : ''}`,
-    price: totalPrice,
-    qty: 1,
-    size: selectedSize,
-    color: selectedColor,
-    img: selectedPrint.image_url || '',
-    type: 'showcase',
-    customization: {
-      placement: printPreset,
-      placementLabel: PLACEMENT_LABELS[printPreset] || printPreset,
-      scale: Math.round(printScale * 100),
-      blend: Math.round(printBlend * 100),
-      embroidery: embroiderySelected
-    }
-  };
+  // Multi-zone: collect all zones that have a print assigned
+  const zoneItems = Object.entries(window.zoneCustomizations || {})
+    .filter(([, cfg]) => cfg && cfg.print)
+    .map(([zoneId, cfg]) => {
+      const p = cfg.print;
+      const basePrice = p.price != null ? p.price : SHOWCASE_PRICE;
+      const totalPrice = basePrice + (cfg.type === 'embroidery' ? EMBROIDERY_SURCHARGE : 0);
+      const size  = cfg.size  || selectedSize  || 'M';
+      const color = cfg.color || selectedColor || '#ffffff';
+      const scale = cfg.scale || printScale;
+      const preset = cfg.preset || (zoneId === 'back' ? 'back-center' : 'center');
+      return {
+        key: `showcase-${p.id}-${zoneId}-${color}-${size}-${preset}-${Math.round(scale*100)}`,
+        id: `showcase-${p.id}-${zoneId}`,
+        name: `T-Shirt OVRG — ${p.name} (${zoneId === 'back' ? 'Dos' : 'Devant'})${cfg.type === 'embroidery' ? ' (Broderie)' : ''}`,
+        price: totalPrice,
+        qty: 1,
+        size,
+        color,
+        img: p.image_url || '',
+        type: 'showcase',
+        zone: zoneId,
+        customization: {
+          placement: preset,
+          placementLabel: PLACEMENT_LABELS[preset] || preset,
+          scale: Math.round(scale * 100),
+          blend: Math.round(printBlend * 100),
+          embroidery: cfg.type === 'embroidery'
+        }
+      };
+    });
+
+  // Fallback to legacy single-print flow if no zones configured
+  if (zoneItems.length === 0) {
+    if (!selectedPrint) return null;
+    const basePrice = selectedPrint.price != null ? selectedPrint.price : SHOWCASE_PRICE;
+    const totalPrice = basePrice + (embroiderySelected ? EMBROIDERY_SURCHARGE : 0);
+    return {
+      key: `showcase-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPreset}-${Math.round(printScale*100)}-${Math.round(printBlend*100)}`,
+      id: `showcase-${selectedPrint.id}`,
+      name: `T-Shirt OVRG — ${selectedPrint.name}${embroiderySelected ? ' (Broderie)' : ''}`,
+      price: totalPrice,
+      qty: 1,
+      size: selectedSize,
+      color: selectedColor,
+      img: selectedPrint.image_url || '',
+      type: 'showcase',
+      customization: { placement: printPreset, placementLabel: PLACEMENT_LABELS[printPreset] || printPreset, scale: Math.round(printScale * 100), blend: Math.round(printBlend * 100), embroidery: embroiderySelected }
+    };
+  }
+
+  return zoneItems.length === 1 ? zoneItems[0] : zoneItems;
 }
 
 function addToCartShowcase() {
@@ -1752,7 +1976,11 @@ async function uploadPrintImage(event) {
 
 async function savePrint() {
   const name = document.getElementById('printName').value.trim();
-  const category = document.getElementById('printCategory').value.trim();
+  let category = document.getElementById('printCategory').value.trim();
+    const type = document.getElementById('printType') ? document.getElementById('printType').value : 'print';
+    if (type === 'embroidery' && !category.startsWith('Broderie')) {
+      category = 'Broderie: ' + category;
+    }
   const price = parseInt(document.getElementById('printPrice').value, 10);
   const stock = parseInt(document.getElementById('printStock').value, 10);
   const colors = Array.from(document.querySelectorAll('#adminColorRow input:checked')).map(i => i.value);
@@ -1834,6 +2062,7 @@ function resetPrintForm() {
   document.getElementById('editPrintId').value = '';
   document.getElementById('printName').value = '';
   document.getElementById('printCategory').value = 'Édition Limitée';
+  if(document.getElementById('printType')) document.getElementById('printType').value = 'print';
   document.getElementById('printPrice').value = '18000';
   document.getElementById('printStock').value = '100';
   renderAdminColorCheckboxes(globalSettings.global_colors);
@@ -2244,7 +2473,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 window.setProductType = typeof setProductType !== "undefined" ? setProductType : undefined;
 window.switchView = typeof switchView !== "undefined" ? switchView : undefined;
-window.setShirtColor = typeof setShirtColor !== "undefined" ? setShirtColor : undefined;
+// window.setShirtColor is exported by three-viewer.js — do not override here
+
 window.openAdmin = typeof openAdmin !== "undefined" ? openAdmin : undefined;
 window.closeAdmin = typeof closeAdmin !== "undefined" ? closeAdmin : undefined;
 window.saveCustomText = typeof saveCustomText !== "undefined" ? saveCustomText : undefined;

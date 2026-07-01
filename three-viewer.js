@@ -50,7 +50,7 @@ window.load3DModel = function (modelUrl) {
     currentModelGroup = null;
     shirtMeshes = [];
     _clearDecals();
-    _clearHwOverlay();
+    window.clearAllZones();
   }
 
   const gltfLoader = new GLTFLoader();
@@ -94,7 +94,7 @@ window.load3DModel = function (modelUrl) {
     model.updateMatrixWorld(true);
 
     if (IS_HEADWEAR || IS_OUTERWEAR) {
-      _rebuildHwOverlay();
+      _rebuildAllDecals();
     } else {
       _updateTshirtDecals();
     }
@@ -154,6 +154,82 @@ export function initThreeViewer() {
     controls?.update();
     renderer?.render(scene, camera);
   })();
+
+  // ── Drag-resize handle ──────────────────────────────────────────────────────
+  // Added to document.body with fixed positioning so it sits above the 3D canvas
+  // without fighting the OrbitControls pointer capture on renderer.domElement.
+  const _existingHandle = document.getElementById('decalResizeHandle');
+  if (_existingHandle) _existingHandle.remove();
+
+  const handle = document.createElement('div');
+  handle.id = 'decalResizeHandle';
+  handle.title = 'Glisser ←→ pour redimensionner le décal';
+  handle.textContent = '⇔ Taille';
+  Object.assign(handle.style, {
+    position: 'fixed',
+    background: 'rgba(255,107,53,0.90)',
+    color: '#fff',
+    padding: '5px 12px',
+    borderRadius: '20px',
+    fontSize: '0.72rem',
+    fontWeight: '700',
+    letterSpacing: '0.04em',
+    cursor: 'ew-resize',
+    userSelect: 'none',
+    zIndex: '99999',
+    boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
+    pointerEvents: 'auto',
+    display: 'none',   // hidden until container is visible
+  });
+  document.body.appendChild(handle);
+
+  // Position handle over top-right corner of the 3D container
+  function _positionHandle() {
+    const rect = container.getBoundingClientRect();
+    if (rect.width < 10) { handle.style.display = 'none'; return; }
+    handle.style.display = '';
+    handle.style.top  = (rect.top  + 8) + 'px';
+    handle.style.left = (rect.right - 90) + 'px';
+  }
+  _positionHandle();
+  new ResizeObserver(_positionHandle).observe(container);
+  window.addEventListener('scroll', _positionHandle, { passive: true });
+
+  // Drag logic
+  let _dragStartX = 0, _dragStartScale = 1.0;
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handle.setPointerCapture(e.pointerId);
+    _dragStartX     = e.clientX;
+    _dragStartScale = currentTransform.scale ?? 1.0;
+  });
+  handle.addEventListener('pointermove', (e) => {
+    if (!handle.hasPointerCapture(e.pointerId)) return;
+    const dx       = e.clientX - _dragStartX;
+    const newScale = Math.max(0.15, Math.min(2.5, _dragStartScale + dx / 160));
+    currentTransform.scale = newScale;
+    if (decalMaterial) decalMaterial.opacity = 1.0 - (currentTransform.blend || 0) * 0.3;
+    _updateTshirtDecals();
+    // Headwear / outerwear multi-zone: update active zone scale directly
+    const z = window.printPlacement || 'front-center';
+    const zc = (window.zoneCustomizations || {})[z];
+    if (zc !== undefined && window.setZoneCustomization) {
+      // Map newScale (0.15–2.5) to headwear decal scale fraction (0.10–0.65)
+      const hwScale = 0.10 + (Math.min(newScale, 2.0) / 2.0) * 0.55;
+      const merged = Object.assign({}, zc, { scale: hwScale });
+      window.zoneCustomizations[z] = merged;
+      _rebuildAllDecals();
+    }
+    // Sync page scale slider (fires page's input handler to update printScale etc.)
+    const slider = document.getElementById('scaleSlider') || document.getElementById('printScale');
+    if (slider) {
+      const pct = Math.round(newScale * 100);
+      slider.value = Math.max(+slider.min || 40, Math.min(+slider.max || 250, pct));
+      slider.dispatchEvent(new Event('input'));
+    }
+  });
+  handle.addEventListener('pointerup', (e) => { handle.releasePointerCapture(e.pointerId); });
 }
 
 function _onResize() {
@@ -211,19 +287,41 @@ function _clearDecals() {
 
 function _updateTshirtDecals() {
   _clearDecals();
-  if (!printTexture || !decalMaterial || !shirtMeshes.length) return;
-  const ar = printTexture.image.width / printTexture.image.height;
-  const w  = 0.8 * currentTransform.scale;
-  const h  = w / ar;
-  let px = currentTransform.preset.includes('left') ? -0.2
-         : currentTransform.preset.includes('right') ? 0.2 : 0;
-  let py = currentTransform.preset.includes('top') ? 0.45
-         : currentTransform.preset.includes('bottom') ? -0.05 : 0.2;
-  let pz = 0.5;
+  if (!printTexture || !decalMaterial || !shirtMeshes.length || !currentModelGroup) return;
+
+  currentModelGroup.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(currentModelGroup);
+  const bs  = box.getSize(new THREE.Vector3());
+  const mcx = (box.min.x + box.max.x) / 2;
+
+  const ar     = printTexture.image.width / printTexture.image.height;
+  const w      = bs.x * 0.50 * currentTransform.scale;
+  const h      = w / ar;
+  const preset = currentTransform.preset || 'center';
+
+  let px = mcx;
+  if (preset.includes('left'))  px = mcx - bs.x * 0.16;
+  if (preset.includes('right')) px = mcx + bs.x * 0.16;
+
+  let py = box.min.y + bs.y * (
+    preset.includes('top')    ? 0.72 :
+    preset.includes('bottom') ? 0.30 : 0.52);
+
+  // Place origin just INSIDE the front surface so DecalGeometry hits the mesh correctly
+  const inset = bs.z * 0.08;   // 8% of model depth below front surface
+  let pz = box.max.z - inset;
+
   const ori = new THREE.Euler();
-  if (currentTransform.preset.includes('back')) { pz = -0.5; ori.y = Math.PI; px = -px; }
+  if (preset.includes('back')) {
+    pz = box.min.z + inset;   // just inside back surface
+    ori.y = Math.PI;
+    px = mcx - (px - mcx);
+  }
+
   const pos  = new THREE.Vector3(px, py, pz);
-  const size = new THREE.Vector3(w, h, 1.5);
+  // Depth ~40% of model depth — deep enough to stamp the curved surface but never punch through
+  const size = new THREE.Vector3(w, h, Math.min(bs.z * 0.42, 0.22));
+
   shirtMeshes.forEach(mesh => {
     try {
       const dg = new DecalGeometry(mesh, pos, ori, size);
@@ -319,30 +417,88 @@ function _clearHwOverlay() {
   }
 }
 
-function _rebuildHwOverlay() {
-  _clearHwOverlay();
-  if (!currentModelGroup) return;
 
-  const cv = _buildHwCanvas();
-  if (!cv) return;
+// ─── MULTI-ZONE CUSTOMIZATION ────────────────────────────────────────────────
+window.zoneCustomizations = {};
+// structure: { 'front-center': { type: 'print'|'embroidery'|'label'|'both', printImg: <Image>, labelText: '', labelColor: '', scale: 0.42, blend: 0.55 }, ... }
 
-  const tex = new THREE.CanvasTexture(cv);
-  tex.colorSpace  = THREE.SRGBColorSpace;
-  tex.needsUpdate = true;
+const hwMaterials = {}; // map of zoneId -> Material
 
-  const blend = typeof window.EMBROIDERY_BLEND !== 'undefined' ? window.EMBROIDERY_BLEND : 0.55;
-  hwOverlayMat = new THREE.MeshStandardMaterial({
-    map:         tex,
-    transparent: true,
-    depthTest:   true,
-    depthWrite:  false,
-    polygonOffset: true,
-    polygonOffsetFactor: -6,
-    polygonOffsetUnits: -6,
-    roughness:   0.85,
-    opacity:     1.0 - blend * 0.3,
+window.setZoneCustomization = function(zoneId, config) {
+  if (!window.zoneCustomizations[zoneId]) {
+    window.zoneCustomizations[zoneId] = { scale: 0.42, blend: 0.55 };
+  }
+  Object.assign(window.zoneCustomizations[zoneId], config);
+  
+  if (config.printUrl) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { 
+      window.zoneCustomizations[zoneId].printImg = img; 
+      _rebuildAllDecals(); 
+    };
+    img.onerror = () => {
+      window.zoneCustomizations[zoneId].printImg = null;
+      _rebuildAllDecals();
+    };
+    img.src = config.printUrl;
+  } else if (config.printUrl === null) {
+    window.zoneCustomizations[zoneId].printImg = null;
+    _rebuildAllDecals();
+  } else {
+    _rebuildAllDecals();
+  }
+};
+
+window.clearZoneCustomization = function(zoneId) {
+  delete window.zoneCustomizations[zoneId];
+  _rebuildAllDecals();
+};
+
+window.clearAllZones = function() {
+  window.zoneCustomizations = {};
+  _rebuildAllDecals();
+};
+
+function _buildZoneCanvas(config) {
+  const S = 512;
+  const cv = document.createElement('canvas');
+  cv.width = S; cv.height = S;
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, S, S);
+
+  const hasPrint = !!config.printImg;
+  const hasLabel = !!(config.labelText && config.labelText.trim());
+  if (!hasPrint && !hasLabel) return null;
+
+  const PAD = 20;
+  if (hasPrint && hasLabel) {
+    _drawImageFit(ctx, config.printImg, PAD, PAD, S - PAD * 2, Math.round(S * 0.58) - PAD);
+    _drawLabelText(ctx, config.labelText, config.labelColor || '#ffffff', S / 2, S * 0.80, S * 0.88, S * 0.30);
+  } else if (hasPrint) {
+    _drawImageFit(ctx, config.printImg, PAD, PAD, S - PAD * 2, S - PAD * 2);
+  } else {
+    _drawLabelText(ctx, config.labelText, config.labelColor || '#ffffff', S / 2, S / 2, S * 0.90, S * 0.42);
+  }
+  return cv;
+}
+
+function _rebuildAllDecals() {
+  // Clear existing decals
+  hwDecalMeshes.forEach(d => {
+    scene?.remove(d);
+    d.geometry?.dispose();
   });
+  hwDecalMeshes = [];
+  
+  // Dispose old materials
+  Object.values(hwMaterials).forEach(mat => {
+    mat.map?.dispose();
+    mat.dispose();
+  });
+  for (let key in hwMaterials) delete hwMaterials[key];
 
+  if (!currentModelGroup) return;
   currentModelGroup.updateMatrixWorld(true);
   const box     = new THREE.Box3().setFromObject(currentModelGroup);
   const boxSize = box.getSize(new THREE.Vector3());
@@ -350,118 +506,154 @@ function _rebuildHwOverlay() {
   const cy      = box.min.y + boxSize.y * 0.58;
   const cz      = box.max.z;
 
-  const planeW = boxSize.x * _hwScale;
+  // Render each zone
+  for (const zoneId of Object.keys(window.zoneCustomizations)) {
+    const config = window.zoneCustomizations[zoneId];
+    const cv = _buildZoneCanvas(config);
+    if (!cv) continue;
 
-  const zoneId = window.printPlacement || 'front-center';
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.needsUpdate = true;
 
-  let px = cx;
-  let py = cy;
-  let pz = cz;
-  const ori = new THREE.Euler(0, 0, 0);
+    const blend = config.blend !== undefined ? config.blend : 0.55;
+    const mat = new THREE.MeshStandardMaterial({
+      map: tex, transparent: true, depthTest: true, depthWrite: false,
+      polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6,
+      roughness: 0.85, opacity: 1.0,
+    });
+    hwMaterials[zoneId] = mat;
 
-  if (IS_OUTERWEAR) {
-    if (zoneId === 'front' || zoneId === 'front-center') {
-      py = cy + boxSize.y * 0.15;
-      pz = cz - boxSize.z * 0.02;
-    } else if (zoneId === 'front-left') {
-      px = cx - boxSize.x * 0.22;
-      py = cy + boxSize.y * 0.20;
-      pz = cz - boxSize.z * 0.05;
-      ori.y = Math.PI / 12;
-    } else if (zoneId === 'front-right') {
-      px = cx + boxSize.x * 0.22;
-      py = cy + boxSize.y * 0.20;
-      pz = cz - boxSize.z * 0.05;
-      ori.y = -Math.PI / 12;
-    } else if (zoneId === 'back-center') {
-      px = cx;
-      py = cy + boxSize.y * 0.15;
-      pz = box.min.z + boxSize.z * 0.02;
-      ori.y = Math.PI;
-    } else if (zoneId === 'sleeve-left') {
-      px = cx - boxSize.x * 0.45;
-      py = cy + boxSize.y * 0.10;
-      pz = cz - boxSize.z * 0.35;
-      ori.y = Math.PI / 2;
-    } else if (zoneId === 'sleeve-right') {
-      px = cx + boxSize.x * 0.45;
-      py = cy + boxSize.y * 0.10;
-      pz = cz - boxSize.z * 0.35;
-      ori.y = -Math.PI / 2;
+    const scale = config.scale !== undefined ? config.scale : 0.42;
+    const planeW = boxSize.x * scale;
+
+    let px = cx, py = cy, pz = cz;
+    const ori = new THREE.Euler(0, 0, 0);
+
+    if (IS_OUTERWEAR) {
+      if (zoneId === 'front' || zoneId === 'front-center') {
+        py = cy + boxSize.y * 0.15; pz = cz - boxSize.z * 0.02;
+      } else if (zoneId === 'front-left') {
+        px = cx - boxSize.x * 0.22; py = cy + boxSize.y * 0.20; pz = cz - boxSize.z * 0.05; ori.y = Math.PI / 12;
+      } else if (zoneId === 'front-right') {
+        px = cx + boxSize.x * 0.22; py = cy + boxSize.y * 0.20; pz = cz - boxSize.z * 0.05; ori.y = -Math.PI / 12;
+      } else if (zoneId === 'back' || zoneId === 'back-center') {
+        px = cx; py = cy + boxSize.y * 0.15; pz = box.min.z + boxSize.z * 0.02; ori.y = Math.PI;
+      } else if (zoneId === 'sleeve-left') {
+        px = cx - boxSize.x * 0.45; py = cy + boxSize.y * 0.10; pz = cz - boxSize.z * 0.35; ori.y = Math.PI / 2;
+      } else if (zoneId === 'sleeve-right') {
+        px = cx + boxSize.x * 0.45; py = cy + boxSize.y * 0.10; pz = cz - boxSize.z * 0.35; ori.y = -Math.PI / 2;
+      }
+    } else if (IS_HEADWEAR) {
+      if (zoneId === 'front' || zoneId === 'front-center') {
+      } else if (zoneId === 'front-left') {
+        px = cx - boxSize.x * 0.16; pz = cz - boxSize.z * 0.05; ori.y = Math.PI / 6;
+      } else if (zoneId === 'front-right') {
+        px = cx + boxSize.x * 0.16; pz = cz - boxSize.z * 0.05; ori.y = -Math.PI / 6;
+      } else if (zoneId === 'back-center' || zoneId === 'back') {
+        px = cx; pz = box.min.z; ori.y = Math.PI;
+      } else if (zoneId === 'brim-front') {
+        py = box.min.y + boxSize.y * 0.18; pz = box.max.z + 0.08; ori.x = -Math.PI / 6;
+      } else if (zoneId === 'front-high') {
+        py = cy + boxSize.y * 0.12; pz = cz - boxSize.z * 0.08; ori.x = -Math.PI / 12;
+      } else if (zoneId === 'front-low') {
+        py = cy - boxSize.y * 0.10; pz = cz - boxSize.z * 0.02; ori.x = Math.PI / 24;
+      }
+    } else {
+      // T-shirt: bounding-box-relative placement
+      let tx = cx;
+      let ty = box.min.y + boxSize.y * 0.52;
+      const inset = boxSize.z * 0.08;
+      let tz = box.max.z - inset;   // just INSIDE front surface
+
+      const preset = config.preset || zoneId;
+
+      // Sleeve / side zones — position decal on the side of the model
+      if (zoneId === 'sleeve-left' || zoneId === 'left-sleeve' || preset === 'sleeve-left') {
+        tx = box.min.x + boxSize.x * 0.12;
+        ty = box.min.y + boxSize.y * 0.60;
+        tz = (box.min.z + box.max.z) / 2;
+        ori.y = Math.PI / 2;   // face left
+      } else if (zoneId === 'sleeve-right' || zoneId === 'right-sleeve' || preset === 'sleeve-right') {
+        tx = box.max.x - boxSize.x * 0.12;
+        ty = box.min.y + boxSize.y * 0.60;
+        tz = (box.min.z + box.max.z) / 2;
+        ori.y = -Math.PI / 2;  // face right
+      } else {
+        // Front / back presets
+        if (preset.includes('left'))   tx = cx - boxSize.x * 0.16;
+        if (preset.includes('right'))  tx = cx + boxSize.x * 0.16;
+        if (preset.includes('top'))    ty = box.min.y + boxSize.y * 0.72;
+        if (preset.includes('bottom')) ty = box.min.y + boxSize.y * 0.30;
+
+        if (zoneId === 'back' || (preset && preset.includes('back'))) {
+          tz = box.min.z + inset;   // just INSIDE back surface
+          ori.y = Math.PI;
+          if (tx !== cx) tx = cx - (tx - cx);
+        }
+      }
+
+      px = tx; py = ty; pz = tz;
     }
-  } else {
-    if (zoneId === 'front' || zoneId === 'front-center') {
-      // Default position (center)
-    } else if (zoneId === 'front-left') {
-      px = cx - boxSize.x * 0.16;
-      pz = cz - boxSize.z * 0.05;
-      ori.y = Math.PI / 6;
-    } else if (zoneId === 'front-right') {
-      px = cx + boxSize.x * 0.16;
-      pz = cz - boxSize.z * 0.05;
-      ori.y = -Math.PI / 6;
-    } else if (zoneId === 'back-center') {
-      px = cx;
-      pz = box.min.z;
-      ori.y = Math.PI;
-    } else if (zoneId === 'brim-front') {
-      py = box.min.y + boxSize.y * 0.18;
-      pz = box.max.z + 0.08;
-      ori.x = -Math.PI / 6;
-    } else if (zoneId === 'front-high') {
-      py = cy + boxSize.y * 0.12;
-      pz = cz - boxSize.z * 0.08;
-      ori.x = -Math.PI / 12;
-    } else if (zoneId === 'front-low') {
-      py = cy - boxSize.y * 0.10;
-      pz = cz - boxSize.z * 0.02;
-      ori.x = Math.PI / 24;
-    }
+
+    const pos = new THREE.Vector3(px, py, pz);
+    let depth;
+    if (IS_OUTERWEAR) depth = Math.max(0.3, boxSize.z * 1.4);
+    else if (IS_HEADWEAR) depth = Math.max(2.0, boxSize.z * 1.5);
+    else depth = Math.min(boxSize.z * 0.42, 0.22); // T-shirt: thin stamp, no punch-through
+
+    const size = new THREE.Vector3(planeW, planeW, depth);
+    shirtMeshes.forEach(mesh => {
+      try {
+        const dg = new DecalGeometry(mesh, pos, ori, size);
+        const dm = new THREE.Mesh(dg, mat);
+        dm.renderOrder = 1;
+        scene.add(dm);
+        hwDecalMeshes.push(dm);
+      } catch(e) {}
+    });
   }
-
-  const pos  = new THREE.Vector3(px, py, pz);
-  const size = new THREE.Vector3(planeW, planeW, 2.5);
-
-  shirtMeshes.forEach(mesh => {
-    try {
-      const dg = new DecalGeometry(mesh, pos, ori, size);
-      const dm = new THREE.Mesh(dg, hwOverlayMat);
-      dm.renderOrder = 1;
-      scene.add(dm);
-      hwDecalMeshes.push(dm);
-    } catch(e) {
-      console.warn('Headwear decal projection error:', e);
-    }
-  });
 }
+
 
 // ─── PUBLIC API ──────────────────────────────────────────────────────────────
 
+
 window.applyHeadwearPrint = function (imageUrl) {
-  if (!imageUrl) { _hwPrintImg = null; _rebuildHwOverlay(); return; }
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload  = () => { _hwPrintImg = img;  _rebuildHwOverlay(); };
-  img.onerror = () => { _hwPrintImg = null; _rebuildHwOverlay(); };
-  img.src = imageUrl;
+  const z = window.printPlacement || 'front-center';
+  // Clear ALL existing zone customizations first to prevent stacking
+  // across zones (e.g. front-center + back-center both being rendered).
+  if (window.clearAllZones) window.clearAllZones();
+  if (imageUrl) {
+    window.setZoneCustomization(z, { printUrl: imageUrl });
+  }
 };
 
 window.applyHeadwearLabel = function (text, color) {
-  _hwLabelText  = (text  || '').toUpperCase();
-  _hwLabelColor =  color || '#ffffff';
-  _rebuildHwOverlay();
+  const z = window.printPlacement || 'front-center';
+  // Clear stale zones, then set only this one
+  if (window.clearAllZones) window.clearAllZones();
+  window.setZoneCustomization(z, { labelText: (text||'').toUpperCase(), labelColor: color || '#ffffff' });
 };
 
-window.setHeadwearDecalScale = function (pct) {
-  _hwScale = 0.20 + (pct / 70) * 0.55;
-  _rebuildHwOverlay();
+window.setHeadwearDecalScale = function (sliderPct) {
+  // sliderPct: 40 = smallest, 100 = default, 160 = largest
+  // Map linearly to decal scale fraction of model bounding-box width.
+  //   40%  → scale 0.15  (small)
+  //   100% → scale 0.40  (default)
+  //   160% → scale 0.65  (large)
+  const scale = 0.15 + ((sliderPct - 40) / 120) * 0.50;
+  const z = window.printPlacement || 'front-center';
+  const existing = window.zoneCustomizations[z] || {};
+  window.zoneCustomizations[z] = Object.assign({}, existing, { scale });
+  _rebuildAllDecals();
 };
 
 window.clearHeadwearDecal = function () {
-  _hwPrintImg  = null;
-  _hwLabelText = '';
-  _clearHwOverlay();
+  // Clear ALL zones so no stale prints remain on any zone
+  if (window.clearAllZones) window.clearAllZones();
 };
+
 
 window.applyMockupTexture = function (imageUrl) {
   if (!imageUrl) {
