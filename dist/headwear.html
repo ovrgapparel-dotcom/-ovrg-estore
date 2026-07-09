@@ -25,7 +25,7 @@
   const SUPABASE_URL    = 'https://mihpdlhbijlvbdcqvzdw.supabase.co';
   const SUPABASE_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paHBkbGhiaWpsdmJkY3F2emR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDkzMTgsImV4cCI6MjA4Nzk4NTMxOH0.X-2XjKKi3enHck1KBtlga-RiVjXN3BS5EhW3fnF3oTE';
   const STORAGE_BUCKET  = 'product-images';   // reused bucket for print images
-  const PRINTS_TABLE    = 'showcase_prints';  // new table — SQL below
+  const PRINTS_TABLE    = 'headwear_embroideries';  // using dedicated headwear embroidery table
 </script>
 
 <!--
@@ -1359,7 +1359,8 @@ function setProductType(type) {
   updateShirtImagesForColor(selectedColor);
 
   if (window.load3DModel) {
-    const modelUrl = type === 'cap' ? '/cap.glb' : '/bucket.glb';
+    const SUPABASE_MODEL_URL = 'https://mihpdlhbijlvbdcqvzdw.supabase.co/storage/v1/object/public/product-images/models';
+    const modelUrl = type === 'cap' ? `${SUPABASE_MODEL_URL}/cap.glb` : `${SUPABASE_MODEL_URL}/bucket.glb`;
     window.load3DModel(modelUrl);
   }
 }
@@ -2225,7 +2226,7 @@ function renderSettingsColorMockups() {
       </div>
       
       <h4 style="margin-bottom:0.5rem; color:#888; font-size:0.9rem;">Casquette</h4>
-      <div class="admin-grid" style="grid-template-columns: 1fr 1fr 1fr; gap:1rem; margin-bottom:1.5rem">
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem; margin-bottom:1.5rem">
         <div>
           <label style="font-size:0.8rem">Devant</label>
           <div class="upload-slot" id="slot_cap_front_${i}" style="height:80px; min-height:80px;">
@@ -2247,7 +2248,7 @@ function renderSettingsColorMockups() {
       </div>
 
       <h4 style="margin-bottom:0.5rem; color:#888; font-size:0.9rem;">Bob</h4>
-      <div class="admin-grid" style="grid-template-columns: 1fr 1fr 1fr; gap:1rem;">
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem;">
         <div>
           <label style="font-size:0.8rem">Devant</label>
           <div class="upload-slot" id="slot_bucket_front_${i}" style="height:80px; min-height:80px;">

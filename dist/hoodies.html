@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OVRG Showcase — Headwear</title>
+<title>OVRG Showcase — Hoodies</title>
 <meta name="description" content="Personnalisez vos casquettes et bobs avec nos broderies exclusives OVRG.">
 <meta name="theme-color" content="#FF6B35">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,7 +25,7 @@
   const SUPABASE_URL    = 'https://mihpdlhbijlvbdcqvzdw.supabase.co';
   const SUPABASE_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paHBkbGhiaWpsdmJkY3F2emR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDkzMTgsImV4cCI6MjA4Nzk4NTMxOH0.X-2XjKKi3enHck1KBtlga-RiVjXN3BS5EhW3fnF3oTE';
   const STORAGE_BUCKET  = 'product-images';   // reused bucket for print images
-  const PRINTS_TABLE    = 'headwear_embroideries';  // using dedicated headwear embroidery table
+  const PRINTS_TABLE    = 'showcase_prints';  // new table — SQL below
 </script>
 
 <!--
@@ -556,6 +556,19 @@ footer .footer-admin {
   font-family: inherit; transition: all 0.2s; letter-spacing: 0.03em;
 }
 .pg-trigger:hover { background: rgba(255,107,53,0.18); border-color: rgba(255,107,53,0.7); }
+
+.gallery-tabs { display: flex; gap: 1rem; }
+.gallery-tab { background: none; border: none; font-family: inherit; font-size: 1rem; color: #aaa; cursor: pointer; padding-bottom: 0.3rem; border-bottom: 2px solid transparent; transition: all 0.2s; font-weight: 600; }
+.gallery-tab:hover { color: var(--dark); }
+.gallery-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.zone-tag { display: inline-block; font-size: 0.65rem; background: #eee; padding: 2px 6px; border-radius: 10px; margin-right: 4px; font-weight: 700; color: #555; text-transform: uppercase; }
+
+/* ── ZONE SELECTOR BAR (same as showcase.html) ── */
+.zone-selector { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.zone-btn { background: #eee; border: 1px solid #ccc; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #555; font-family: inherit; font-size: 0.9rem; }
+.zone-btn:hover { background: #e0e0e0; }
+.zone-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
 </style>
 </head>
 <body>
@@ -565,7 +578,7 @@ footer .footer-admin {
   <div class="header-inner">
     <div style="display:flex;align-items:center;gap:0.75rem">
       <a href="index.html" class="logo">OVRG<span>.</span></a>
-      <span class="header-sub">Bobs &amp; Hats</span>
+      <span class="header-sub">Hoodies</span>
     </div>
     <a href="index.html" class="back-link">← Retour à la boutique</a>
   </div>
@@ -573,9 +586,9 @@ footer .footer-admin {
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-tag">Custom Headwear</div>
+  <div class="hero-tag">Custom Outerwear</div>
   <h1>OVRG <span>Showcase</span></h1>
-  <p>Choisissez une broderie exclusive ou ajoutez votre propre label, personnalisez la couleur de votre casquette ou bob, puis prévisualisez votre création.</p>
+  <p>Choisissez une broderie exclusive ou ajoutez votre propre label, personnalisez la couleur de votre veste ou hoodie, puis prévisualisez votre création.</p>
 </section>
 
 <!-- MAIN -->
@@ -585,20 +598,26 @@ footer .footer-admin {
   <div class="mockup-card">
     <div class="view-tabs">
       <button class="view-btn active" id="front-btn" onclick="switchView('front')">Devant</button>
-      <button class="view-btn" id="side-btn" onclick="switchView('side')">Côté</button>
+      <button class="view-btn" id="side-btn" onclick="switchView('sleeve-left')">Côté</button>
+      <button class="view-btn" id="right-btn" onclick="switchView('sleeve-right')">Côté droit</button>
       <button class="view-btn" id="back-btn" onclick="switchView('back')">Dos</button>
       <button class="view-btn" id="btn-3d" onclick="switchView('3d')" style="background: linear-gradient(135deg, var(--primary), #d94d1a); color: white; border: none; box-shadow: 0 4px 10px rgba(255,107,53,0.3);">✨ Vue 3D</button>
     </div>
     <div class="mockup-stage">
-      <div class="shirt-wrapper" id="front-view">
+      <div class="shirt-wrapper" id="front-view" style="display:block">
         <canvas id="tshirt-front" class="shirt-img"></canvas>
         <div class="fabric-highlight"></div>
         <div class="design-canvas-wrap" id="canvas-front" style="display:none"><canvas></canvas></div>
       </div>
-      <div class="shirt-wrapper" id="side-view" style="display:none">
-        <canvas id="tshirt-side" class="shirt-img"></canvas>
+      <div class="shirt-wrapper" id="sleeve-left-view" style="display:none">
+        <canvas id="tshirt-sleeve-left" class="shirt-img"></canvas>
         <div class="fabric-highlight"></div>
-        <div class="design-canvas-wrap" id="canvas-side" style="display:none"><canvas></canvas></div>
+        <div class="design-canvas-wrap" id="canvas-sleeve-left" style="display:none"><canvas></canvas></div>
+      </div>
+      <div class="shirt-wrapper" id="sleeve-right-view" style="display:none">
+        <canvas id="tshirt-sleeve-right" class="shirt-img"></canvas>
+        <div class="fabric-highlight"></div>
+        <div class="design-canvas-wrap" id="canvas-sleeve-right" style="display:none"><canvas></canvas></div>
       </div>
       <div class="shirt-wrapper" id="back-view" style="display:none">
         <canvas id="tshirt-back" class="shirt-img"></canvas>
@@ -611,11 +630,28 @@ footer .footer-admin {
       <div class="no-print-msg" id="noPrintMsg">Sélectionnez une broderie ci-dessous</div>
     </div>
 
+    
     <div class="print-gallery">
-      <h3>Bibliothèque d'imprimés <span id="printCount" style="color:var(--gray);font-weight:400;font-size:0.85rem"></span></h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.5rem">
+        <div class="zone-selector">
+          <button class="zone-btn active" id="zoneFrontBtn" onclick="setActiveZone('front')">Devant</button>
+          <button class="zone-btn" id="zoneBackBtn" onclick="setActiveZone('back')">Dos</button>
+          <button class="zone-btn" id="zoneSleeveLeftBtn" onclick="setActiveZone('sleeve-left')">Manche G</button>
+          <button class="zone-btn" id="zoneSleeveRightBtn" onclick="setActiveZone('sleeve-right')">Manche D</button>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); margin-bottom:1rem; padding-bottom:0.5rem">
+        <div class="gallery-tabs">
+          <button class="gallery-tab active" id="tabPrints" onclick="setDesignTab('print')">🎨 Imprimés</button>
+          <button class="gallery-tab" id="tabEmbroideries" onclick="setDesignTab('embroidery')">🧵 Broderies</button>
+        </div>
+        <span id="printCount" style="color:var(--gray);font-weight:400;font-size:0.85rem"></span>
+      </div>
       <div class="print-grid" id="printGrid">
         <div class="print-thumb-none" style="grid-column:1/-1">Chargement…</div>
       </div>
+    </div>
+
     </div>
   </div>
 
@@ -623,13 +659,6 @@ footer .footer-admin {
   <div class="controls-card">
     <h2>Personnaliser</h2>
 
-    <div class="ctrl-section">
-      <label class="ctrl-label">Type de produit</label>
-      <div class="size-row" id="productTypeRow">
-        <button class="size-btn selected" data-type="cap" onclick="setProductType('cap')">Casquette</button>
-        <button class="size-btn" data-type="bucket" onclick="setProductType('bucket')">Bob (Bucket Hat)</button>
-      </div>
-    </div>
 
     <div class="print-info" id="printInfo">
       <span>Aucune broderie sélectionnée — choisissez-en une ci-dessous.</span>
@@ -639,14 +668,18 @@ footer .footer-admin {
     <div id="printCustomize" style="display:none">
 
       <div class="ctrl-section">
-        <label class="ctrl-label" style="display:flex;justify-content:space-between;align-items:center">
-          <span>Zone d'application</span>
-          <button class="pg-trigger" onclick="openPlacementGuide()" title="Voir le guide de placement">Guide zones</button>
-        </label>
-        <div id="zoneGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-top:0.3rem"></div>
-        <p style="font-size:0.75rem;color:var(--gray);margin-top:0.5rem;line-height:1.4">
-          Zones calibrées pour la broderie sur mesure · Les positions correspondent aux zones réelles de broderie machine.
-        </p>
+        <label class="ctrl-label">Position sur le produit</label>
+        <div class="placement-grid" id="placementGrid">
+          <button class="placement-btn" data-preset="top-left" title="Poitrine Gauche" onclick="setPrintPlacement('top-left')">↖</button>
+          <button class="placement-btn" data-preset="top-center" title="Haut centre" onclick="setPrintPlacement('top-center')">⬆</button>
+          <button class="placement-btn" data-preset="top-right" title="Poitrine Droite" onclick="setPrintPlacement('top-right')">↗</button>
+          <button class="placement-btn" data-preset="mid-left" title="Milieu gauche" onclick="setPrintPlacement('mid-left')">⬅</button>
+          <button class="placement-btn selected" data-preset="center" title="Centre" onclick="setPrintPlacement('center')">⬤</button>
+          <button class="placement-btn" data-preset="mid-right" title="Milieu droite" onclick="setPrintPlacement('mid-right')">➡</button>
+          <button class="placement-btn" data-preset="bottom-left" title="Bas gauche" onclick="setPrintPlacement('bottom-left')">↙</button>
+          <button class="placement-btn" data-preset="bottom-center" title="Bas centre" onclick="setPrintPlacement('bottom-center')">⬇</button>
+          <button class="placement-btn" data-preset="bottom-right" title="Bas droite" onclick="setPrintPlacement('bottom-right')">↘</button>
+        </div>
       </div>
 
       <div class="ctrl-section">
@@ -768,7 +801,7 @@ footer .footer-admin {
       <div class="admin-tabs">
         <div class="admin-tab active" onclick="showAdminTab('list', this)">Broderies</div>
         <div class="admin-tab" onclick="resetPrintForm();showAdminTab('add', this)">+ Ajouter une broderie</div>
-        <div class="admin-tab" onclick="showAdminTab('settings', this)">⚙ Paramètres Headwear</div>
+        <div class="admin-tab" onclick="showAdminTab('settings', this)">⚙ Paramètres</div>
       </div>
 
       <div id="adminTabList">
@@ -855,7 +888,7 @@ footer .footer-admin {
 
       <div id="adminTabSettings" style="display:none">
         <div class="admin-form">
-          <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">Paramètres Headwear</h3>
+          <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">Paramètres</h3>
           
                     <div style="margin-top:1.5rem;">
             <label>Prix de base (FCFA)</label>
@@ -904,22 +937,24 @@ let globalSettings = {
   back_image_url: null,
   global_colors: ['#ffffff','#1a1a1a','#e63946','#457b9d','#2a9d8f','#f4a261'],
   color_mockups: [],
-  capMockupUrl: null,
-  bucketMockupUrl: null,
-  capMockupFrontUrl: null,
-  capMockupSideUrl: null,
-  capMockupBackUrl: null,
-  bucketMockupFrontUrl: null,
-  bucketMockupSideUrl: null,
-  bucketMockupBackUrl: null
+  jacketMockupUrl: null,
+  hoodieMockupUrl: null,
+  jacketMockupFrontUrl: null,
+  jacketMockupSleeveLeftUrl: null,
+  jacketMockupSleeveRightUrl: null,
+  jacketMockupBackUrl: null,
+  hoodieMockupFrontUrl: null,
+  hoodieMockupSleeveLeftUrl: null,
+  hoodieMockupSleeveRightUrl: null,
+  hoodieMockupBackUrl: null
 };
 
-globalSettings.headwearBasePrice = 9000;
+globalSettings.outerwearBasePrice = 25000;
 try {
-  const savedPrice = localStorage.getItem('ovrg_headwear_base_price');
-  if (savedPrice) globalSettings.headwearBasePrice = parseInt(savedPrice, 10);
-  globalSettings.capMockupUrl = localStorage.getItem('ovrg_cap_mockup_url');
-  globalSettings.bucketMockupUrl = localStorage.getItem('ovrg_bucket_mockup_url');
+  const savedPrice = localStorage.getItem('ovrg_outerwear_base_price');
+  if (savedPrice) globalSettings.outerwearBasePrice = parseInt(savedPrice, 10);
+  globalSettings.jacketMockupUrl = localStorage.getItem('ovrg_jacket_mockup_url');
+  globalSettings.hoodieMockupUrl = localStorage.getItem('ovrg_hoodie_mockup_url');
 } catch(e) {}
 
 const HEADWEAR_MOCKUPS_BUCKET = 'product-images';
@@ -933,10 +968,19 @@ let currentView = 'front';
 let pendingPrintImage = '';
 
 // Headwear specific states
-let productType = 'cap';
-let printPlacement = 'front-center'; window.printPlacement = 'front-center';
+let productType = 'hoodie';
+let printPlacement = 'center'; window.printPlacement = 'center';
 let printScale = 1.0;
+let printSize = 'M';    // mirrors embroiderySize — used in buildOrderItem key
 let decorMode = 'embroidery'; // 'embroidery' | 'label' | 'both'
+
+// Per-side drag/resize state (initialised to match default zone percentages)
+const designState = {
+  front:          { xPct: 35, yPct: 20, wPct: 30, hPct: 36 },
+  'sleeve-left':  { xPct: 35, yPct: 20, wPct: 30, hPct: 36 },
+  'sleeve-right': { xPct: 35, yPct: 20, wPct: 30, hPct: 36 },
+  back:           { xPct: 35, yPct: 20, wPct: 30, hPct: 36 }
+};
 
 // ── EMBROIDERY ZONES ──────────────────────────────────────────────────────────
 // Pixel coordinates on the 600×600 fallback canvas, calibrated to where each
@@ -946,51 +990,74 @@ let decorMode = 'embroidery'; // 'embroidery' | 'label' | 'both'
 // Zone format: { id, label, cx, cy, w, h }  (canvas pixel coords, 600×600 base)
 // cx/cy = centre of zone, w/h = zone dimensions.
 const EMBROIDERY_ZONES = {
-  cap: [
-    { id: 'front',        label: 'Devant Complet',cx: 305, cy: 210, w: 180, h: 200 },
-    { id: 'front-high',   label: 'Devant Haut',   cx: 305, cy: 155, w: 160, h:  90 },
-    { id: 'front-center', label: 'Devant Milieu', cx: 305, cy: 210, w: 180, h: 110 },
-    { id: 'front-low',    label: 'Devant Bas',    cx: 305, cy: 265, w: 170, h:  80 },
-    { id: 'front-left',   label: 'Devant Gauche', cx: 195, cy: 225, w: 100, h:  90 },
-    { id: 'front-right',  label: 'Devant Droite', cx: 415, cy: 225, w: 100, h:  90 },
-    { id: 'back-center',  label: 'Dos Centre',    cx: 305, cy: 300, w: 130, h:  90 },
+  jacket: [
+    { id: 'front',        label: 'Devant Complet', cx: 300, cy: 230, w: 180, h: 220 },
+    { id: 'front-left',   label: 'Poitrine Gauche',cx: 210, cy: 190, w: 100, h: 100 },
+    { id: 'front-right',  label: 'Poitrine Droite',cx: 390, cy: 190, w: 100, h: 100 },
+    { id: 'front-center-high', label: 'Centre Haut',    cx: 300, cy: 150, w: 100, h: 80 },
+    { id: 'front-center-mid',  label: 'Centre Milieu',  cx: 300, cy: 230, w: 120, h: 80 },
+    { id: 'front-center-low',  label: 'Centre Bas',     cx: 300, cy: 310, w: 120, h: 80 },
+    { id: 'back-center',  label: 'Dos Complet',    cx: 300, cy: 310, w: 220, h: 250 },
+    { id: 'back-left',    label: 'Omoplate Gauche',cx: 210, cy: 260, w: 100, h: 100 },
+    { id: 'back-right',   label: 'Omoplate Droite',cx: 390, cy: 260, w: 100, h: 100 },
+    { id: 'back-center-high', label: 'Haut du dos',cx: 300, cy: 200, w: 100, h: 80 },
+    { id: 'back-center-low',  label: 'Bas du dos', cx: 300, cy: 420, w: 120, h: 80 },
+    { id: 'sleeve-left',  label: 'Manche Gauche',  cx: 300, cy: 260, w: 100, h: 220 },
+    { id: 'sleeve-right', label: 'Manche Droite',  cx: 300, cy: 260, w: 100, h: 220 }
   ],
-  bucket: [
-    { id: 'front',        label: 'Devant Complet',cx: 300, cy: 230, w: 200, h: 200 },
-    { id: 'front-high',   label: 'Devant Haut',   cx: 300, cy: 175, w: 180, h:  90 },
-    { id: 'front-center', label: 'Devant Milieu', cx: 300, cy: 230, w: 200, h: 110 },
-    { id: 'front-low',    label: 'Devant Bas',    cx: 300, cy: 285, w: 180, h:  80 },
-    { id: 'front-left',   label: 'Devant Gauche', cx: 170, cy: 245, w: 110, h: 100 },
-    { id: 'front-right',  label: 'Devant Droite', cx: 430, cy: 245, w: 110, h: 100 },
-    { id: 'brim-front',   label: 'Bord Devant',   cx: 300, cy: 420, w: 240, h:  60 },
+  hoodie: [
+    { id: 'front',        label: 'Devant Complet', cx: 300, cy: 250, w: 200, h: 200 },
+    { id: 'front-left',   label: 'Poitrine Gauche',cx: 210, cy: 200, w: 100, h: 100 },
+    { id: 'front-right',  label: 'Poitrine Droite',cx: 390, cy: 200, w: 100, h: 100 },
+    { id: 'front-center-high', label: 'Centre Haut',    cx: 300, cy: 160, w: 100, h: 80 },
+    { id: 'front-center-mid',  label: 'Centre Milieu',  cx: 300, cy: 240, w: 120, h: 80 },
+    { id: 'front-center-low',  label: 'Centre Bas',     cx: 300, cy: 320, w: 120, h: 80 },
+    { id: 'back-center',  label: 'Dos Complet',    cx: 300, cy: 320, w: 220, h: 250 },
+    { id: 'back-left',    label: 'Omoplate Gauche',cx: 210, cy: 270, w: 100, h: 100 },
+    { id: 'back-right',   label: 'Omoplate Droite',cx: 390, cy: 270, w: 100, h: 100 },
+    { id: 'back-center-high', label: 'Haut du dos',cx: 300, cy: 210, w: 100, h: 80 },
+    { id: 'back-center-low',  label: 'Bas du dos', cx: 300, cy: 435, w: 120, h: 80 },
+    { id: 'sleeve-left',  label: 'Manche Gauche',  cx: 300, cy: 260, w: 100, h: 220 },
+    { id: 'sleeve-right', label: 'Manche Droite',  cx: 300, cy: 260, w: 100, h: 220 }
   ]
 };
 
 // Size multipliers (S / M / L)
 const EMBROIDERY_SIZES = { S: 0.65, M: 1.0, L: 1.40 };
 
-let activeZoneId    = 'front-center';
+let activeZoneId    = 'front';
+window.activeZoneId = 'front';
 let embroiderySize  = 'M';
 let scaleMultiplier = 1.0;
 
+function getZoneSide(zoneId) {
+  if (zoneId.includes('back')) return 'back';
+  if (zoneId.includes('sleeve-left')) return 'sleeve-left';
+  if (zoneId.includes('sleeve-right')) return 'sleeve-right';
+  return 'front';
+}
 
 // sides is populated once the DOM is ready (see DOMContentLoaded)
-let sides = { front: { wrap: null, canvas: null, img: null }, side: { wrap: null, canvas: null, img: null }, back: { wrap: null, canvas: null, img: null } };
-
-// ============================================================
-//  HEADWEAR MOCKUP IMAGES + RECOLORING ENGINE
-// ============================================================
-// We use plain solid-color fallback canvases — no external placeholder images needed
-const GENERIC_MOCKUPS = {
-  cap:    { front: null, side: null, back: null },
-  bucket: { front: null, side: null, back: null }
+let sides = {
+  front: { wrap: null, canvas: null, img: null },
+  'sleeve-left': { wrap: null, canvas: null, img: null },
+  'sleeve-right': { wrap: null, canvas: null, img: null },
+  back: { wrap: null, canvas: null, img: null }
 };
 
-let SHIRT_IMAGES = { front: null, side: null, back: null };
-const shirtSource = { front: null, side: null, back: null };
+// ============================================================
+//  OUTERWEAR MOCKUP IMAGES + RECOLORING ENGINE
+// ============================================================
+const GENERIC_MOCKUPS = {
+  jacket: { front: null, back: null, 'sleeve-left': null, 'sleeve-right': null },
+  hoodie: { front: null, back: null, 'sleeve-left': null, 'sleeve-right': null }
+};
+
+let SHIRT_IMAGES = { front: null, back: null, 'sleeve-left': null, 'sleeve-right': null };
+const shirtSource = { front: null, back: null, 'sleeve-left': null, 'sleeve-right': null };
 
 // ── FABRIC ANALYSIS DATA ──
-const fabricData = { front: null, side: null, back: null };
+const fabricData = { front: null, back: null, 'sleeve-left': null, 'sleeve-right': null };
 
 function analyzeFabric(side) {
   const img = shirtSource[side];
@@ -1034,7 +1101,7 @@ function analyzeFabric(side) {
 }
 
 function loadShirtImages() {
-  ['front','side','back'].forEach(side => {
+  ['front','sleeve-left','sleeve-right','back'].forEach(side => {
     const url = SHIRT_IMAGES[side];
     if (!url) {
       // No mockup uploaded yet for this side — just show the labelled placeholder
@@ -1060,7 +1127,7 @@ function loadShirtImages() {
 
 function recolorShirt(side) {
   const img = shirtSource[side];
-  const ids = { front: 'tshirt-front', side: 'tshirt-side', back: 'tshirt-back' };
+  const ids = { front: 'tshirt-front', 'sleeve-left': 'tshirt-sleeve-left', 'sleeve-right': 'tshirt-sleeve-right', back: 'tshirt-back' };
   const canvas = document.getElementById(ids[side]);
   if (!img || !canvas) return;
 
@@ -1107,7 +1174,7 @@ function initSupabase() {
 // ============================================================
 async function loadSettings() {
   try {
-    const { data, error } = await sbClient.from('showcase_settings').select('*').eq('id', 2).single();
+    const { data, error } = await sbClient.from('showcase_settings').select('*').eq('id', 4).single();
     if (error && error.code !== 'PGRST116') throw error;
     if (data) {
       if (data.global_colors && data.global_colors.length) {
@@ -1117,11 +1184,11 @@ async function loadSettings() {
       if (data.color_mockups && Array.isArray(data.color_mockups) && data.color_mockups.length) {
         globalSettings.color_mockups = data.color_mockups;
         // Also persist to localStorage for offline preview
-        try { localStorage.setItem('ovrg_headwear_color_mockups', JSON.stringify(data.color_mockups)); } catch(e) {}
+        try { localStorage.setItem('ovrg_outerwear_color_mockups', JSON.stringify(data.color_mockups)); } catch(e) {}
       } else {
         // Fallback to localStorage if Supabase returned nothing
         try {
-          const cached = localStorage.getItem('ovrg_headwear_color_mockups');
+          const cached = localStorage.getItem('ovrg_outerwear_color_mockups');
           if (cached) globalSettings.color_mockups = JSON.parse(cached);
         } catch(e) {}
       }
@@ -1130,7 +1197,7 @@ async function loadSettings() {
     console.error('Load settings error:', e);
     // On network error, try localStorage
     try {
-      const cached = localStorage.getItem('ovrg_headwear_color_mockups');
+      const cached = localStorage.getItem('ovrg_outerwear_color_mockups');
       if (cached) globalSettings.color_mockups = JSON.parse(cached);
     } catch(e2) {}
   }
@@ -1147,14 +1214,7 @@ async function loadPrints() {
       .eq('active', true)
       .order('id', { ascending: true });
     if (error) throw error;
-    
-    // Filter to only embroideries
-    prints = (data || []).filter(p => {
-      if (p.design_type) return p.design_type === 'embroidery';
-      if (p.category && p.category.startsWith('Broderie')) return true;
-      return false;
-    });
-    
+    prints = data || [];
     renderPrintGrid();
   } catch(e) {
     console.error('Load prints error:', e);
@@ -1163,15 +1223,71 @@ async function loadPrints() {
   }
 }
 
+/* replaced by update script */
+
+// ============================================================
+//  IMAGE PRE-LOAD CACHE — prevents async race in 2D renderer
+// ============================================================
+const _printImageCache = {};   // url → HTMLImageElement (fully loaded)
+
+function _preloadImage(url) {
+  if (!url || _printImageCache[url]) return Promise.resolve(_printImageCache[url] || null);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = () => { _printImageCache[url] = img; resolve(img); };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+// Map zone id → 2D canvas side
+function getZoneSide(zoneId) {
+  if (!zoneId) return 'front';
+  if (zoneId === 'back' || zoneId === 'back-center') return 'back';
+  if (zoneId === 'sleeve-left')  return 'sleeve-left';
+  if (zoneId === 'sleeve-right') return 'sleeve-right';
+  return 'front';
+}
+
+// ── MULTI-ZONE ENGINE ──
+let activeDesignTab = 'print'; // 'print' or 'embroidery'
+window.zoneCustomizations = window.zoneCustomizations || {};
+window.selectedPrints = window.selectedPrints || {};
+
+function setDesignTab(tab) {
+  activeDesignTab = tab;
+  document.getElementById('tabPrints').classList.toggle('active', tab === 'print');
+  document.getElementById('tabEmbroideries').classList.toggle('active', tab === 'embroidery');
+  renderPrintGrid();
+}
+
+
+function getDesignType(p) {
+  if (p.design_type) return p.design_type;
+  if (p.category && p.category.startsWith('Broderie')) return 'embroidery';
+  return 'print';
+}
+
+function getFilteredPrints() {
+  return prints.filter(p => getDesignType(p) === activeDesignTab);
+}
+
+// Override renderPrintGrid
 function renderPrintGrid() {
   const grid = document.getElementById('printGrid');
-  if (document.getElementById('printCount')) document.getElementById('printCount').textContent = `(${prints.length})`;
-  if (!prints.length) {
-    grid.innerHTML = `<div class="print-thumb-none" style="grid-column:1/-1">Aucun imprimé disponible pour le moment.</div>`;
+  const filtered = getFilteredPrints();
+  if (document.getElementById('printCount')) document.getElementById('printCount').textContent = `(${filtered.length})`;
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="print-thumb-none" style="grid-column:1/-1">Aucun design disponible dans cette catégorie.</div>`;
     return;
   }
-  grid.innerHTML = prints.map(p => `
-    <div class="print-thumb${selectedPrint && selectedPrint.id===p.id ? ' selected':''}" onclick='selectPrint(${JSON.stringify(p).replace(/'/g,"&#39;")})'>
+  
+  const currentConfig = window.zoneCustomizations[activeZoneId] || {};
+  const activePrintId = currentConfig.print && currentConfig.print.id;
+
+  grid.innerHTML = filtered.map(p => `
+    <div class="print-thumb${activePrintId === p.id ? ' selected':''}" onclick='selectPrint(${JSON.stringify(p).replace(/'/g,"&#39;")})'>
       ${p.image_url
         ? `<img src="${p.image_url}" alt="${p.name}">`
         : `<div class="print-thumb-none">${p.name}</div>`}
@@ -1179,38 +1295,114 @@ function renderPrintGrid() {
     </div>`).join('');
 }
 
+// Override selectPrint — maps selections to zoneCustomizations
 function selectPrint(p) {
-  selectedPrint = p;
-  document.getElementById('printInfo').innerHTML = `<span>Broderie sélectionnée : <strong>${p.name}</strong>${p.category ? ' • ' + p.category : ''}</span>`;
-  document.getElementById('printCustomize').style.display = '';
-  renderZoneButtons();   // rebuild zone selector for current product type
-
-  updatePrice();
-
-  if (window.applyHeadwearPrint && (decorMode === 'embroidery' || decorMode === 'both')) {
-    window.applyHeadwearPrint(p.image_url || null);
+  // activeZoneId is now the side ('front', 'back', 'sleeve-left', 'sleeve-right')
+  const zone = activeZoneId;
+  if (!window.zoneCustomizations[zone]) {
+    window.zoneCustomizations[zone] = {};
   }
+  const config = window.zoneCustomizations[zone];
 
-  // Load print image into sides.img for 2D overlays
-  if (p.image_url) {
-    const img = new Image();
-    img.crossOrigin = 'Anonymous';
-    img.src = p.image_url;
-    img.onload = () => {
-      sides.front.img = img;
-      sides.side.img = img;
-      sides.back.img = img;
-      scheduleRender();
-    };
+  if (config.print && config.print.id === p.id) {
+    // Toggle off — deselect
+    config.print = null;
+    config.printUrl = null;
+    config.printImg = null;
+    delete window.selectedPrints[zone];
   } else {
-    sides.front.img = null;
-    sides.side.img = null;
-    sides.back.img = null;
-    scheduleRender();
+    // Select
+    config.print = p;
+    config.printUrl = p.image_url || null;
+    config.type = getDesignType(p);
+    // Save current placement and scale into this zone's config
+    config.placement = typeof printPlacement !== 'undefined' ? printPlacement : 'center';
+    config.preset = config.placement;
+    config.scale = typeof scaleMultiplier !== 'undefined' ? scaleMultiplier : 1.0;
+    window.selectedPrints[zone] = p;
   }
 
+  // Keep global selectedPrint in sync with the active zone's selection
+  selectedPrint = config.print || null;
+
+  if (!config.print && !config.labelText) {
+    delete window.zoneCustomizations[zone];
+  }
+
+  if (window.setZoneCustomization) {
+    if (window.zoneCustomizations[zone]) {
+      window.setZoneCustomization(zone, window.zoneCustomizations[zone]);
+    } else if (window.clearZoneCustomization) {
+      window.clearZoneCustomization(zone);
+    }
+  }
+
+  updateZoneUI();
+  updatePrice();
   renderPrintGrid();
+  scheduleRender();
 }
+
+
+
+function updateZoneUI() {
+  const config = window.zoneCustomizations[activeZoneId] || {};
+  const hasPrint = !!config.print;
+  const p = config.print;
+  
+  const zoneLabel = {
+    'front': 'Devant', 'back': 'Dos',
+    'sleeve-left': 'Manche G', 'sleeve-right': 'Manche D'
+  }[activeZoneId] || activeZoneId;
+
+  if (hasPrint) {
+    const icon = config.type === 'embroidery' ? '🧵' : '🎨';
+    const typeName = config.type === 'embroidery' ? 'Broderie' : 'Imprimé';
+    document.getElementById('printInfo').innerHTML = `<span>${icon}</span> <span>${typeName} (${zoneLabel}) : <strong>${p.name}</strong></span>`;
+  } else {
+    document.getElementById('printInfo').innerHTML = `<span>✨</span> <span>Zone ${zoneLabel} — Aucun design sélectionné</span>`;
+  }
+  
+  document.getElementById('printCustomize').style.display = '';
+}
+
+// Override updatePrice for multi-zone
+function updatePrice() {
+  let total = globalSettings.headwearBasePrice || 9000;
+  
+  // Surcharges per zone
+  for (const zoneId in window.zoneCustomizations) {
+    const config = window.zoneCustomizations[zoneId];
+    if (config.print) {
+      if (config.type === 'embroidery') {
+        total += 9000;
+      } else {
+        total += (config.print.price != null ? config.print.price : 10000);
+      }
+    }
+    if (config.labelText) {
+      const chars = config.labelText.replace(/\s/g, '').length;
+      total += chars * 150;
+    }
+  }
+  
+  document.getElementById('priceMain').textContent = fmt(total);
+}
+
+// Push ALL active zone prints to the 3D viewer
+function _syncAll3DZones() {
+  if (window.setZoneCustomization) {
+    ['front', 'back', 'sleeve-left', 'sleeve-right'].forEach(zone => {
+      if (window.zoneCustomizations[zone]) {
+        window.setZoneCustomization(zone, window.zoneCustomizations[zone]);
+      } else {
+        window.clearZoneCustomization && window.clearZoneCustomization(zone);
+      }
+    });
+  }
+}
+
+
 
 
 // ── DECORATION MODE ─────────────────────────────────────────────────────
@@ -1238,75 +1430,70 @@ function setDecorMode(mode) {
 
 // ── LABEL HANDLER ─────────────────────────────────────────────────────
 function onLabelChange() {
-  const text  = (document.getElementById('customLabelInput')?.value || '').toUpperCase().trim();
-  const color = document.getElementById('customLabelColor')?.value || '#ffffff';
-  const previewRow  = document.getElementById('labelPreviewRow');
-  const previewSpan = document.getElementById('labelPreviewText');
-  if (previewRow && previewSpan) {
-    if (text) {
-      previewRow.style.display  = '';
-      previewSpan.textContent   = text;
-      previewSpan.style.color   = color;
-      previewSpan.style.textShadow = color === '#ffffff'
-        ? '0 0 6px rgba(0,0,0,0.8)' : '0 0 6px rgba(255,255,255,0.5)';
-    } else {
-      previewRow.style.display = 'none';
-    }
+  const inputEl = document.getElementById('customLabelInput');
+  const colorEl = document.getElementById('customLabelColor');
+  const text = (inputEl?.value || '').toUpperCase().trim();
+  const color = colorEl?.value || '#ffffff';
+  // Update zone customizations
+  if (window.zoneCustomizations[activeZoneId]) {
+    window.zoneCustomizations[activeZoneId].labelText = text;
+    window.zoneCustomizations[activeZoneId].labelColor = color;
+  } else if (text) {
+    window.zoneCustomizations[activeZoneId] = { labelText: text, labelColor: color };
   }
-  const showLabel = decorMode === 'label' || decorMode === 'both';
-  if (window.applyHeadwearLabel)
-    window.applyHeadwearLabel(showLabel ? text : '', color);
+  // Update preview UI
+  const previewRow = document.getElementById('labelPreviewRow');
+  const previewText = document.getElementById('labelPreviewText');
+  if (previewRow) previewRow.style.display = text ? '' : 'none';
+  if (previewText) previewText.textContent = text;
+  // Apply to 3D viewer if exists
+  if (window.applyHeadwearLabel) {
+    window.applyHeadwearLabel(text, color);
+  }
   updatePrice();
   scheduleRender();
 }
 
-
-// ── PRICE CALCULATION ─────────────────────────────────────────────────────
-function updatePrice() {
-  const basePrice = selectedPrint && selectedPrint.price != null
-    ? selectedPrint.price
-    : globalSettings.headwearBasePrice || 9000;
-
-  const showLabel = decorMode === 'label' || decorMode === 'both';
-  let labelSurcharge = 0;
-  if (showLabel) {
-    const labelText = (document.getElementById('customLabelInput')?.value || '').trim();
-    labelSurcharge = labelText.length * 150;
-  }
-
-  const total = basePrice + labelSurcharge;
-  const priceEl = document.getElementById('priceMain');
-  if (priceEl) priceEl.textContent = fmt(total);
-
-  const noteEl = document.getElementById('priceNote');
-  if (noteEl) {
-    if (labelSurcharge > 0) {
-      noteEl.textContent = `Broderie ${fmt(basePrice)} + Label ${fmt(labelSurcharge)} • livraison à Abidjan`;
-    } else {
-      noteEl.textContent = `${decorMode === 'label' ? 'Label' : 'Broderie'} sur mesure • livraison à Abidjan`;
-    }
-  }
-}
-
 function switchView(view) {
+  if (currentView === view) return; // prevent infinite loop from setActiveZone
   currentView = view;
-
-  // Update button active states
-  document.querySelectorAll('.view-btn').forEach(btn => {
-    const onclick = btn.getAttribute('onclick') || '';
-    btn.classList.toggle('active', onclick.includes(`'${view}'`));
-  });
-
-  // Show / hide the appropriate mockup containers
-  ['front','side','back','3d'].forEach(v => {
+  ['front', 'sleeve-left', 'sleeve-right', 'back', '3d'].forEach(v => {
     const el = document.getElementById(v === '3d' ? '3d-view' : v + '-view');
-    if (el) el.style.display = v === view ? 'block' : 'none';
+    if (el) el.style.display = v === view ? (v === '3d' ? 'block' : 'inline-block') : 'none';
   });
 
-  // Rebuild zone buttons so they filter to the current view
-  renderZoneButtons();
+  // Update view nav buttons
+  document.getElementById('front-btn')?.classList.toggle('active', view === 'front');
+  document.getElementById('side-btn')?.classList.toggle('active', view === 'sleeve-left');
+  document.getElementById('right-btn')?.classList.toggle('active', view === 'sleeve-right');
+  document.getElementById('back-btn')?.classList.toggle('active', view === 'back');
+
+  // Update zone selector bar
+  document.getElementById('zoneFrontBtn')?.classList.toggle('active', view === 'front');
+  document.getElementById('zoneBackBtn')?.classList.toggle('active', view === 'back');
+  document.getElementById('zoneSleeveLeftBtn')?.classList.toggle('active', view === 'sleeve-left');
+  document.getElementById('zoneSleeveRightBtn')?.classList.toggle('active', view === 'sleeve-right');
 
   if (view !== '3d') {
+    // Sync activeZoneId to match the view WITHOUT calling switchView again
+    activeZoneId = view;
+    window.activeZoneId = view;
+
+    // Restore print and placement for this zone
+    const zc = window.zoneCustomizations[view];
+    selectedPrint = window.selectedPrints[view] || null;
+    if (zc && zc.placement) {
+      setPrintPlacement(zc.placement, false);
+    }
+    if (zc && zc.scale) {
+      scaleMultiplier = zc.scale;
+      const slider = document.getElementById('scaleSlider');
+      if (slider) { slider.value = Math.round(scaleMultiplier * 100); updateSliderBg(slider); }
+    }
+
+    // Update the info panel
+    updateZoneUI();
+
     if (shirtSource[view]) {
       recolorShirt(view);
     } else {
@@ -1319,18 +1506,12 @@ function switchView(view) {
   if (view === '3d' && window.trigger3DResize) {
     setTimeout(() => {
       window.trigger3DResize();
-      // Rebuild decal after resize so it has correct dimensions
-      if (window.applyHeadwearPrint || window.applyHeadwearLabel) {
-        const decorMode_ = typeof decorMode !== 'undefined' ? decorMode : 'embroidery';
-        const print_ = typeof selectedPrint !== 'undefined' ? selectedPrint : null;
-        const showPrint = decorMode_ === 'embroidery' || decorMode_ === 'both';
-        const showLabel = decorMode_ === 'label' || decorMode_ === 'both';
-        if (showPrint && print_ && window.applyHeadwearPrint) window.applyHeadwearPrint(print_.image_url || null);
-        if (showLabel && window.applyHeadwearLabel) {
-          const text = document.getElementById('customLabelInput')?.value || '';
-          const color = document.getElementById('customLabelColor')?.value || '#ffffff';
-          window.applyHeadwearLabel(text, color);
-        }
+      // Sync all zone decals to the 3D viewer
+      _syncAll3DZones();
+      if (window.applyHeadwearLabel) {
+        const text = document.getElementById('customLabelInput')?.value || '';
+        const color = document.getElementById('customLabelColor')?.value || '#ffffff';
+        if (text) window.applyHeadwearLabel(text, color);
       }
     }, 100);
   }
@@ -1347,20 +1528,28 @@ function handleAdminClick() {
 
 function setProductType(type) {
   productType = type;
-  activeZoneId = 'front-center';   // reset to front zone on type change
-
-  document.querySelectorAll('#productTypeRow .size-btn').forEach(btn => {
+  activeZoneId = 'front';   // reset to front zone on type change
+  printPlacement = 'center';
+  window.printPlacement = 'center';
+  // Reset placement grid
+  document.querySelectorAll('#placementGrid .placement-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.preset === 'center');
+  });
+  // #productTypeRow is not present on this page — skip safely
+  document.querySelectorAll('[data-type]').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.type === type);
   });
 
-  // Rebuild zone buttons for the new product type
-  renderZoneButtons();
 
-  updateShirtImagesForColor(selectedColor);
+  if (globalSettings.global_colors) {
+    renderColorOptions(globalSettings.global_colors);
+  } else {
+    updateShirtImagesForColor(selectedColor);
+  }
 
   if (window.load3DModel) {
     const SUPABASE_MODEL_URL = 'https://mihpdlhbijlvbdcqvzdw.supabase.co/storage/v1/object/public/product-images/models';
-    const modelUrl = type === 'cap' ? `${SUPABASE_MODEL_URL}/cap.glb` : `${SUPABASE_MODEL_URL}/bucket.glb`;
+    const modelUrl = type === 'jacket' ? `${SUPABASE_MODEL_URL}/jacket.glb` : `${SUPABASE_MODEL_URL}/hoodie.glb`;
     window.load3DModel(modelUrl);
   }
 }
@@ -1372,38 +1561,87 @@ function setProductType(type) {
 // ============================================================
 // ── ZONE SYSTEM ───────────────────────────────────────────────────────────────
 
-function getActiveZone() {
-  const zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.cap;
-  return zones.find(z => z.id === activeZoneId) || zones[0];
-}
-
-// Build the zone selector buttons dynamically for the current product type
-function renderZoneButtons() {
-  const grid = document.getElementById('zoneGrid');
-  if (!grid) return;
-  let zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.cap;
-  if (currentView && currentView !== '3d') {
-    zones = zones.filter(z => z.id.startsWith(currentView));
+function getZoneIdForSideAndPreset(side, preset) {
+  if (side === 'front') {
+    if (preset === 'top-left') return 'front-left';
+    if (preset === 'top-center') return 'front-center-high';
+    if (preset === 'top-right') return 'front-right';
+    if (preset === 'center') return 'front-center-mid';
+    if (preset === 'bottom-center') return 'front-center-low';
+    return 'front';
   }
-  grid.innerHTML = zones.map(z => `
-    <button class="size-btn${z.id === activeZoneId ? ' selected' : ''}"
-            data-zone="${z.id}"
-            onclick="setZone('${z.id}')"
-            style="font-size:0.78rem;padding:0.5rem 0.6rem">
-      ${z.label}
-    </button>`).join('');
+  if (side === 'back') {
+    if (preset === 'top-left') return 'back-left';
+    if (preset === 'top-center') return 'back-center-high';
+    if (preset === 'top-right') return 'back-right';
+    if (preset === 'center') return 'back-center';
+    if (preset === 'bottom-center') return 'back-center-low';
+    return 'back-center';
+  }
+  if (side === 'sleeve-left') return 'sleeve-left';
+  if (side === 'sleeve-right') return 'sleeve-right';
+  return 'front';
 }
 
-function setZone(zoneId) {
-  activeZoneId  = zoneId;
-  printPlacement = zoneId;
-  window.printPlacement = zoneId;
-  // Highlight selected button
-  document.querySelectorAll('#zoneGrid .size-btn').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.zone === zoneId);
+function getActiveZone() {
+  const zId = getZoneIdForSideAndPreset(activeZoneId, printPlacement);
+  const zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.jacket;
+  return zones.find(z => z.id === zId) || zones[0];
+}
+
+function setActiveZone(zone) {
+  // Update active zone and sync the view to it
+  activeZoneId = zone;
+  window.activeZoneId = zone;
+  ['front', 'back', 'sleeve-left', 'sleeve-right'].forEach(z => {
+    const id = { 'front': 'zoneFrontBtn', 'back': 'zoneBackBtn', 'sleeve-left': 'zoneSleeveLeftBtn', 'sleeve-right': 'zoneSleeveRightBtn' }[z];
+    document.getElementById(id)?.classList.toggle('active', z === zone);
   });
-  scheduleRender();
-  _sync3DOverlay();
+  // Switch the mockup view to match without triggering loop
+  switchView(zone);
+
+  // Restore print selection for this zone
+  const zc = window.zoneCustomizations[zone];
+  selectedPrint = window.selectedPrints[zone] || null;
+  if (zc && zc.placement) {
+    setPrintPlacement(zc.placement, false);
+  } else {
+    setPrintPlacement('center', false);
+  }
+  if (zc && zc.scale) {
+    scaleMultiplier = zc.scale;
+    const slider = document.getElementById('scaleSlider');
+    if (slider) { slider.value = Math.round(scaleMultiplier * 100); updateSliderBg(slider); }
+  }
+
+  updateZoneUI();
+}
+
+function setPrintPlacement(preset, render = true) {
+  printPlacement = preset;
+  window.printPlacement = preset;
+  
+  document.querySelectorAll('#placementGrid .placement-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.preset === preset);
+  });
+  
+  // Save preset AND current scale to the zone customization
+  if (!window.zoneCustomizations[activeZoneId]) {
+    window.zoneCustomizations[activeZoneId] = {};
+  }
+  if (window.zoneCustomizations[activeZoneId].print) {
+    window.zoneCustomizations[activeZoneId].placement = preset;
+    window.zoneCustomizations[activeZoneId].preset = preset;
+    window.zoneCustomizations[activeZoneId].scale = scaleMultiplier;
+    if (window.setZoneCustomization) {
+      window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
+    }
+  }
+  
+  if (render) {
+    scheduleRender();
+    _sync3DOverlay();
+  }
 }
 
 function updateSliderBg(slider) {
@@ -1420,6 +1658,14 @@ function onScaleSliderInput(val) {
   const el = document.getElementById('scaleDisplay');
   if (el) el.textContent = val + '%';
   
+  // Save scale to current zone customization
+  if (window.zoneCustomizations[activeZoneId]) {
+    window.zoneCustomizations[activeZoneId].scale = scaleMultiplier;
+    if (window.setZoneCustomization) {
+      window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
+    }
+  }
+
   // Sync S/M/L buttons selection state based on value
   document.querySelectorAll('[data-scale]').forEach(btn => {
     const scale = btn.dataset.scale;
@@ -1433,9 +1679,18 @@ function onScaleSliderInput(val) {
 
 function setEmbroiderySize(sz) {
   embroiderySize = sz;
+  printSize = sz;   // keep global in sync for buildOrderItem
   const mults = { S: 0.65, M: 1.0, L: 1.40 };
   scaleMultiplier = mults[sz];
   
+  // Save scale to current zone customization
+  if (window.zoneCustomizations[activeZoneId]) {
+    window.zoneCustomizations[activeZoneId].scale = scaleMultiplier;
+    if (window.setZoneCustomization) {
+      window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
+    }
+  }
+
   const el = document.getElementById('scaleDisplay');
   if (el) el.textContent = sz;
   
@@ -1452,30 +1707,14 @@ function setEmbroiderySize(sz) {
   _sync3DOverlay();
 }
 
-// Push zone + size to the 3D overlay — fully re-applies the current print to the active zone
-// so that zone-change and size-change are both reflected in the 3D viewer.
+// Push zone + size to the 3D overlay
 function _sync3DOverlay() {
   const z    = getActiveZone();
   const mult = scaleMultiplier;
-  const scaleFrac = (z.w * mult) / 600;
-
+  // Convert canvas px (600×600 base) to fraction of canvas size
+  const scaleFrac = (z.w * mult) / 600;   // fraction of model bounding box
   if (window.setHeadwearDecalScale) window.setHeadwearDecalScale(scaleFrac * 100);
-
-  // Re-apply the current print / label to the newly active zone
-  if (window.applyHeadwearPrint || window.applyHeadwearLabel) {
-    const showPrint = (decorMode === 'embroidery' || decorMode === 'both');
-    const showLabel = (decorMode === 'label'       || decorMode === 'both');
-    const print_ = typeof selectedPrint !== 'undefined' ? selectedPrint : null;
-    if (showPrint && print_ && window.applyHeadwearPrint) {
-      window.applyHeadwearPrint(print_.image_url || null);
-    } else if (showLabel && window.applyHeadwearLabel) {
-      const txt   = document.getElementById('customLabelInput')?.value?.trim() || '';
-      const color = document.getElementById('customLabelColor')?.value || '#ffffff';
-      window.applyHeadwearLabel(txt, color);
-    }
-  }
 }
-
 
 // ── CANVAS RENDER — showcase pipeline, adapted for zone-based headwear ─────────
 // Uses the FLOATING OVERLAY canvas (s.wrap / s.canvas) identical to showcase.html.
@@ -1497,16 +1736,29 @@ function renderDesign(side) {
   if (!hasPrint && !hasLabel) { s.wrap.style.display = 'none'; return; }
 
   // ── Get wrapper dimensions ────────────────────────────────────────────────
-  const wrapId = { front: 'front-view', side: 'side-view', back: 'back-view' };
+  const wrapId = { front: 'front-view', 'sleeve-left': 'sleeve-left-view', 'sleeve-right': 'sleeve-right-view', back: 'back-view' };
   const wrapper = document.getElementById(wrapId[side]);
   if (!wrapper) return;
   const rect = wrapper.getBoundingClientRect();
   const wW = rect.width, wH = rect.height;
-  if (wW < 10 || wH < 10) { requestAnimationFrame(() => renderDesign(side)); return; }
+  // Only defer if this view is the one currently visible — avoid infinite RAF loops for hidden views
+  if (wW < 10 || wH < 10) { if (currentView === side) requestAnimationFrame(() => renderDesign(side)); return; }
 
   // ── Map active zone (600×600 base coords) → % of wrapper ─────────────────
-  const zone = getActiveZone();
-  const mult = scaleMultiplier;
+  // Find which side actually has a customization.
+  let customized = window.zoneCustomizations[side];
+  if (!customized || (!customized.print && !customized.labelText)) {
+    s.wrap.style.display = 'none'; return;
+  }
+
+  // Get the sub-zone (e.g. front-left) based on the placement preset
+  const preset = customized.placement || 'center';
+  const subZoneId = getZoneIdForSideAndPreset(side, preset);
+
+  const zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.jacket;
+  const zone = zones.find(z => z.id === subZoneId) || zones[0];
+  const mult = (customized.scale || scaleMultiplier);
+  
   // Zone is defined in 600×600 px space; wrapper height is ~600px rendered size.
   // Convert to % of displayed wrapper.
   const zWpx = zone.w * mult;
@@ -1664,7 +1916,8 @@ function renderDesign(side) {
 
 // Draw a print image into a region of tmpCtx, respecting aspect ratio + padding
 function _renderImageToCtx(tmpCtx, img, x, y, w, h, padding = 0.05) {
-  if (!img) return;
+  if (!img || !img.complete || img.naturalWidth === 0) return;
+
   const pw = w * (1 - padding * 2);
   const ph = h * (1 - padding * 2);
   const ir = img.naturalWidth / img.naturalHeight;
@@ -1696,7 +1949,7 @@ function _renderLabelToCtx(tmpCtx, x, y, w, h) {
 
 
 function paintFallbackCanvas(side) {
-  const ids = { front: 'tshirt-front', side: 'tshirt-side', back: 'tshirt-back' };
+  const ids = { front: 'tshirt-front', 'sleeve-left': 'tshirt-sleeve-left', 'sleeve-right': 'tshirt-sleeve-right', back: 'tshirt-back' };
   const canvas = document.getElementById(ids[side] || 'tshirt-front');
   if (!canvas) return;
 
@@ -1709,77 +1962,30 @@ function paintFallbackCanvas(side) {
 
   const col = (typeof selectedColor !== 'undefined' && selectedColor) ? selectedColor : '#ffffff';
 
-  if (typeof productType !== 'undefined' && productType === 'bucket') {
-    // ── Bob / Bucket hat silhouette ─────────────────────────────────
-    ctx.save();
-    // Brim (flat circle)
-    ctx.beginPath();
-    ctx.ellipse(300, 440, 230, 55, 0, 0, Math.PI * 2);
-    ctx.fillStyle = col;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.20)';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    // Crown (rounded dome)
-    ctx.beginPath();
-    ctx.moveTo(100, 410);
-    ctx.bezierCurveTo(80, 250, 130, 100, 300, 90);
-    ctx.bezierCurveTo(470, 100, 520, 250, 500, 410);
-    ctx.fillStyle = col;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.20)';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-    ctx.restore();
-  } else {
-    // ── Cap silhouette ───────────────────────────────────────────────
-    ctx.save();
-    // Crown
-    ctx.beginPath();
-    ctx.moveTo(100, 360);
-    ctx.bezierCurveTo(80, 180, 160, 80, 300, 70);
-    ctx.bezierCurveTo(440, 80, 500, 180, 510, 360);
-    ctx.closePath();
-    ctx.fillStyle = col;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.22)';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    // Visor / brim
-    ctx.beginPath();
-    ctx.moveTo(100, 360);
-    ctx.bezierCurveTo(80, 375, 60, 390, 50, 410);
-    ctx.bezierCurveTo(80, 430, 200, 445, 305, 440);
-    ctx.bezierCurveTo(200, 435, 110, 410, 110, 390);
-    ctx.bezierCurveTo(115, 375, 120, 368, 130, 365);
-    ctx.fillStyle = _shadedColor(col, -0.10);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.22)';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    // Sweatband line
-    ctx.beginPath();
-    ctx.moveTo(100, 360);
-    ctx.bezierCurveTo(200, 375, 400, 378, 510, 360);
-    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-    ctx.lineWidth = 4;
-    ctx.stroke();
-
-    // Front panel stitching lines (subtle)
-    ctx.beginPath();
-    ctx.moveTo(300, 70); ctx.lineTo(300, 355);
-    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.restore();
-  }
+  // Generic outerwear silhouette
+  ctx.save();
+  ctx.beginPath();
+  // Simple shirt shape (for fallback only)
+  ctx.moveTo(150, 150); // Left shoulder
+  ctx.lineTo(250, 100); // Neck left
+  ctx.lineTo(350, 100); // Neck right
+  ctx.lineTo(450, 150); // Right shoulder
+  ctx.lineTo(550, 300); // Right sleeve end
+  ctx.lineTo(450, 350); // Right armpit
+  ctx.lineTo(450, 550); // Right bottom
+  ctx.lineTo(150, 550); // Left bottom
+  ctx.lineTo(150, 350); // Left armpit
+  ctx.lineTo(50, 300);  // Left sleeve end
+  ctx.closePath();
+  ctx.fillStyle = col;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.20)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.restore();
 
   // Side label if no mockup
-  const label = side === 'front' ? 'Devant' : side === 'side' ? 'Côté' : 'Dos';
+  const label = side === 'front' ? 'Devant' : side === 'back' ? 'Dos' : side === 'sleeve-left' ? 'Manche Gauche' : 'Manche Droite';
   ctx.fillStyle = 'rgba(0,0,0,0.30)';
   ctx.font = 'bold 18px DM Sans, sans-serif';
   ctx.textAlign = 'center';
@@ -1810,8 +2016,24 @@ let selectedColor = '#ffffff';
 function renderColorOptions(colors) {
   const row = document.getElementById('colorRow');
   if (!row) return;
-  row.innerHTML = colors.map((c,i) => `<button class="color-swatch${i===0?' selected':''}" style="background:${c}" data-color="${c}" title="${COLOR_NAMES[c]||c}"></button>`).join('');
-  selectedColor = colors[0];
+
+  let availableColors = colors;
+  if (globalSettings.color_mockups) {
+    availableColors = colors.filter(c => {
+      const m = globalSettings.color_mockups.find(mock => mock.hex.toLowerCase() === c.toLowerCase());
+      if (!m) return false;
+      if (productType === 'jacket') return m.jacket_front || m.jacket_side || m.jacket_back;
+      return m.hoodie_front || m.hoodie_side || m.hoodie_back;
+    });
+  }
+  if (availableColors.length === 0) availableColors = colors; // fallback if none match
+
+  row.innerHTML = availableColors.map((c,i) => `<button class="color-swatch${i===0?' selected':''}" style="background:${c}" data-color="${c}" title="${COLOR_NAMES[c]||c}"></button>`).join('');
+  
+  if (!availableColors.includes(selectedColor)) {
+    selectedColor = availableColors[0];
+  }
+  
   if (window.setShirtColor) window.setShirtColor(selectedColor);
   updateShirtImagesForColor(selectedColor);
 }
@@ -1908,20 +2130,43 @@ function initDraggable(side) {
 }
 
 function renderAllDesigns() {
-  ['front', 'side', 'back'].forEach(s => renderDesign(s));
+  ['front', 'sleeve-left', 'sleeve-right', 'back'].forEach(s => renderDesign(s));
+}
+
+function _syncZoneImagesAndRender() {
+  const pendingLoads = [];
+
+  ['front','back','sleeve-left','sleeve-right'].forEach(zone => {
+    if (!sides[zone]) return;
+    const zCfg = window.zoneCustomizations[zone];
+    if (zCfg && zCfg.print && zCfg.print.image_url) {
+      if (!sides[zone].img || sides[zone].img.src !== zCfg.print.image_url) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        const p = new Promise(res => {
+          img.onload  = res;
+          img.onerror = res;
+        });
+        img.src = zCfg.print.image_url;
+        sides[zone].img = img;
+        pendingLoads.push(p);
+      }
+    } else {
+      sides[zone].img = null;
+    }
+  });
+
+  Promise.all(pendingLoads).then(() => {
+    renderAllDesigns();
+  });
 }
 
 function scheduleRender() {
   if (_renderRAF) return;   // deduplicate within the same frame
   _renderRAF = requestAnimationFrame(() => {
     _renderRAF = null;
-    // Overlay designs on each side (the shirt base is drawn by recolorShirt / paintFallbackCanvas
-    // which are called separately when mockup images load — no need to call here)
-    renderAllDesigns();
-    // Sync 3D overlay
-    if (window.setPrintTransform) {
-      window.setPrintTransform({ scale: 1.0, preset: activeZoneId, blend: EMBROIDERY_BLEND });
-    }
+    _syncZoneImagesAndRender();
+    _syncAll3DZones();
   });
 }
 
@@ -2014,22 +2259,15 @@ function showAdminTab(tab, el) {
 
 async function loadAdminPrints() {
   const list = document.getElementById('adminPrintList');
-  list.innerHTML = `<p style="color:#666;text-align:center;padding:2rem">Chargement des broderies...</p>`;
+  list.innerHTML = `<p style="color:#666;text-align:center;padding:2rem">Chargement...</p>`;
   try {
     const { data, error } = await sbClient.from(PRINTS_TABLE).select('*').order('id', { ascending: true });
     if (error) throw error;
-    // Filter to only show broderies/embroideries in the headwear admin panel
-    const embroideries = (data || []).filter(p => {
-      if (p.design_type && p.design_type === 'embroidery') return true;
-      if (p.category && p.category.startsWith('Broderie')) return true;
-      return false;
-    });
-    renderAdminPrintList(embroideries);
+    renderAdminPrintList(data || []);
   } catch(e) {
     list.innerHTML = `<p style="color:#f87171;text-align:center;padding:2rem">Table non configurée.</p>`;
   }
 }
-
 
 let adminPrintsData = []; 
 
@@ -2038,8 +2276,8 @@ function renderAdminPrintList(items) {
   const list = document.getElementById('adminPrintList');
   if (!items.length) {
     list.innerHTML = `<div style="text-align:center;padding:2.5rem;color:#555">
-      <div style="font-size:2.2rem;margin-bottom:0.8rem">🧵</div>
-      <p>Aucune broderie. Ajoutez-en une via "+ Ajouter une broderie".</p>
+      <div style="font-size:2.2rem;margin-bottom:0.8rem">🎨</div>
+      <p>Aucun imprimé.</p>
     </div>`;
     return;
   }
@@ -2200,8 +2438,8 @@ function loadAdminSettingsUI() {
   if (pendingColorMockups.length === 0 && globalSettings.global_colors && globalSettings.global_colors.length > 0) {
     pendingColorMockups = globalSettings.global_colors.map(c => ({
       hex: c,
-      cap_front: null, cap_side: null, cap_back: null,
-      bucket_front: null, bucket_side: null, bucket_back: null
+      jacket_front: null, jacket_side: null, jacket_back: null,
+      hoodie_front: null, hoodie_side: null, hoodie_back: null
     }));
   }
   renderSettingsColorMockups();
@@ -2225,46 +2463,46 @@ function renderSettingsColorMockups() {
         <button class="btn-cancel-login" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="removeColorMockup(${i})">Supprimer</button>
       </div>
       
-      <h4 style="margin-bottom:0.5rem; color:#888; font-size:0.9rem;">Casquette</h4>
+      <h4 style="margin-bottom:0.5rem; color:#888; font-size:0.9rem;">Veste</h4>
       <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem; margin-bottom:1.5rem">
         <div>
           <label style="font-size:0.8rem">Devant</label>
-          <div class="upload-slot" id="slot_cap_front_${i}" style="height:80px; min-height:80px;">
-            ${m.cap_front ? '<img src="' + m.cap_front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_cap_front_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'cap_front\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_cap_front_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'cap_front\')">'}
+          <div class="upload-slot" id="slot_jacket_front_${i}" style="height:80px; min-height:80px;">
+            ${m.jacket_front ? '<img src="' + m.jacket_front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_jacket_front_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_front\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_jacket_front_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_front\')">'}
           </div>
         </div>
         <div>
           <label style="font-size:0.8rem">Côté</label>
-          <div class="upload-slot" id="slot_cap_side_${i}" style="height:80px; min-height:80px;">
-            ${m.cap_side ? '<img src="' + m.cap_side + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_cap_side_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'cap_side\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_cap_side_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'cap_side\')">'}
+          <div class="upload-slot" id="slot_jacket_side_${i}" style="height:80px; min-height:80px;">
+            ${m.jacket_side ? '<img src="' + m.jacket_side + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_jacket_side_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_side\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_jacket_side_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_side\')">'}
           </div>
         </div>
         <div>
           <label style="font-size:0.8rem">Dos</label>
-          <div class="upload-slot" id="slot_cap_back_${i}" style="height:80px; min-height:80px;">
-            ${m.cap_back ? '<img src="' + m.cap_back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_cap_back_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'cap_back\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_cap_back_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'cap_back\')">'}
+          <div class="upload-slot" id="slot_jacket_back_${i}" style="height:80px; min-height:80px;">
+            ${m.jacket_back ? '<img src="' + m.jacket_back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_jacket_back_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_back\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_jacket_back_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_back\')">'}
           </div>
         </div>
       </div>
 
-      <h4 style="margin-bottom:0.5rem; color:#888; font-size:0.9rem;">Bob</h4>
+      <h4 style="margin-bottom:0.5rem; color:#888; font-size:0.9rem;">Hoodie</h4>
       <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem;">
         <div>
           <label style="font-size:0.8rem">Devant</label>
-          <div class="upload-slot" id="slot_bucket_front_${i}" style="height:80px; min-height:80px;">
-            ${m.bucket_front ? '<img src="' + m.bucket_front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_bucket_front_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'bucket_front\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_bucket_front_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'bucket_front\')">'}
+          <div class="upload-slot" id="slot_hoodie_front_${i}" style="height:80px; min-height:80px;">
+            ${m.hoodie_front ? '<img src="' + m.hoodie_front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_hoodie_front_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_front\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_hoodie_front_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_front\')">'}
           </div>
         </div>
         <div>
           <label style="font-size:0.8rem">Côté</label>
-          <div class="upload-slot" id="slot_bucket_side_${i}" style="height:80px; min-height:80px;">
-            ${m.bucket_side ? '<img src="' + m.bucket_side + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_bucket_side_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'bucket_side\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_bucket_side_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'bucket_side\')">'}
+          <div class="upload-slot" id="slot_hoodie_side_${i}" style="height:80px; min-height:80px;">
+            ${m.hoodie_side ? '<img src="' + m.hoodie_side + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_hoodie_side_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_side\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_hoodie_side_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_side\')">'}
           </div>
         </div>
         <div>
           <label style="font-size:0.8rem">Dos</label>
-          <div class="upload-slot" id="slot_bucket_back_${i}" style="height:80px; min-height:80px;">
-            ${m.bucket_back ? '<img src="' + m.bucket_back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_bucket_back_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'bucket_back\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_bucket_back_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'bucket_back\')">'}
+          <div class="upload-slot" id="slot_hoodie_back_${i}" style="height:80px; min-height:80px;">
+            ${m.hoodie_back ? '<img src="' + m.hoodie_back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_hoodie_back_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_back\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_hoodie_back_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_back\')">'}
           </div>
         </div>
       </div>
@@ -2277,7 +2515,7 @@ function addColorMockup() {
   if (pendingColorMockups.find(m => m.hex.toLowerCase() === hex.toLowerCase())) {
     showToast('Erreur', 'Cette couleur existe déjà.', '#ef4444'); return;
   }
-  pendingColorMockups.push({ hex: hex, cap_front: null, cap_side: null, cap_back: null, bucket_front: null, bucket_side: null, bucket_back: null });
+  pendingColorMockups.push({ hex: hex, jacket_front: null, jacket_side: null, jacket_back: null, hoodie_front: null, hoodie_side: null, hoodie_back: null });
   renderSettingsColorMockups();
 }
 
@@ -2317,7 +2555,7 @@ async function saveHeadwearSettings() {
 
   const global_colors = pendingColorMockups.map(m => m.hex);
   const payload = {
-    id: 2,
+    id: 4,
     global_colors: global_colors,
     color_mockups: pendingColorMockups
   };
@@ -2346,44 +2584,55 @@ function updateShirtImagesForColor(hex) {
   // If no color mockups loaded yet, just paint fallback canvases
   if (!globalSettings.color_mockups || !globalSettings.color_mockups.length) {
     paintFallbackCanvas('front');
-    paintFallbackCanvas('side');
+    paintFallbackCanvas('sleeve-left');
+    paintFallbackCanvas('sleeve-right');
     paintFallbackCanvas('back');
     return;
   }
   const match = globalSettings.color_mockups.find(m => m.hex && m.hex.toLowerCase() === hex.toLowerCase())
               || globalSettings.color_mockups[0];
-  if (!match) { paintFallbackCanvas('front'); paintFallbackCanvas('side'); paintFallbackCanvas('back'); return; }
+  if (!match) { paintFallbackCanvas('front'); paintFallbackCanvas('sleeve-left'); paintFallbackCanvas('sleeve-right'); paintFallbackCanvas('back'); return; }
 
-  if (productType === 'cap') {
-    SHIRT_IMAGES.front = match.cap_front    || null;
-    SHIRT_IMAGES.side  = match.cap_side     || null;
-    SHIRT_IMAGES.back  = match.cap_back     || null;
+  if (productType === 'jacket') {
+    SHIRT_IMAGES.front = match.jacket_front || null;
+    SHIRT_IMAGES['sleeve-left']  = match.jacket_side  || null;
+    SHIRT_IMAGES['sleeve-right'] = match.jacket_side  || null;
+    SHIRT_IMAGES.back  = match.jacket_back  || null;
   } else {
-    SHIRT_IMAGES.front = match.bucket_front || null;
-    SHIRT_IMAGES.side  = match.bucket_side  || null;
-    SHIRT_IMAGES.back  = match.bucket_back  || null;
+    SHIRT_IMAGES.front = match.hoodie_front || null;
+    SHIRT_IMAGES['sleeve-left']  = match.hoodie_side  || null;
+    SHIRT_IMAGES['sleeve-right'] = match.hoodie_side  || null;
+    SHIRT_IMAGES.back  = match.hoodie_back  || null;
   }
   loadShirtImages();
 }
 
 
 function buildOrderItem() {
-  if (!selectedPrint) return null;
-  const price = selectedPrint.price != null ? selectedPrint.price : globalSettings.headwearBasePrice;
+  // Use active zone's print if global selectedPrint is not set
+  const activePrint = selectedPrint ||
+    (window.zoneCustomizations[activeZoneId] && window.zoneCustomizations[activeZoneId].print) || null;
+  if (!activePrint) return null;
+
+  const price = activePrint.price != null ? activePrint.price : (globalSettings.headwearBasePrice || 9000);
+  const zone = getActiveZone();
+  const placementLabel = zone ? zone.label : printPlacement;
+  const sizeLabel = embroiderySize === 'S' ? 'Petit' : (embroiderySize === 'L' ? 'Grand' : 'Moyen');
+
   return {
-    key: `showcase-headwear-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${printSize}`,
-    id: `showcase-${selectedPrint.id}`,
-    name: `${productType === 'cap' ? 'Casquette' : 'Bob'} OVRG — ${selectedPrint.name}`,
+    key: `outerwear-${activePrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${embroiderySize}`,
+    id: `outerwear-${activePrint.id}`,
+    name: `${productType === 'jacket' ? 'Veste' : 'Hoodie'} OVRG — ${activePrint.name}`,
     price: price,
     qty: 1,
     size: selectedSize,
     color: selectedColor,
-    img: selectedPrint.image_url || '',
-    type: 'showcase',
+    img: activePrint.image_url || '',
+    type: 'outerwear',
     customization: {
       placement: printPlacement,
-      placementLabel: printPlacement === 'front' ? 'Devant' : 'Côté',
-      scale: printSize === 'small' ? 'Petit' : 'Grand',
+      placementLabel: placementLabel,
+      scale: sizeLabel,
       blend: 100
     }
   };
@@ -2405,206 +2654,13 @@ function orderViaWhatsApp() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
   const c = item.customization;
-  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'cap' ? 'casquette' : 'bob'}:\n\n`+
+  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'jacket' ? 'veste' : 'hoodie'}:\n\n`+
               `🎨 Imprimé: ${selectedPrint.name}\n`+
               `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}\n`+
               `📏 Taille: ${item.size}\n`+
               `📍 Position: ${c.placementLabel}\n`+
               `💰 Prix: ${fmt(item.price)}`;
   window.open(`https://wa.me/2250799108108?text=${encodeURIComponent(msg)}`, '_blank');
-}
-
-function goToCheckout() {
-  const item = buildOrderItem();
-  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
-  addToCartShowcase();
-  setTimeout(() => { window.location.href = '/#catalogue'; }, 150);
-}
-
-
-
-function updateAdminUI() {
-  const btn = document.getElementById('adminToggleBtn');
-  if (!btn) return;
-  if (currentUser) { btn.textContent = '⚙●'; btn.style.color = '#22c55e'; btn.style.opacity = '0.4'; }
-  else { btn.textContent = '⚙'; btn.style.color = '#1a1a1a'; btn.style.opacity = '0.15'; }
-}
-
-function openLogin() {
-  document.getElementById('loginEmail').value = '';
-  document.getElementById('loginPassword').value = '';
-  document.getElementById('loginError').textContent = '';
-  document.getElementById('loginOverlay').classList.add('open');
-}
-
-function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
-
-async function doLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  document.getElementById('loginError').textContent = '';
-  if (!email || !password) { document.getElementById('loginError').textContent = 'Veuillez remplir tous les champs.'; return; }
-  if (!sbClient) {
-    document.getElementById('loginError').textContent = 'Connexion à Supabase indisponible. Rechargez la page et réessayez.';
-    return;
-  }
-  try {
-    await sbClient.auth.signOut().catch(()=>{});
-    const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    currentUser = data.user;
-    closeLogin();
-    openAdmin();
-  } catch(e) {
-    console.error('Login error:', e);
-    document.getElementById('loginError').textContent = 'Email ou mot de passe incorrect.';
-  }
-}
-
-async function doLogout() {
-  await sbClient.auth.signOut().catch(()=>{});
-  currentUser = null;
-  closeAdmin();
-  showToast('Déconnecté', 'Session admin terminée.');
-}
-
-function openAdmin() {
-  document.getElementById('adminOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  checkSupabaseConnection();
-  loadAdminPrints();
-}
-
-function closeAdmin() {
-  document.getElementById('adminOverlay').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-async function checkSupabaseConnection() {
-  const el = document.getElementById('supabaseStatus');
-  try {
-    const { error } = await sbClient.from(PRINTS_TABLE).select('id').limit(1);
-    if (error) throw error;
-    el.className = 'supabase-status connected';
-    el.textContent = '✓ Connecté à Supabase — table showcase_prints prête';
-  } catch(e) {
-    el.className = 'supabase-status disconnected';
-    el.textContent = '✗ Table showcase_prints introuvable — exécutez le SQL fourni dans le code source';
-  }
-}
-
-function showAdminTab(tab, el) {
-  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('adminTabList').style.display = tab==='list' ? '' : 'none';
-  document.getElementById('adminTabAdd').style.display = tab==='add' ? '' : 'none';
-  const settingsTab = document.getElementById('adminTabSettings');
-  if (settingsTab) settingsTab.style.display = tab==='settings' ? '' : 'none';
-  if (tab === 'settings') loadAdminSettingsUI();
-}
-
-async function loadAdminPrints() {
-  const list = document.getElementById('adminPrintList');
-  list.innerHTML = `<p style="color:#666;text-align:center;padding:2rem">Chargement des broderies...</p>`;
-  const _filterBroderies = (data) => (data || []).filter(p => {
-    if (p.design_type && p.design_type === 'embroidery') return true;
-    if (p.category && p.category.startsWith('Broderie')) return true;
-    return false;
-  });
-  try {
-    const { data, error } = await sbClient.from(PRINTS_TABLE).select('*').order('id', { ascending: true });
-    if (error) throw error;
-    renderAdminPrintList(_filterBroderies(data));
-  } catch(e) {
-    // Fallback to default prints table if configured one fails
-    if (PRINTS_TABLE !== DEFAULT_PRINTS_TABLE) {
-      console.warn('Primary prints table failed, falling back to default:', DEFAULT_PRINTS_TABLE);
-      try {
-        const { data, error } = await sbClient.from(DEFAULT_PRINTS_TABLE).select('*').order('id', { ascending: true });
-        if (error) throw error;
-        renderAdminPrintList(_filterBroderies(data));
-        showToast('Info', `Utilisation de la table par défaut (${DEFAULT_PRINTS_TABLE})`);
-        return;
-      } catch (fallbackErr) {
-        console.error('Fallback prints load failed:', fallbackErr);
-      }
-    }
-    list.innerHTML = `<p style="color:#f87171;text-align:center;padding:2rem">Table non configurée.</p>`;
-  }
-}
-
-
-// Helper to create the prints table via Supabase RPC (requires appropriate permission)
-async function createPrintsTable() {
-  const CREATE_TABLE_SQL = `
-    create table if not exists ${PRINTS_TABLE} (
-      id bigserial primary key,
-      name text not null,
-      image_url text not null,
-      category text,
-      price integer,
-      stock integer,
-      colors jsonb,
-      active boolean default true
-    );`;
-  try {
-    const { error } = await sbClient.rpc('run_sql', { sql: CREATE_TABLE_SQL });
-    if (error) throw error;
-    showToast('Succès', 'Table des imprimés créée avec succès.');
-    await loadAdminPrints();
-  } catch (err) {
-    console.error('Create table error:', err);
-    showToast('Erreur', 'Impossible de créer la table. Vérifiez les permissions.', '#ef4444');
-  }
-}
-
-
-
-function buildOrderItem() {
-  if (!selectedPrint) return null;
-  const price = selectedPrint.price != null ? selectedPrint.price : globalSettings.headwearBasePrice;
-  return {
-    key: `showcase-headwear-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${printSize}`,
-    id: `showcase-${selectedPrint.id}`,
-    name: `${productType === 'cap' ? 'Casquette' : 'Bob'} OVRG — ${selectedPrint.name}`,
-    price: price,
-    qty: 1,
-    size: selectedSize,
-    color: selectedColor,
-    img: selectedPrint.image_url || '',
-    type: 'showcase',
-    customization: {
-      placement: printPlacement,
-      placementLabel: printPlacement === 'front' ? 'Devant' : 'Côté',
-      scale: printSize === 'small' ? 'Petit' : 'Grand',
-      blend: 100
-    }
-  };
-}
-
-function addToCartShowcase() {
-  const item = buildOrderItem();
-  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
-  let cart = [];
-  try { cart = JSON.parse(localStorage.getItem('ovrg_cart') || '[]'); } catch(e) {}
-  const existing = cart.find(c => c.key === item.key);
-  if (existing) existing.qty += 1;
-  else cart.push(item);
-  localStorage.setItem('ovrg_cart', JSON.stringify(cart));
-  showToast('Ajouté au panier! 🛍', `${item.name} ajouté.`);
-}
-
-function orderViaWhatsApp() {
-  const item = buildOrderItem();
-  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
-  const c = item.customization;
-  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'cap' ? 'casquette' : 'bob'}:%0A%0A`+
-              `🎨 Imprimé: ${selectedPrint.name}%0A`+
-              `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}%0A`+
-              `📏 Taille: ${item.size}%0A`+
-              `📍 Position: ${c.placementLabel}%0A`+
-              `💰 Prix: ${fmt(item.price)}`;
-  window.open(`https://wa.me/2250799108108?text=${msg}`, '_blank');
 }
 
 function goToCheckout() {
@@ -2637,13 +2693,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Wire up the sides overlay canvases now that the DOM is ready
   sides.front.wrap   = document.getElementById('canvas-front');
   sides.front.canvas = document.querySelector('#canvas-front canvas');
-  sides.side.wrap    = document.getElementById('canvas-side');
-  sides.side.canvas  = document.querySelector('#canvas-side canvas');
+  sides['sleeve-left'].wrap    = document.getElementById('canvas-sleeve-left');
+  sides['sleeve-left'].canvas  = document.querySelector('#canvas-sleeve-left canvas');
+  sides['sleeve-right'].wrap   = document.getElementById('canvas-sleeve-right');
+  sides['sleeve-right'].canvas = document.querySelector('#canvas-sleeve-right canvas');
   sides.back.wrap    = document.getElementById('canvas-back');
   sides.back.canvas  = document.querySelector('#canvas-back canvas');
 
   // Init zone buttons
-  renderZoneButtons();
+  setActiveZone(activeZoneId);
+
+  // Attach drag/resize handlers to each side's design overlay canvas
+  ['front', 'sleeve-left', 'sleeve-right', 'back'].forEach(side => initDraggable(side));
 
   // Init scale slider background
   const slider = document.getElementById('scaleSlider');
@@ -2694,7 +2755,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Colours for each zone (index-based)
 const ZONE_COLORS = ['#ff6b35','#4ecdc4','#ffe66d','#a8e6cf'];
 
-let pgCurrentType   = 'cap';     // 'cap' | 'bucket'
+let pgCurrentType = 'jacket';     // 'cap' | 'bucket'
 let pgSelectedZone  = 'front-center';
 let pgHoveredZone   = null;
 
@@ -2705,9 +2766,9 @@ function openPlacementGuide() {
   document.getElementById('placementGuide').style.display = '';
   document.body.style.overflow = 'hidden';
   // Sync type buttons
-  document.getElementById('pgTypeCap').classList.toggle('active', pgCurrentType === 'cap');
-  document.getElementById('pgTypeBucket').classList.toggle('active', pgCurrentType === 'bucket');
-  document.getElementById('pgHatLabel').textContent = pgCurrentType === 'cap' ? 'casquette' : 'bob';
+  document.getElementById('pgTypeJacket').classList.toggle('active', pgCurrentType === 'jacket');
+  document.getElementById('pgTypeHoodie').classList.toggle('active', pgCurrentType === 'hoodie');
+  document.getElementById('pgHatLabel').textContent = pgCurrentType === 'jacket' ? 'veste' : 'hoodie';
   pgBuildZoneList();
   pgDraw();
 }
@@ -2720,9 +2781,9 @@ function closePlacementGuide() {
 function setPgType(type) {
   pgCurrentType = type;
   pgSelectedZone = 'front-center';
-  document.getElementById('pgTypeCap').classList.toggle('active', type === 'cap');
-  document.getElementById('pgTypeBucket').classList.toggle('active', type === 'bucket');
-  document.getElementById('pgHatLabel').textContent = type === 'cap' ? 'casquette' : 'bob';
+  document.getElementById('pgTypeJacket').classList.toggle('active', type === 'jacket');
+  document.getElementById('pgTypeHoodie').classList.toggle('active', type === 'hoodie');
+  document.getElementById('pgHatLabel').textContent = type === 'jacket' ? 'veste' : 'hoodie';
   pgBuildZoneList();
   pgDraw();
 }
@@ -2730,7 +2791,7 @@ function setPgType(type) {
 function applyPgSelection() {
   // Push type + zone back to main page
   if (pgCurrentType !== productType) setProductType(pgCurrentType);
-  setZone(pgSelectedZone);
+  setActiveZone(pgSelectedZone);   // was: setZone() — undefined function
   closePlacementGuide();
 }
 
@@ -2738,7 +2799,7 @@ function applyPgSelection() {
 function pgBuildZoneList() {
   const list = document.getElementById('pgZoneList');
   if (!list) return;
-  const zones = EMBROIDERY_ZONES[pgCurrentType] || EMBROIDERY_ZONES.cap;
+  const zones = EMBROIDERY_ZONES[pgCurrentType] || EMBROIDERY_ZONES.jacket;
   list.innerHTML = zones.map((z, i) => `
     <div class="pg-zone-item${z.id === pgSelectedZone ? ' active' : ''}"
          onclick="pgSelectZone('${z.id}'); applyPgSelection();" data-zone="${z.id}">
@@ -2775,13 +2836,13 @@ function pgDraw() {
   ctx.roundRect(0, 0, PG_W, PG_H, 12);
   ctx.fill();
 
-  const zones = EMBROIDERY_ZONES[pgCurrentType] || EMBROIDERY_ZONES.cap;
+  const zones = EMBROIDERY_ZONES[pgCurrentType] || EMBROIDERY_ZONES.jacket;
 
   // ── Draw hat silhouette ──────────────────────────────────────
-  if (pgCurrentType === 'bucket') {
-    pgDrawBucketSilhouette(ctx);
+  if (pgCurrentType === 'hoodie') {
+    pgDrawHoodieSilhouette(ctx);
   } else {
-    pgDrawCapSilhouette(ctx);
+    pgDrawJacketSilhouette(ctx);
   }
 
   // ── Draw zone overlays ────────────────────────────────────────
@@ -2839,55 +2900,39 @@ function pgDraw() {
   }
 }
 
-function pgDrawCapSilhouette(ctx) {
-  const c = (x, y) => pgScale(x, y);
+
+function pgDrawJacketSilhouette(ctx) {
   ctx.save();
-  ctx.fillStyle = '#2d3142'; ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1.5;
-  // Crown
+  ctx.fillStyle = '#444';
   ctx.beginPath();
-  ctx.moveTo(...c(100,360)); ctx.bezierCurveTo(...c(80,180),...c(160,80),...c(300,70));
-  ctx.bezierCurveTo(...c(440,80),...c(500,180),...c(510,360)); ctx.closePath();
-  ctx.fill(); ctx.stroke();
-  // Visor
-  ctx.fillStyle = '#252836';
-  ctx.beginPath();
-  ctx.moveTo(...c(100,360)); ctx.bezierCurveTo(...c(80,375),...c(60,390),...c(50,410));
-  ctx.bezierCurveTo(...c(80,430),...c(200,445),...c(305,440));
-  ctx.bezierCurveTo(...c(200,435),...c(110,410),...c(110,390));
-  ctx.bezierCurveTo(...c(115,375),...c(120,368),...c(130,365));
-  ctx.fill(); ctx.stroke();
-  // Sweatband
-  ctx.beginPath();
-  ctx.moveTo(...c(100,360)); ctx.bezierCurveTo(...c(200,375),...c(400,378),...c(510,360));
-  ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 2.5; ctx.stroke();
-  // Centre seam
-  ctx.beginPath();
-  ctx.moveTo(...c(300,70)); ctx.lineTo(...c(300,355));
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.moveTo(PG_SX * 200, PG_SY * 100);
+  ctx.lineTo(PG_SX * 400, PG_SY * 100);
+  ctx.lineTo(PG_SX * 450, PG_SY * 400);
+  ctx.lineTo(PG_SX * 150, PG_SY * 400);
+  ctx.closePath();
+  ctx.fill();
   ctx.restore();
 }
 
-function pgDrawBucketSilhouette(ctx) {
-  const c = (x, y) => pgScale(x, y);
+function pgDrawHoodieSilhouette(ctx) {
   ctx.save();
-  ctx.fillStyle = '#252836'; ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1.5;
-  // Brim
+  ctx.fillStyle = '#333';
   ctx.beginPath();
-  ctx.ellipse(...c(300,440), 230 * PG_SX, 55 * PG_SY, 0, 0, Math.PI * 2);
-  ctx.fill(); ctx.stroke();
-  // Crown
-  ctx.fillStyle = '#2d3142';
-  ctx.beginPath();
-  ctx.moveTo(...c(100,410));
-  ctx.bezierCurveTo(...c(80,250),...c(130,100),...c(300,90));
-  ctx.bezierCurveTo(...c(470,100),...c(520,250),...c(500,410));
-  ctx.fill(); ctx.stroke();
+  ctx.moveTo(PG_SX * 250, PG_SY * 50);
+  ctx.lineTo(PG_SX * 350, PG_SY * 50);
+  ctx.lineTo(PG_SX * 400, PG_SY * 150);
+  ctx.lineTo(PG_SX * 450, PG_SY * 400);
+  ctx.lineTo(PG_SX * 150, PG_SY * 400);
+  ctx.lineTo(PG_SX * 200, PG_SY * 150);
+  ctx.closePath();
+  ctx.fill();
   ctx.restore();
 }
+
 
 // Hit-test: find which zone the click lands in
 function pgGetZoneAt(mx, my) {
-  const zones = EMBROIDERY_ZONES[pgCurrentType] || EMBROIDERY_ZONES.cap;
+  const zones = EMBROIDERY_ZONES[pgCurrentType] || EMBROIDERY_ZONES.jacket;
   // Iterate in reverse so top-most zone wins
   for (let i = zones.length - 1; i >= 0; i--) {
     const z  = zones[i];
@@ -2944,15 +2989,15 @@ function pgHandleLeave() {
 
     <!-- Product type toggle inside popup -->
     <div class="pg-type-row">
-      <button class="pg-type-btn active" id="pgTypeCap" onclick="setPgType('cap')">Casquette</button>
-      <button class="pg-type-btn" id="pgTypeBucket" onclick="setPgType('bucket')">Bob</button>
+      <button class="pg-type-btn active" id="pgTypeJacket" onclick="setPgType('jacket')">Veste</button>
+      <button class="pg-type-btn" id="pgTypeHoodie" onclick="setPgType('hoodie')">Hoodie</button>
     </div>
 
     <div class="pg-body">
 
       <!-- Left: Interactive SVG diagram -->
       <div class="pg-diagram-wrap">
-        <p class="pg-diagram-label">Schéma de la <span id="pgHatLabel">casquette</span></p>
+        <p class="pg-diagram-label">Schéma de la <span id="pgHatLabel">veste</span></p>
         <canvas id="pgCanvas" width="400" height="380"
                 onclick="pgHandleClick(event)"
                 onmousemove="pgHandleHover(event)"
@@ -2990,7 +3035,5 @@ function pgHandleLeave() {
   </div>
 </div>
 
-
 </body>
 </html>
-
