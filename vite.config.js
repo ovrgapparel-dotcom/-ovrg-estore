@@ -8,8 +8,12 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         showcase: resolve(__dirname, 'showcase.html'),
         headwear: resolve(__dirname, 'headwear.html'),
-        outerwear: resolve(__dirname, 'outerwear.html'),
+        jeans: resolve(__dirname, 'jeans.html'),
+        hoodies: resolve(__dirname, 'hoodies.html'),
       },
     },
   },
+  test: {
+    setupFiles: ['./testSetup.js'],
+  }
 });

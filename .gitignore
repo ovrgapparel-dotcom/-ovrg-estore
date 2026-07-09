@@ -11,5 +11,4 @@ yarn-error.log*
 pnpm-debug.log*
 logger.js
 .vercel
-dist/
 scratch/

@@ -3,7 +3,7 @@ const fs = require('fs');
 
 async function inspect() {
     const io = new NodeIO();
-    const document = await io.read('jacket.glb');
+    const document = await io.read('public/tshirt.glb');
     
     console.log("=== Nodes ===");
     for (const node of document.getRoot().listNodes()) {

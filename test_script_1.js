@@ -27,7 +27,13 @@ try {
 
 const HEADWEAR_MOCKUPS_BUCKET = 'product-images';
 let sbClient = null;
-try { sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON); } catch(e) { console.warn('Supabase early init failed, will retry in initSupabase():', e); }
+if (typeof supabase !== 'undefined') {
+  try {
+    sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  } catch(e) { console.warn('Supabase early init failed, will retry in initSupabase():', e); }
+} else {
+  console.warn('Supabase not available in test environment');
+}
 let currentUser = null;
 let prints = [];
 let selectedPrint = null;
@@ -78,7 +84,7 @@ let scaleMultiplier = 1.0;
 
 
 // sides is populated once the DOM is ready (see DOMContentLoaded)
-let sides = { front: { wrap: null, canvas: null, img: null }, side: { wrap: null, canvas: null, img: null }, back: { wrap: null, canvas: null, img: null } };
+let sides = { front: { wrap: null, canvas: null, img: null }, side: { wrap: null, canvas: null, img: null }, back: { wrap: null, canvas: null, img: null }, 'sleeve-left': { wrap: null, canvas: null, img: null }, 'sleeve-right': { wrap: null, canvas: null, img: null } };
 
 // ============================================================
 //  HEADWEAR MOCKUP IMAGES + RECOLORING ENGINE
@@ -89,7 +95,7 @@ const GENERIC_MOCKUPS = {
   bucket: { front: null, side: null, back: null }
 };
 
-let SHIRT_IMAGES = { front: null, side: null, back: null };
+let SHIRT_IMAGES = { front: null, side: null, back: null, 'sleeve-left': null, 'sleeve-right': null };
 const shirtSource = { front: null, side: null, back: null };
 
 // ── FABRIC ANALYSIS DATA ──
@@ -137,7 +143,7 @@ function analyzeFabric(side) {
 }
 
 function loadShirtImages() {
-  ['front','side','back'].forEach(side => {
+  ['front','side','back','sleeve-left','sleeve-right'].forEach(side => {
     const url = SHIRT_IMAGES[side];
     if (!url) {
       // No mockup uploaded yet for this side — just show the labelled placeholder
@@ -163,7 +169,7 @@ function loadShirtImages() {
 
 function recolorShirt(side) {
   const img = shirtSource[side];
-  const ids = { front: 'tshirt-front', side: 'tshirt-side', back: 'tshirt-back' };
+  const ids = { front: 'tshirt-front', side: 'tshirt-side', back: 'tshirt-back', 'sleeve-left': 'tshirt-sleeve-left', 'sleeve-right': 'tshirt-sleeve-right' };
   const canvas = document.getElementById(ids[side]);
   if (!img || !canvas) return;
 
@@ -291,13 +297,15 @@ function selectPrint(p) {
   if (p.image_url) {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
-    img.src = p.image_url;
     img.onload = () => {
       sides.front.img = img;
+      sides['sleeve-left'].img = img;
+      sides['sleeve-right'].img = img;
       sides.side.img = img;
       sides.back.img = img;
       scheduleRender();
     };
+    img.src = p.image_url;
   } else {
     sides.front.img = null;
     sides.side.img = null;
@@ -393,9 +401,10 @@ function switchView(view) {
     btn.classList.toggle('active', onclick.includes(`'${view}'`));
   });
 
-  // Show / hide the appropriate mockup containers
-  ['front','side','back','3d'].forEach(v => {
-    const el = document.getElementById(v === '3d' ? '3d-view' : v + '-view');
+  // Show / hide the appropriate mockup containers, now including sleeve views
+  const viewList = ['front','side','back','3d','sleeve-left','sleeve-right'];
+  viewList.forEach(v => {
+    const el = document.getElementById(v === '3d' ? '3d-view' : `${v}-view`);
     if (el) el.style.display = v === view ? 'block' : 'none';
   });
 
@@ -431,6 +440,8 @@ function switchView(view) {
     }, 100);
   }
 }
+window.switchView = switchView;
+globalThis.switchView = switchView;
 function handleAdminClick() {
   // If a user is authenticated, open the admin panel; otherwise, show the login overlay.
   if (currentUser) {
@@ -442,11 +453,15 @@ function handleAdminClick() {
 
 
 function setProductType(type) {
-  productType = type;
+  // Map UI type identifiers to internal product types
+  const mappedType = (type === 'hoodie') ? 'bucket' : type; // hoodie uses bucket mockups
+  productType = mappedType;
   activeZoneId = 'front-center';   // reset to front zone on type change
 
   document.querySelectorAll('#productTypeRow .size-btn').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.type === type);
+    // The button's data-type may be 'hoodie' or 'jacket'; map accordingly for visual selection
+    const btnType = (btn.dataset.type === 'hoodie') ? 'bucket' : btn.dataset.type;
+    btn.classList.toggle('selected', btnType === mappedType);
   });
 
   // Rebuild zone buttons for the new product type
@@ -455,7 +470,7 @@ function setProductType(type) {
   updateShirtImagesForColor(selectedColor);
 
   if (window.load3DModel) {
-    const modelUrl = type === 'cap' ? '/cap.glb' : '/bucket.glb';
+    const modelUrl = mappedType === 'cap' ? '/cap.glb' : '/bucket.glb';
     window.load3DModel(modelUrl);
   }
 }
@@ -576,7 +591,7 @@ function renderDesign(side) {
   if (!hasPrint && !hasLabel) { s.wrap.style.display = 'none'; return; }
 
   // ── Get wrapper dimensions ────────────────────────────────────────────────
-  const wrapId = { front: 'front-view', side: 'side-view', back: 'back-view' };
+  const wrapId = { front: 'front-view', "sleeve-left": 'sleeve-left-view', "sleeve-right": 'sleeve-right-view', back: 'back-view' };
   const wrapper = document.getElementById(wrapId[side]);
   if (!wrapper) return;
   const rect = wrapper.getBoundingClientRect();
@@ -759,7 +774,8 @@ function _renderLabelToCtx(tmpCtx, x, y, w, h) {
   const text  = (document.getElementById('customLabelInput')?.value || '').trim().toUpperCase();
   if (!text) return;
   const color = document.getElementById('customLabelColor')?.value || '#ffffff';
-  const sz    = Math.min(h * 0.80, w / Math.max(text.length, 1) * 1.5);
+  const maxWidth = w * 0.9; // leave 10% margin
+  const sz = Math.min(h * 0.80, maxWidth / Math.max(text.length, 1) * 1.5);
   tmpCtx.save();
   tmpCtx.font          = `900 ${sz}px "Arial Black", Arial, sans-serif`;
   tmpCtx.textAlign     = 'center';
@@ -775,7 +791,7 @@ function _renderLabelToCtx(tmpCtx, x, y, w, h) {
 
 
 function paintFallbackCanvas(side) {
-  const ids = { front: 'tshirt-front', side: 'tshirt-side', back: 'tshirt-back' };
+  const ids = { front: 'tshirt-front', side: 'tshirt-side', back: 'tshirt-back', 'sleeve-left': 'tshirt-sleeve-left', 'sleeve-right': 'tshirt-sleeve-right' };
   const canvas = document.getElementById(ids[side] || 'tshirt-front');
   if (!canvas) return;
 

@@ -8,7 +8,7 @@ const path = require('path');
 const https = require('https');
 
 const SUPABASE_URL = 'https://mihpdlhbijlvbdcqvzdw.supabase.co';
-const ANON_KEY     = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paHBkbGhiaWpsdmJkY3F2emR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDkzMTgsImV4cCI6MjA4Nzk4NTMxOH0.X-2XjKKi3enHck1KBtlga-RiVjXN3BS5EhW3fnF3oTE';
+const ANON_KEY     = 'REMOVED_SECRET';
 const BUCKET       = 'product-images';
 
 // All models live in public/

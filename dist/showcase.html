@@ -8,16 +8,7 @@
 <meta name="theme-color" content="#FF6B35">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  // Custom error logger removed.
-<script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
-      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/"
-    }
-  }
-</script>
+
 
 <!-- ╔══════════════════════════════════════════════════════════════╗
      ║  SUPABASE SETUP — same project as the main e-store            ║
@@ -405,6 +396,16 @@ footer .footer-admin {
 .zone-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
 </style>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/",
+      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/"
+    }
+  }
+</script>
+  <script type="module" crossorigin src="/assets/three-viewer-BqYLNI3Z.js"></script>
 </head>
 <body>
 
@@ -489,8 +490,8 @@ footer .footer-admin {
       <div class="ctrl-section">
         <label class="ctrl-label">Taille de l'imprimé</label>
         <div class="slider-row">
-          <input type="range" id="printScale" min="50" max="150" value="100" class="range-input">
-          <span class="slider-value" id="printScaleValue">100%</span>
+          <input type="range" id="printScale" min="50" max="150" value="50" class="range-input">
+          <span class="slider-value" id="printScaleValue">50%</span>
         </div>
       </div>
 
@@ -608,8 +609,6 @@ footer .footer-admin {
       <div class="admin-tabs">
         <div class="admin-tab active" onclick="showAdminTab('list', this)">🎨 Imprimés</div>
         <div class="admin-tab" onclick="resetPrintForm();showAdminTab('add', this)">+ Ajouter imprimé</div>
-        <div class="admin-tab" onclick="resetHeadwearForm('cap');showAdminTab('caps', this)">🧢 Casquettes</div>
-        <div class="admin-tab" onclick="resetHeadwearForm('bob');showAdminTab('bobs', this)">🪣 Bobs</div>
         <div class="admin-tab" onclick="showAdminTab('settings', this)">⚙ Paramètres</div>
       </div>
 
@@ -721,83 +720,6 @@ footer .footer-admin {
         </div>
       </div>
 
-      <!-- ── CAPS ADMIN TAB ── -->
-      <div id="adminTabCaps" style="display:none">
-        <div class="admin-form">
-          <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">Casquettes — Catalogue</h3>
-          <div class="admin-print-list" id="adminCapList">
-            <p style="color:#666;text-align:center;padding:2rem">Chargement...</p>
-          </div>
-          <div style="margin-top:1rem">
-            <button class="btn-save" onclick="resetHeadwearForm('cap');showHeadwearAddForm('cap')">+ Ajouter une casquette</button>
-          </div>
-        </div>
-        <div id="adminCapAddForm" style="display:none">
-          <div class="admin-form">
-            <input type="hidden" id="editCapId" value="">
-            <h3 id="capFormTitle" style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">+ Nouvelle casquette</h3>
-            <div><label>Nom</label><input type="text" id="capName" placeholder="Ex: OVRG Cap Classic"></div>
-            <div class="admin-grid2">
-              <div><label>Catégorie</label><input type="text" id="capCategory" value="Casquette" placeholder="Snapback, Dad Cap..."></div>
-              <div><label>Image (PNG recommandé)</label>
-                <div class="upload-slot" id="capUploadSlot">
-                  <div class="upload-slot-icon">🧢</div>
-                  <div class="upload-progress" id="capUploadProgress">⟳ Upload...</div>
-                  <input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearImage(event,'cap')">
-                </div>
-              </div>
-            </div>
-            <div class="admin-grid2">
-              <div><label>Prix (FCFA)</label><input type="number" id="capPrice" value="15000" min="0" step="500"></div>
-              <div><label>Stock</label><input type="number" id="capStock" value="50" min="0" step="1"></div>
-            </div>
-            <div><label>Couleurs disponibles</label><div class="admin-color-row" id="adminCapColorRow"></div></div>
-            <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
-              <button class="btn-save" onclick="saveHeadwear('cap')">💾 Enregistrer</button>
-              <button class="btn-cancel-login" style="background:#333;color:#aaa;padding:0.75rem 1.5rem;border-radius:8px" onclick="cancelHeadwearForm('cap')">Annuler</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── BOBS ADMIN TAB ── -->
-      <div id="adminTabBobs" style="display:none">
-        <div class="admin-form">
-          <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">Bobs (Bucket Hats) — Catalogue</h3>
-          <div class="admin-print-list" id="adminBobList">
-            <p style="color:#666;text-align:center;padding:2rem">Chargement...</p>
-          </div>
-          <div style="margin-top:1rem">
-            <button class="btn-save" onclick="resetHeadwearForm('bob');showHeadwearAddForm('bob')">+ Ajouter un bob</button>
-          </div>
-        </div>
-        <div id="adminBobAddForm" style="display:none">
-          <div class="admin-form">
-            <input type="hidden" id="editBobId" value="">
-            <h3 id="bobFormTitle" style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.05em;color:var(--primary);margin-bottom:0.3rem">+ Nouveau bob</h3>
-            <div><label>Nom</label><input type="text" id="bobName" placeholder="Ex: OVRG Bucket Hat"></div>
-            <div class="admin-grid2">
-              <div><label>Catégorie</label><input type="text" id="bobCategory" value="Bob" placeholder="Bucket Hat, Fisherman..."></div>
-              <div><label>Image (PNG recommandé)</label>
-                <div class="upload-slot" id="bobUploadSlot">
-                  <div class="upload-slot-icon">🪣</div>
-                  <div class="upload-progress" id="bobUploadProgress">⟳ Upload...</div>
-                  <input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearImage(event,'bob')">
-                </div>
-              </div>
-            </div>
-            <div class="admin-grid2">
-              <div><label>Prix (FCFA)</label><input type="number" id="bobPrice" value="12000" min="0" step="500"></div>
-              <div><label>Stock</label><input type="number" id="bobStock" value="50" min="0" step="1"></div>
-            </div>
-            <div><label>Couleurs disponibles</label><div class="admin-color-row" id="adminBobColorRow"></div></div>
-            <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
-              <button class="btn-save" onclick="saveHeadwear('bob')">💾 Enregistrer</button>
-              <button class="btn-cancel-login" style="background:#333;color:#aaa;padding:0.75rem 1.5rem;border-radius:8px" onclick="cancelHeadwearForm('bob')">Annuler</button>
-            </div>
-          </div>
-        </div>
-      </div>
 
     </div>
   </div>
@@ -812,14 +734,14 @@ footer .footer-admin {
 <!-- SUPABASE CDN -->
 <script data-cfasync="false" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- 3D VIEWER MODULE -->
-<script type="module" src="three-viewer.js"></script>
+<!-- 3D VIEWER MODULE -->
 
 <script>
 
 // ── MULTI-ZONE ENGINE ──
 let activeDesignTab = 'print'; // 'print' or 'embroidery'
 let activeZoneId = 'front';
+window.activeZoneId = 'front';
 window.zoneCustomizations = window.zoneCustomizations || {};
 
 function setDesignTab(tab) {
@@ -831,6 +753,7 @@ function setDesignTab(tab) {
 
 function setActiveZone(zone) {
   activeZoneId = zone;
+  window.activeZoneId = zone;
   document.getElementById('zoneFrontBtn').classList.toggle('active', zone === 'front');
   document.getElementById('zoneBackBtn').classList.toggle('active', zone === 'back');
   
@@ -914,6 +837,10 @@ function selectPrint(p) {
   if (window.setZoneCustomization) {
     if (window.zoneCustomizations[activeZoneId]) {
       window.zoneCustomizations[activeZoneId].preset = printPreset;
+      // Ensure scale is initialised so the 3D decal matches the slider position
+      if (window.zoneCustomizations[activeZoneId].scale === undefined) {
+        window.zoneCustomizations[activeZoneId].scale = printScale;
+      }
       window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
     } else {
       window.clearZoneCustomization && window.clearZoneCustomization(activeZoneId);
@@ -1144,21 +1071,9 @@ function recolorShirt(side) {
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-  // Draw the base shirt image (always a white/neutral mockup)
+  // Draw the uploaded colour-specific mockup directly — no tinting needed
   ctx.drawImage(img, 0, 0, w, h);
 
-  // Apply colour tint via multiply composite — makes white shirt become the target colour
-  // while preserving fabric shading/texture from the greyscale luminance values.
-  const col = (typeof selectedColor !== 'undefined' && selectedColor) ? selectedColor : '#ffffff';
-  if (col && col !== '#ffffff') {
-    ctx.save();
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.fillStyle = col;
-    ctx.fillRect(0, 0, w, h);
-    ctx.restore();
-  }
-
-  // Re-analyse fabric data so the print blend uses the tinted result
   analyzeFabric(side);
   scheduleRender();
 }
@@ -1183,7 +1098,7 @@ const PRESET_CONFIGS = {
 };
 
 // Print customization state — applies to both front & back
-let printScale = 1.0;     // 0.5 – 1.5  (50%–150%)
+let printScale = 0.5;     // 0.5 – 1.5  (50%–150%)
 let printPreset = 'center';
 let printBlend = 0.4;     // 0 – 1  (0% flat print, 100% blended into fabric)
 
