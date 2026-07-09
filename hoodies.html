@@ -892,7 +892,7 @@ footer .footer-admin {
           
                     <div style="margin-top:1.5rem;">
             <label>Prix de base (FCFA)</label>
-            <input type="number" id="headwearBasePrice" placeholder="9000" value="9000" min="0" step="500" style="width: 150px;">
+            <input type="number" id="outerwearBasePrice" placeholder="25000" value="25000" min="0" step="500" style="width: 150px;">
           </div>
 
           <h3 style="margin-top:2rem; color:var(--primary); font-family:'Bebas Neue',sans-serif; letter-spacing:0.05em; font-size:1.3rem;">Mockups par couleur</h3>
@@ -1368,7 +1368,7 @@ function updateZoneUI() {
 
 // Override updatePrice for multi-zone
 function updatePrice() {
-  let total = globalSettings.headwearBasePrice || 9000;
+  let total = globalSettings.outerwearBasePrice || 25000;
   
   // Surcharges per zone
   for (const zoneId in window.zoneCustomizations) {
@@ -2434,6 +2434,10 @@ function cancelAddPrint() {
 let pendingColorMockups = [];
 
 function loadAdminSettingsUI() {
+  const priceInput = document.getElementById('outerwearBasePrice');
+  if (priceInput) {
+    priceInput.value = globalSettings.outerwearBasePrice || 25000;
+  }
   pendingColorMockups = JSON.parse(JSON.stringify(globalSettings.color_mockups || []));
   if (pendingColorMockups.length === 0 && globalSettings.global_colors && globalSettings.global_colors.length > 0) {
     pendingColorMockups = globalSettings.global_colors.map(c => ({
@@ -2547,10 +2551,10 @@ async function uploadHeadwearMockup(event, index, key) {
 }
 
 async function saveHeadwearSettings() {
-  const basePrice = parseInt(document.getElementById('headwearBasePrice').value, 10);
+  const basePrice = parseInt(document.getElementById('outerwearBasePrice').value, 10);
   if (!isNaN(basePrice)) {
-    globalSettings.headwearBasePrice = basePrice;
-    localStorage.setItem('ovrg_headwear_base_price', basePrice);
+    globalSettings.outerwearBasePrice = basePrice;
+    localStorage.setItem('ovrg_outerwear_base_price', basePrice);
   }
 
   const global_colors = pendingColorMockups.map(m => m.hex);
@@ -2614,7 +2618,7 @@ function buildOrderItem() {
     (window.zoneCustomizations[activeZoneId] && window.zoneCustomizations[activeZoneId].print) || null;
   if (!activePrint) return null;
 
-  const price = activePrint.price != null ? activePrint.price : (globalSettings.headwearBasePrice || 9000);
+  const price = activePrint.price != null ? activePrint.price : (globalSettings.outerwearBasePrice || 25000);
   const zone = getActiveZone();
   const placementLabel = zone ? zone.label : printPlacement;
   const sizeLabel = embroiderySize === 'S' ? 'Petit' : (embroiderySize === 'L' ? 'Grand' : 'Moyen');
@@ -2667,7 +2671,7 @@ function goToCheckout() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
   addToCartShowcase();
-  setTimeout(() => { window.location.href = '/#catalogue'; }, 150);
+  setTimeout(() => { window.location.href = 'index.html?cart=1'; }, 150);
 }
 
 

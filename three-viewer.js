@@ -609,11 +609,16 @@ function _doRebuildAllDecals() {
     let scale = config.scale !== undefined ? config.scale : 0.42;
     if (IS_OUTERWEAR) {
       const preset = config.placement || config.preset || 'center';
-      let baseScale = 0.42;  // center / full-back prints
-      if (preset.endsWith('left') || preset.endsWith('right')) {
+      let baseScale;
+      if (zoneId === 'back' && !preset.endsWith('left') && !preset.endsWith('right')) {
+        // Back center/full-back prints need larger coverage than front chest prints
+        baseScale = 0.58;
+      } else if (preset.endsWith('left') || preset.endsWith('right')) {
         baseScale = 0.30;  // chest-pocket sized (30% of body width)
       } else if (zoneId === 'sleeve-left' || zoneId === 'sleeve-right') {
         baseScale = 0.22;  // sleeve prints smaller
+      } else {
+        baseScale = 0.44;  // front center prints
       }
       scale = baseScale * (config.scale !== undefined ? config.scale : 1.0);
     } else if (!IS_HEADWEAR) {
@@ -694,11 +699,11 @@ function _doRebuildAllDecals() {
       const hFrontBotY = box.min.y + boxSize.y * 0.53;  // Y≈-0.24 lower chest (above pocket)
 
       // ─── BACK Y positions ─────────────────────────────────────────────────
-      // Back area spans full height: shoulder (Y≈0.20) to hem (Y≈-1.1)
-      // Using SAME Y percentages as front makes back placements appear too high.
-      const hBackTopY  = box.min.y + boxSize.y * 0.70;  // Y≈0.10  upper back / shoulder blades
-      const hBackMidY  = box.min.y + boxSize.y * 0.50;  // Y≈-0.30 true mid-back
-      const hBackBotY  = box.min.y + boxSize.y * 0.35;  // Y≈-0.60 lower back (above hem)
+      // Back area spans full height: shoulder blades to hem.
+      // Adjusted so 'center' preset lands at true visual center of the back panel.
+      const hBackTopY  = box.min.y + boxSize.y * 0.72;  // upper back / shoulder blades
+      const hBackMidY  = box.min.y + boxSize.y * 0.57;  // true mid-back (visual centre of back panel)
+      const hBackBotY  = box.min.y + boxSize.y * 0.38;  // lower back (above hem)
 
       if (zoneId === 'front') {
         pz = hFrontZ;
@@ -720,10 +725,9 @@ function _doRebuildAllDecals() {
           px = cx; ori.y = 0;
         }
       } else if (zoneId === 'back') {
-        // CRITICAL: box.min.z is the hood tip (far behind), NOT the torso back.
-        // Torso back ≈ box.max.z − 85% of depth = 0.315 − 0.536 = −0.22 world units.
-        // With depth 0.20×boxZ (0.126) the box covers −0.284 to −0.158 — hits torso, misses hood at −0.30+
-        const hTorsoBackZ = box.max.z - boxSize.z * 0.85;
+        // box.min.z = hood tip (far behind). Torso back ≈ box.max.z − 88% of depth.
+        // Increased from 0.85 → 0.88 to push stamp centre closer to actual torso back surface.
+        const hTorsoBackZ = box.max.z - boxSize.z * 0.88;
         pz = hTorsoBackZ;
         ori.y = Math.PI;
         // Vertical Y — back uses DIFFERENT refs than front (back area is taller)
@@ -811,7 +815,7 @@ function _doRebuildAllDecals() {
       if (zoneId === 'sleeve-left' || zoneId === 'sleeve-right' || subZoneId.includes('sleeve')) {
         depth = boxSize.z * 0.60;
       } else if (IS_HOODIES && zoneId === 'back') {
-        depth = boxSize.z * 0.20;  // shallow: box covers −0.284 to −0.158, hits torso back, NOT hood at −0.30+
+        depth = boxSize.z * 0.32;  // deeper stamp: covers full back torso panel without reaching hood tip
       } else if (IS_HOODIES && zoneId === 'front') {
         depth = boxSize.z * 0.40;  // moderate: chest panel only, skip outer drawstring meshes
       } else {

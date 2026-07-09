@@ -2418,7 +2418,7 @@ function goToCheckout() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
   addToCartShowcase();
-  setTimeout(() => { window.location.href = '/#catalogue'; }, 150);
+  setTimeout(() => { window.location.href = 'index.html?cart=1'; }, 150);
 }
 
 
@@ -2611,7 +2611,7 @@ function goToCheckout() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
   addToCartShowcase();
-  setTimeout(() => { window.location.href = '/#catalogue'; }, 150);
+  setTimeout(() => { window.location.href = 'index.html?cart=1'; }, 150);
 }
 
 

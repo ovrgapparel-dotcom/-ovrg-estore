@@ -1667,7 +1667,7 @@ function goToCheckout() {
   addToCartShowcase();
   // Small delay so localStorage write completes before navigation
   setTimeout(() => {
-    window.location.href = '/#catalogue';
+    window.location.href = 'index.html?cart=1';
   }, 150);
 }
 

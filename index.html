@@ -3229,6 +3229,13 @@
       initSupabase();
       await loadProducts();
       renderCart();
+      
+      // Auto-open cart if requested via query parameter or hash
+      var urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('cart') === '1' || window.location.hash === '#cart') {
+        toggleCart();
+      }
+
       try {
         var sessRes = await sbClient.auth.getSession();
         if (sessRes.error && (sessRes.error.message || '').includes('Refresh Token')) { await sbClient.auth.signOut(); currentUser = null; }
