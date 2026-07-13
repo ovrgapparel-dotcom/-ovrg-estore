@@ -403,6 +403,120 @@ footer .footer-admin {
 .zone-btn:hover { background: #e0e0e0; }
 .zone-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
+/* Drag and resize styles */
+.design-canvas-wrap {
+  pointer-events: all !important;
+  cursor: grab;
+  z-index: 5;
+  border-radius: 4px;
+}
+.design-canvas-wrap:active { cursor: grabbing; }
+.design-resize-handle {
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  width: 22px;
+  height: 22px;
+  background: var(--primary);
+  border-radius: 50%;
+  cursor: se-resize;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  user-select: none;
+  touch-action: none;
+}
+
+/* Mobile responsive layout */
+@media (max-width: 900px) {
+  .showcase-main {
+    grid-template-columns: 1fr !important;
+    margin-top: 1rem !important;
+    gap: 1.5rem !important;
+  }
+  .mockup-card {
+    position: static !important;
+    box-shadow: none !important;
+    padding: 1rem !important;
+  }
+  .mockup-stage {
+    min-height: 300px !important;
+  }
+  .shirt-wrapper canvas.shirt-img {
+    width: 240px !important;
+  }
+  .controls-card {
+    padding: 1.2rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .mockup-stage {
+    min-height: 250px !important;
+  }
+  .shirt-wrapper canvas.shirt-img {
+    width: 200px !important;
+  }
+  .view-tabs {
+    flex-wrap: wrap !important;
+    gap: 0.3rem !important;
+  }
+  .view-btn {
+    font-size: 0.75rem !important;
+    padding: 0.3rem 0.7rem !important;
+  }
+}
+
+/* Mobile bottom CTA bar */
+.mobile-cta-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--dark);
+  padding: 0.75rem 1rem;
+  z-index: 1000;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 2px solid var(--primary);
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
+}
+.mobile-cta-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: white;
+}
+.mobile-cta-btns {
+  display: flex;
+  gap: 0.5rem;
+}
+.mobile-cta-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mobile-cta-btn.wa {
+  background: #25D366;
+}
+@media (max-width: 768px) {
+  .mobile-cta-bar {
+    display: flex;
+  }
+  body {
+    padding-bottom: 60px !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -450,6 +564,7 @@ footer .footer-admin {
         <div id="threeContainer" style="width: 100%; height: 100%;"></div>
       </div>
       <div class="no-print-msg" id="noPrintMsg">Sélectionnez un imprimé ci-dessous ↓</div>
+      <div class="design-drag-hint" style="color: rgba(255,255,255,0.35); text-align: center; font-size: 0.72rem; margin-top: 0.5rem;">Faites glisser pour placer · Tirez le coin pour redimensionner</div>
     </div>
 
     
@@ -841,6 +956,17 @@ function selectPrint(p) {
         window.zoneCustomizations[activeZoneId].scale = printScale;
       }
       window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
+      
+      // Initialize 2D coordinates mapping
+      const ds = designState[activeZoneId];
+      if (ds) {
+        const lookupPreset = printPreset.replace(/^back-/, '');
+        const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
+        ds.wPct = cfg.w * printScale;
+        ds.hPct = cfg.h * printScale;
+        ds.xPct = cfg.left + (cfg.w - ds.wPct) / 2;
+        ds.yPct = cfg.top + (cfg.h - ds.hPct) / 2;
+      }
     } else {
       window.clearZoneCustomization && window.clearZoneCustomization(activeZoneId);
     }
@@ -902,7 +1028,10 @@ function updatePrice() {
     }
   }
   
-  document.getElementById('priceMain').textContent = fmt(total);
+  const formattedPrice = fmt(total);
+  document.getElementById('priceMain').textContent = formattedPrice;
+  const mPrice = document.getElementById('mctaPrice');
+  if (mPrice) mPrice.textContent = formattedPrice;
 }
 
 // ── Zone-aware render: update 2D canvas from zoneCustomizations ──
@@ -966,6 +1095,137 @@ function switchProduct(product) {
   // Optionally update admin UI visibility (caps/bobs tabs) – show all admin tabs as they are already present.
 }
 
+
+// Drag and Resize State
+const designState = {
+  front: { xPct: 30, yPct: 30, wPct: 40, hPct: 32 },
+  back:  { xPct: 30, yPct: 30, wPct: 40, hPct: 32 }
+};
+
+function initDraggable(side) {
+  const s = sides[side];
+  if (!s || !s.wrap) return;
+
+  // Resize handle
+  const handle = document.createElement('div');
+  handle.className = 'design-resize-handle';
+  handle.textContent = '↘';
+  handle.title = 'Redimensionner';
+  s.wrap.appendChild(handle);
+
+  let mode = null;   // 'drag' | 'resize'
+  let startX, startY, snapXPct, snapYPct, snapWPct, snapHPct;
+
+  function getParentRect() {
+    return (s.wrap.parentElement || document.body).getBoundingClientRect();
+  }
+
+  function onStart(e, isResize) {
+    e.stopPropagation();
+    const pt = e.touches ? e.touches[0] : e;
+    mode = isResize ? 'resize' : 'drag';
+    startX = pt.clientX; startY = pt.clientY;
+    snapXPct = designState[side].xPct;
+    snapYPct = designState[side].yPct;
+    snapWPct = designState[side].wPct;
+    snapHPct = designState[side].hPct;
+    if (!isResize) s.wrap.style.cursor = 'grabbing';
+    e.preventDefault();
+  }
+
+  function onMove(e) {
+    if (!mode) return;
+    const pt = e.touches ? e.touches[0] : e;
+    const pr = getParentRect();
+    const dx = (pt.clientX - startX) / pr.width  * 100;
+    const dy = (pt.clientY - startY) / pr.height * 100;
+    const ds = designState[side];
+    if (mode === 'drag') {
+      ds.xPct = Math.max(0, Math.min(100 - ds.wPct, snapXPct + dx));
+      ds.yPct = Math.max(0, Math.min(100 - ds.hPct, snapYPct + dy));
+    } else {
+      ds.wPct = Math.max(5, Math.min(90, snapWPct + dx));
+      ds.hPct = Math.max(5, Math.min(90, snapHPct + dy));
+      // Keep center-aligned as user resizes
+      ds.xPct = Math.max(0, snapXPct - (ds.wPct - snapWPct)/2);
+      ds.yPct = Math.max(0, snapYPct - (ds.hPct - snapHPct)/2);
+      
+      // Update printScale value and slider
+      const lookupPreset = printPreset.replace(/^back-/, '');
+      const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
+      printScale = ds.wPct / cfg.w;
+      
+      const slider = document.getElementById('printScale');
+      if (slider) {
+        slider.value = Math.round(printScale * 100);
+        document.getElementById('printScaleValue').textContent = Math.round(printScale * 100) + '%';
+      }
+    }
+    
+    // Sync to 3D config
+    sync2DTo3D(side);
+    
+    renderDesign(side);
+    e.preventDefault();
+  }
+
+  function onEnd() {
+    if (mode === 'drag') s.wrap.style.cursor = 'grab';
+    mode = null;
+  }
+
+  s.wrap.addEventListener('mousedown',   e => onStart(e, false));
+  handle.addEventListener('mousedown',   e => onStart(e, true));
+  document.addEventListener('mousemove', e => { if (mode) onMove(e); });
+  document.addEventListener('mouseup',   onEnd);
+
+  s.wrap.addEventListener('touchstart',  e => onStart(e, false), { passive: false });
+  handle.addEventListener('touchstart',  e => onStart(e, true),  { passive: false });
+  document.addEventListener('touchmove', e => { if (mode) onMove(e); }, { passive: false });
+  document.addEventListener('touchend',  onEnd);
+}
+
+function sync2DTo3D(side) {
+  const ds = designState[side];
+  if (!ds) return;
+  const config = window.zoneCustomizations[side];
+  if (!config) return;
+
+  const cx = ds.xPct + ds.wPct / 2;
+  const cy = ds.yPct + ds.hPct / 2;
+
+  let vert = 'mid';
+  if (cy < 38) vert = 'top';
+  else if (cy > 62) vert = 'bottom';
+
+  let horiz = 'center';
+  if (cx < 38) horiz = 'left';
+  else if (cx > 62) horiz = 'right';
+
+  let preset = (vert === 'mid' && horiz === 'center') ? 'center' : `${vert}-${horiz}`;
+  if (side === 'back' && !preset.startsWith('back-')) {
+    preset = 'back-' + preset;
+  }
+
+  config.preset = preset;
+  config.placement = preset;
+  
+  // Calculate relative scale multiplier
+  const lookupPreset = preset.replace(/^back-/, '');
+  const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
+  config.scale = ds.wPct / cfg.w;
+
+  if (window.setZoneCustomization) {
+    window.setZoneCustomization(side, config);
+  }
+
+  // Highlight button
+  const btn = document.querySelector(`.placement-btn[data-preset="${lookupPreset}"]`);
+  if (btn) {
+    document.querySelectorAll('.placement-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+}
 
 const sides = {
   front: { wrap: document.getElementById('canvas-front'), canvas: document.querySelector('#canvas-front canvas'), img: null },
@@ -1256,7 +1516,20 @@ function scheduleRender() {
 document.getElementById('printScale').addEventListener('input', e => {
   printScale = parseInt(e.target.value) / 100;
   document.getElementById('printScaleValue').textContent = e.target.value + '%';
-  // Also store scale in active zone config
+  
+  // Update designState size based on scale
+  const lookupPreset = printPreset.replace(/^back-/, '');
+  const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
+  const ds = designState[activeZoneId];
+  if (ds) {
+    const prevW = ds.wPct;
+    const prevH = ds.hPct;
+    ds.wPct = cfg.w * printScale;
+    ds.hPct = cfg.h * printScale;
+    ds.xPct = Math.max(0, ds.xPct - (ds.wPct - prevW) / 2);
+    ds.yPct = Math.max(0, ds.yPct - (ds.hPct - prevH) / 2);
+  }
+
   if (window.zoneCustomizations[activeZoneId]) {
     window.zoneCustomizations[activeZoneId].scale = printScale;
     if (window.setZoneCustomization) window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
@@ -1267,12 +1540,21 @@ document.getElementById('printScale').addEventListener('input', e => {
 document.getElementById('placementGrid').addEventListener('click', e => {
   const btn = e.target.closest('.placement-btn');
   if (!btn) return;
-  // The preset key is zone-aware: back zone forces back-* prefix
   printPreset = (activeZoneId === 'back' && !btn.dataset.preset.startsWith('back'))
     ? 'back-' + btn.dataset.preset
     : btn.dataset.preset;
   document.querySelectorAll('.placement-btn').forEach(b => b.classList.toggle('selected', b===btn));
-  // Also sync preset into zone config and 3D viewer
+  
+  const lookupPreset = btn.dataset.preset;
+  const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
+  const ds = designState[activeZoneId];
+  if (ds) {
+    ds.wPct = cfg.w * printScale;
+    ds.hPct = cfg.h * printScale;
+    ds.xPct = cfg.left + (cfg.w - ds.wPct) / 2;
+    ds.yPct = cfg.top + (cfg.h - ds.hPct) / 2;
+  }
+
   if (window.zoneCustomizations[activeZoneId]) {
     window.zoneCustomizations[activeZoneId].preset = printPreset;
     if (window.setZoneCustomization) window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
@@ -1339,17 +1621,11 @@ function renderDesign(side) {
   const wW = rect.width, wH = rect.height;
   if (wW < 10 || wH < 10) { requestAnimationFrame(() => renderDesign(side)); return; }
 
-  // Use the preset stored for this specific zone, falling back to the global one
-  const zonePreset = (window.zoneCustomizations[side] && window.zoneCustomizations[side].preset) ? window.zoneCustomizations[side].preset : printPreset;
-  // Strip 'back-' prefix since PRESET_CONFIGS keys don't have it
-  const lookupPreset = zonePreset.replace(/^back-/, '');
-  const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
-
-  const zoneScale = (window.zoneCustomizations[side] && window.zoneCustomizations[side].scale) ? window.zoneCustomizations[side].scale : printScale;
-  const w = cfg.w * zoneScale;
-  const h = cfg.h * zoneScale;
-  const top = cfg.top + (cfg.h - h) / 2;
-  const left = cfg.left + (cfg.w - w) / 2;
+  const ds = designState[side];
+  const w = ds.wPct;
+  const h = ds.hPct;
+  const top = ds.yPct;
+  const left = ds.xPct;
 
   s.wrap.style.top = top + '%';
   s.wrap.style.left = left + '%';
@@ -2395,5 +2671,15 @@ window.saveCustomText = typeof saveCustomText !== "undefined" ? saveCustomText :
 window.selectPrint = typeof selectPrint !== "undefined" ? selectPrint : undefined;
 window.switchProduct = typeof switchProduct !== "undefined" ? switchProduct : undefined;
 </script>
+
+<!-- MOBILE BOTTOM CTA BAR -->
+<div class="mobile-cta-bar">
+  <div class="mobile-cta-price" id="mctaPrice">18,000 FCFA</div>
+  <div class="mobile-cta-btns">
+    <button class="mobile-cta-btn wa" onclick="orderViaWhatsApp()">WhatsApp</button>
+    <button class="mobile-cta-btn" onclick="addToCartShowcase()">🛒 Panier</button>
+  </div>
+</div>
+
 </body>
 </html>
