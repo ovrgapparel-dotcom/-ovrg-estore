@@ -622,8 +622,8 @@ function _doRebuildAllDecals() {
       }
       scale = baseScale * (config.scale !== undefined ? config.scale : 1.0);
     } else if (!IS_HEADWEAR) {
-      // T-shirt: scale config defaults to 0.50; base scale is 0.50 of boxSize.x
-      const configScale = config.scale !== undefined ? config.scale : 0.50;
+      // T-shirt: scale config defaults to 0.65; base scale is 0.50 of boxSize.x
+      const configScale = config.scale !== undefined ? config.scale : 0.65;
       scale = 0.50 * configScale;
     }
     const planeW = boxSize.x * scale;
@@ -685,18 +685,18 @@ function _doRebuildAllDecals() {
       }
     } else if (IS_HOODIES) {
       const preset = config.placement || config.preset || 'center';
-      // Front: push 18% inside front surface to skip drawstring/collar outer meshes
-      const hFrontZ = box.max.z - boxSize.z * 0.18;
-      const hBackZ  = box.min.z + boxSize.z * 0.10;
+      // Front: push 20% inside front surface to skip drawstring/collar outer meshes
+      const hFrontZ = box.max.z - boxSize.z * 0.20;
+      const hBackZ  = box.min.z + boxSize.z * 0.12;
 
       const dx = boxSize.x * 0.15;  // lateral offset for L/R separation
 
       // ─── FRONT Y positions ────────────────────────────────────────────────
 
       // Front chest area: from collar (Y≈0.25) to kangaroo pocket (Y≈-0.35)
-      const hFrontTopY = box.min.y + boxSize.y * 0.67;  // Y≈0.04  upper chest (below collar)
-      const hFrontMidY = box.min.y + boxSize.y * 0.61;  // Y≈-0.08 mid-chest
-      const hFrontBotY = box.min.y + boxSize.y * 0.53;  // Y≈-0.24 lower chest (above pocket)
+      const hFrontTopY = box.min.y + boxSize.y * 0.74;  // upper chest (below collar)
+      const hFrontMidY = box.min.y + boxSize.y * 0.66;  // mid-chest center
+      const hFrontBotY = box.min.y + boxSize.y * 0.56;  // lower chest (above pocket)
 
       // ─── BACK Y positions ─────────────────────────────────────────────────
       // Back area spans full height: shoulder blades to hem.
@@ -725,9 +725,9 @@ function _doRebuildAllDecals() {
           px = cx; ori.y = 0;
         }
       } else if (zoneId === 'back') {
-        // box.min.z = hood tip (far behind). Torso back ≈ box.max.z − 88% of depth.
-        // Increased from 0.85 → 0.88 to push stamp centre closer to actual torso back surface.
-        const hTorsoBackZ = box.max.z - boxSize.z * 0.88;
+        // Torso back surface is near box.min.z (front of bounding box in Three.js coords when hood extends back).
+        // Use box.min.z + 14% to target the flat back torso panel, avoiding the hood tip geometry.
+        const hTorsoBackZ = box.min.z + boxSize.z * 0.14;
         pz = hTorsoBackZ;
         ori.y = Math.PI;
         // Vertical Y — back uses DIFFERENT refs than front (back area is taller)
@@ -771,9 +771,9 @@ function _doRebuildAllDecals() {
     } else {
       // T-shirt: bounding-box-relative placement
       let tx = cx;
-      let ty = box.min.y + boxSize.y * 0.52;
-      const inset = boxSize.z * 0.08;
-      let tz = box.max.z - inset;   // just INSIDE front surface
+      let ty = box.min.y + boxSize.y * 0.58;  // chest center (raised from 0.52)
+      const inset = boxSize.z * 0.06;          // slightly less inset = closer to surface
+      let tz = box.max.z - inset;              // just INSIDE front surface
 
       const preset = config.preset || zoneId;
 
@@ -788,22 +788,25 @@ function _doRebuildAllDecals() {
         ty = box.min.y + boxSize.y * 0.60;
         tz = (box.min.z + box.max.z) / 2;
         ori.y = -Math.PI / 2;  // face right
-      } else {
-        // Front / back presets for T-shirt
-        // Horizontal offset
-        if (preset.includes('left'))   tx = cx - boxSize.x * 0.16;
-        if (preset.includes('right'))  tx = cx + boxSize.x * 0.16;
-        // Vertical: top=72%, mid=52%, center=52%, bottom=30%
+      } else if (zoneId === 'back') {
+        // Back surface: box.min.z is the back of the T-shirt
+        tz = box.min.z + inset;   // just INSIDE back surface
+        ori.y = Math.PI;          // face backward (critical — was missing for T-shirt back)
+        // Horizontal offset — mirror for back-camera view
+        if (preset.includes('left'))        tx = cx + boxSize.x * 0.16;  // mirrored
+        else if (preset.includes('right'))  tx = cx - boxSize.x * 0.16;  // mirrored
+        // Vertical
         if (preset.includes('top'))         ty = box.min.y + boxSize.y * 0.72;
-        else if (preset.includes('mid'))    ty = box.min.y + boxSize.y * 0.52;
         else if (preset.includes('bottom')) ty = box.min.y + boxSize.y * 0.30;
-        // else center stays at 0.52 (default)
-
-        if (zoneId === 'back' || (preset && preset.includes('back'))) {
-          tz = box.min.z + inset;   // just INSIDE back surface
-          ori.y = Math.PI;
-          if (tx !== cx) tx = cx - (tx - cx);  // mirror X for back-camera view
-        }
+        else                                ty = box.min.y + boxSize.y * 0.58;
+      } else {
+        // Front presets for T-shirt
+        if (preset.includes('left'))        tx = cx - boxSize.x * 0.16;
+        else if (preset.includes('right'))  tx = cx + boxSize.x * 0.16;
+        if (preset.includes('top'))         ty = box.min.y + boxSize.y * 0.72;
+        else if (preset.includes('mid'))    ty = box.min.y + boxSize.y * 0.58;
+        else if (preset.includes('bottom')) ty = box.min.y + boxSize.y * 0.30;
+        // center/default stays at 0.58
       }
 
       px = tx; py = ty; pz = tz;
