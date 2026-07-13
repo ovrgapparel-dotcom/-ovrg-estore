@@ -10,6 +10,7 @@ export default defineConfig({
         headwear: resolve(__dirname, 'headwear.html'),
         jeans: resolve(__dirname, 'jeans.html'),
         hoodies: resolve(__dirname, 'hoodies.html'),
+        lestock: resolve(__dirname, 'lestock.html'),
       },
     },
   },

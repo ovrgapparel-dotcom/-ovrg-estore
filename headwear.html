@@ -170,13 +170,59 @@ header {
 }
 .design-canvas-wrap:active { cursor: grabbing; }
 .design-canvas-wrap canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.35)); }
-.design-resize-handle {
-  position: absolute; bottom: -10px; right: -10px; width: 22px; height: 22px;
-  background: var(--primary); border-radius: 50%; cursor: se-resize; z-index: 10;
-  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-  user-select: none; touch-action: none;
+
+.design-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--primary);
+  border: 2px solid white;
+  border-radius: 50%;
+  z-index: 10;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
+.handle-nw { top: -6px; left: -6px; cursor: nwse-resize; }
+.handle-ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.handle-sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.handle-se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+.design-hint-text {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 3px 8px;
+  font-size: 0.65rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  font-weight: 500;
+  display: none;
+  z-index: 12;
+}
+.design-canvas-wrap:hover .design-hint-text {
+  display: block;
+}
+
+.tier-btn {
+  border: 1px solid #333 !important;
+  color: #888 !important;
+  background: none !important;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.tier-btn:hover {
+  border-color: #555 !important;
+  color: #fff !important;
+}
+.tier-btn.selected {
+  border-color: var(--primary) !important;
+  background: var(--primary) !important;
+  color: white !important;
+}
+
 .design-drag-hint {
   font-size:0.72rem; color:var(--gray); margin-top:0.4rem; text-align:center;
   letter-spacing:0.02em;
@@ -556,6 +602,53 @@ footer .footer-admin {
   font-family: inherit; transition: all 0.2s; letter-spacing: 0.03em;
 }
 .pg-trigger:hover { background: rgba(255,107,53,0.18); border-color: rgba(255,107,53,0.7); }
+
+/* Mobile bottom CTA bar */
+.mobile-cta-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--dark);
+  padding: 0.75rem 1rem;
+  z-index: 1000;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 2px solid var(--primary);
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
+}
+.mobile-cta-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: white;
+}
+.mobile-cta-btns {
+  display: flex;
+  gap: 0.5rem;
+}
+.mobile-cta-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mobile-cta-btn.wa {
+  background: #25D366;
+}
+@media (max-width: 768px) {
+  .mobile-cta-bar {
+    display: flex;
+  }
+  body {
+    padding-bottom: 60px !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -693,6 +786,16 @@ footer .footer-admin {
           <span id="labelPreviewText" style="font-size:1.4rem;font-weight:900;letter-spacing:0.08em"></span>
         </div>
       </div>
+    </div>
+
+    <div class="ctrl-section">
+      <label class="ctrl-label">Qualité du vêtement</label>
+      <div class="tier-select-row" id="tierSelectRow" style="display:flex;gap:0.5rem">
+        <button class="tier-btn selected" data-tier="standard" onclick="selectTier('standard')" style="flex:1;padding:0.6rem;border-radius:8px;font-weight:700;cursor:pointer">Standard</button>
+        <button class="tier-btn" data-tier="highend" onclick="selectTier('highend')" style="flex:1;padding:0.6rem;border-radius:8px;font-weight:700;cursor:pointer">High-End</button>
+        <button class="tier-btn" data-tier="premium" onclick="selectTier('premium')" style="flex:1;padding:0.6rem;border-radius:8px;font-weight:700;cursor:pointer">Premium</button>
+      </div>
+      <div id="tierStockInfo" style="font-size:0.8rem;color:#888;margin-top:0.4rem"></div>
     </div>
 
     <div class="ctrl-section">
@@ -1102,6 +1205,56 @@ function initSupabase() {
   }
 }
 
+let lestockConfig = null;
+let selectedTier = 'standard';
+
+async function loadLeStock() {
+  try {
+    const { data, error } = await sbClient.from('showcase_settings').select('color_mockups').eq('id', 5).single();
+    if (data && data.color_mockups && data.color_mockups[0] && data.color_mockups[0].inventory) {
+      const fullInv = data.color_mockups[0].inventory;
+      const key = productType === 'bucket' ? 'bobble' : 'cap';
+      lestockConfig = fullInv[key];
+      const urlParams = new URLSearchParams(window.location.search);
+      const tierParam = urlParams.get('tier');
+      if (tierParam && lestockConfig.tiers[tierParam]) {
+        selectedTier = tierParam;
+      }
+      applyTier();
+    }
+  } catch(e) {
+    console.error("Failed to load LeStock config:", e);
+  }
+}
+
+function selectTier(tier) {
+  selectedTier = tier;
+  applyTier();
+}
+
+function applyTier() {
+  if (!lestockConfig) return;
+  const tierData = lestockConfig.tiers[selectedTier];
+  globalSettings.headwearBasePrice = tierData.price;
+  
+  document.querySelectorAll('.tier-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.getAttribute('data-tier') === selectedTier);
+  });
+
+  const stockInfo = document.getElementById('tierStockInfo');
+  if (stockInfo) {
+    if (tierData.stock <= 0) {
+      stockInfo.innerHTML = `<span style="color:#ef4444;font-weight:700">⚠️ En rupture de stock</span>`;
+    } else if (tierData.stock <= 10) {
+      stockInfo.innerHTML = `<span style="color:#f59e0b;font-weight:600">⚠️ Stock très limité: ${tierData.stock} restants</span>`;
+    } else {
+      stockInfo.innerHTML = `<span style="color:var(--success);font-weight:600">✓ En stock (${tierData.stock} disponibles)</span>`;
+    }
+  }
+
+  updatePrice();
+}
+
 // ============================================================
 //  LOAD DATA
 // ============================================================
@@ -1134,6 +1287,7 @@ async function loadSettings() {
       if (cached) globalSettings.color_mockups = JSON.parse(cached);
     } catch(e2) {}
   }
+  await loadLeStock();
 }
 
 async function loadPrints() {
@@ -1363,6 +1517,7 @@ function setProductType(type) {
     const modelUrl = type === 'cap' ? `${SUPABASE_MODEL_URL}/cap.glb` : `${SUPABASE_MODEL_URL}/bucket.glb`;
     window.load3DModel(modelUrl);
   }
+  loadLeStock();
 }
 
 
@@ -1834,24 +1989,44 @@ function initDraggable(side) {
   const s = sides[side];
   if (!s || !s.wrap) return;
 
-  // Resize handle
-  const handle = document.createElement('div');
-  handle.className = 'design-resize-handle';
-  handle.textContent = '↘';
-  handle.title = 'Redimensionner';
-  s.wrap.appendChild(handle);
+  // Clear any existing handles/hints
+  const oldHandles = s.wrap.querySelectorAll('.design-handle, .design-hint-text, .design-resize-handle');
+  oldHandles.forEach(el => el.remove());
+
+  // Add styling to wrap
+  s.wrap.style.border = '1.5px dashed var(--primary)';
+  s.wrap.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.2)';
+
+  // Create 4 corner handles
+  const corners = ['nw', 'ne', 'sw', 'se'];
+  const handles = {};
+  corners.forEach(c => {
+    const h = document.createElement('div');
+    h.className = `design-handle handle-${c}`;
+    h.title = 'Redimensionner';
+    s.wrap.appendChild(h);
+    handles[c] = h;
+  });
+
+  // Instruction hint
+  const hint = document.createElement('div');
+  hint.className = 'design-hint-text';
+  hint.innerText = 'Glisser pour placer · Tirer les coins pour redimensionner';
+  s.wrap.appendChild(hint);
 
   let mode = null;   // 'drag' | 'resize'
+  let activeHandle = null;
   let startX, startY, snapXPct, snapYPct, snapWPct, snapHPct;
 
   function getParentRect() {
     return (s.wrap.parentElement || document.body).getBoundingClientRect();
   }
 
-  function onStart(e, isResize) {
+  function onStart(e, isResize, handleClass) {
     e.stopPropagation();
     const pt = e.touches ? e.touches[0] : e;
     mode = isResize ? 'resize' : 'drag';
+    activeHandle = handleClass;
     startX = pt.clientX; startY = pt.clientY;
     snapXPct = designState[side].xPct;
     snapYPct = designState[side].yPct;
@@ -1868,15 +2043,27 @@ function initDraggable(side) {
     const dx = (pt.clientX - startX) / pr.width  * 100;
     const dy = (pt.clientY - startY) / pr.height * 100;
     const ds = designState[side];
+
     if (mode === 'drag') {
-      ds.xPct = Math.max(0, Math.min(95 - ds.wPct, snapXPct + dx));
-      ds.yPct = Math.max(0, Math.min(95 - ds.hPct, snapYPct + dy));
+      ds.xPct = Math.max(0, Math.min(100 - ds.wPct, snapXPct + dx));
+      ds.yPct = Math.max(0, Math.min(100 - ds.hPct, snapYPct + dy));
     } else {
-      ds.wPct = Math.max(5, Math.min(90, snapWPct + dx));
-      ds.hPct = Math.max(5, Math.min(90, snapHPct + dy));
-      // Keep centre-aligned as user resizes
-      ds.xPct = Math.max(0, snapXPct - (ds.wPct - snapWPct)/2);
-      ds.yPct = Math.max(0, snapYPct - (ds.hPct - snapHPct)/2);
+      let change = dx;
+      if (activeHandle === 'nw') change = -dx;
+      else if (activeHandle === 'ne') change = dx;
+      else if (activeHandle === 'sw') change = -dx;
+      else if (activeHandle === 'se') change = dx;
+
+      const aspect = snapHPct / snapWPct;
+      const newW = Math.max(5, Math.min(90, snapWPct + change * 2));
+      const newH = newW * aspect;
+
+      ds.wPct = newW;
+      ds.hPct = newH;
+      // Keep centered as user resizes
+      ds.xPct = Math.max(0, Math.min(100 - ds.wPct, snapXPct - (ds.wPct - snapWPct)/2));
+      ds.yPct = Math.max(0, Math.min(100 - ds.hPct, snapYPct - (ds.hPct - snapHPct)/2));
+
       // Sync slider
       const slider = document.getElementById('scaleSlider');
       if (slider) {
@@ -1892,17 +2079,25 @@ function initDraggable(side) {
   function onEnd() {
     if (mode === 'drag') s.wrap.style.cursor = 'grab';
     mode = null;
+    activeHandle = null;
   }
 
   // Mouse
-  s.wrap.addEventListener('mousedown',   e => onStart(e, false));
-  handle.addEventListener('mousedown',   e => onStart(e, true));
+  s.wrap.addEventListener('mousedown', e => {
+    if (!e.target.classList.contains('design-handle')) onStart(e, false);
+  });
+  corners.forEach(c => {
+    handles[c].addEventListener('mousedown', e => onStart(e, true, c));
+    handles[c].addEventListener('touchstart', e => onStart(e, true, c), { passive: false });
+  });
+
   document.addEventListener('mousemove', e => { if (mode) onMove(e); });
   document.addEventListener('mouseup',   onEnd);
 
   // Touch
-  s.wrap.addEventListener('touchstart',  e => onStart(e, false), { passive: false });
-  handle.addEventListener('touchstart',  e => onStart(e, true),  { passive: false });
+  s.wrap.addEventListener('touchstart',  e => {
+    if (!e.target.classList.contains('design-handle')) onStart(e, false);
+  }, { passive: false });
   document.addEventListener('touchmove', e => { if (mode) onMove(e); }, { passive: false });
   document.addEventListener('touchend',  onEnd);
 }
@@ -2367,13 +2562,27 @@ function updateShirtImagesForColor(hex) {
 }
 
 
+function calculateTotalPrice() {
+  const basePrice = selectedPrint && selectedPrint.price != null
+    ? selectedPrint.price
+    : globalSettings.headwearBasePrice || 9000;
+
+  const showLabel = decorMode === 'label' || decorMode === 'both';
+  let labelSurcharge = 0;
+  if (showLabel) {
+    const labelText = (document.getElementById('customLabelInput')?.value || '').trim();
+    labelSurcharge = labelText.length * 150;
+  }
+  return basePrice + labelSurcharge;
+}
+
 function buildOrderItem() {
   if (!selectedPrint) return null;
-  const price = selectedPrint.price != null ? selectedPrint.price : globalSettings.headwearBasePrice;
+  const price = calculateTotalPrice();
   return {
-    key: `showcase-headwear-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${printSize}`,
+    key: `showcase-headwear-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${printSize}-${selectedTier}`,
     id: `showcase-${selectedPrint.id}`,
-    name: `${productType === 'cap' ? 'Casquette' : 'Bob'} OVRG — ${selectedPrint.name}`,
+    name: `${productType === 'cap' ? 'Casquette' : 'Bob'} OVRG (${selectedTier.toUpperCase()}) — ${selectedPrint.name}`,
     price: price,
     qty: 1,
     size: selectedSize,
@@ -2384,7 +2593,8 @@ function buildOrderItem() {
       placement: printPlacement,
       placementLabel: printPlacement === 'front' ? 'Devant' : 'Côté',
       scale: printSize === 'small' ? 'Petit' : 'Grand',
-      blend: 100
+      blend: 100,
+      tier: selectedTier
     }
   };
 }
@@ -2392,6 +2602,16 @@ function buildOrderItem() {
 function addToCartShowcase() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
+
+  // Check garment tier stock
+  if (lestockConfig) {
+    const tierData = lestockConfig.tiers[selectedTier];
+    if (tierData && tierData.stock <= 0) {
+      showToast('Rupture de stock', `Le modèle ${productType === 'cap' ? 'Casquette' : 'Bob'} ${tierData.label} est en rupture de stock.`, '#ef4444');
+      return;
+    }
+  }
+
   let cart = [];
   try { cart = JSON.parse(localStorage.getItem('ovrg_cart') || '[]'); } catch(e) {}
   const existing = cart.find(c => c.key === item.key);
@@ -2405,7 +2625,7 @@ function orderViaWhatsApp() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
   const c = item.customization;
-  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'cap' ? 'casquette' : 'bob'}:\n\n`+
+  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'cap' ? 'casquette' : 'bob'} (${selectedTier.toUpperCase()}):\n\n`+
               `🎨 Imprimé: ${selectedPrint.name}\n`+
               `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}\n`+
               `📏 Taille: ${item.size}\n`+
@@ -2423,196 +2643,7 @@ function goToCheckout() {
 
 
 
-function updateAdminUI() {
-  const btn = document.getElementById('adminToggleBtn');
-  if (!btn) return;
-  if (currentUser) { btn.textContent = '⚙●'; btn.style.color = '#22c55e'; btn.style.opacity = '0.4'; }
-  else { btn.textContent = '⚙'; btn.style.color = '#1a1a1a'; btn.style.opacity = '0.15'; }
-}
 
-function openLogin() {
-  document.getElementById('loginEmail').value = '';
-  document.getElementById('loginPassword').value = '';
-  document.getElementById('loginError').textContent = '';
-  document.getElementById('loginOverlay').classList.add('open');
-}
-
-function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
-
-async function doLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  document.getElementById('loginError').textContent = '';
-  if (!email || !password) { document.getElementById('loginError').textContent = 'Veuillez remplir tous les champs.'; return; }
-  if (!sbClient) {
-    document.getElementById('loginError').textContent = 'Connexion à Supabase indisponible. Rechargez la page et réessayez.';
-    return;
-  }
-  try {
-    await sbClient.auth.signOut().catch(()=>{});
-    const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    currentUser = data.user;
-    closeLogin();
-    openAdmin();
-  } catch(e) {
-    console.error('Login error:', e);
-    document.getElementById('loginError').textContent = 'Email ou mot de passe incorrect.';
-  }
-}
-
-async function doLogout() {
-  await sbClient.auth.signOut().catch(()=>{});
-  currentUser = null;
-  closeAdmin();
-  showToast('Déconnecté', 'Session admin terminée.');
-}
-
-function openAdmin() {
-  document.getElementById('adminOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  checkSupabaseConnection();
-  loadAdminPrints();
-}
-
-function closeAdmin() {
-  document.getElementById('adminOverlay').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-async function checkSupabaseConnection() {
-  const el = document.getElementById('supabaseStatus');
-  try {
-    const { error } = await sbClient.from(PRINTS_TABLE).select('id').limit(1);
-    if (error) throw error;
-    el.className = 'supabase-status connected';
-    el.textContent = '✓ Connecté à Supabase — table showcase_prints prête';
-  } catch(e) {
-    el.className = 'supabase-status disconnected';
-    el.textContent = '✗ Table showcase_prints introuvable — exécutez le SQL fourni dans le code source';
-  }
-}
-
-function showAdminTab(tab, el) {
-  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('adminTabList').style.display = tab==='list' ? '' : 'none';
-  document.getElementById('adminTabAdd').style.display = tab==='add' ? '' : 'none';
-  const settingsTab = document.getElementById('adminTabSettings');
-  if (settingsTab) settingsTab.style.display = tab==='settings' ? '' : 'none';
-  if (tab === 'settings') loadAdminSettingsUI();
-}
-
-async function loadAdminPrints() {
-  const list = document.getElementById('adminPrintList');
-  list.innerHTML = `<p style="color:#666;text-align:center;padding:2rem">Chargement des broderies...</p>`;
-  const _filterBroderies = (data) => (data || []).filter(p => {
-    if (p.design_type && p.design_type === 'embroidery') return true;
-    if (p.category && p.category.startsWith('Broderie')) return true;
-    return false;
-  });
-  try {
-    const { data, error } = await sbClient.from(PRINTS_TABLE).select('*').order('id', { ascending: true });
-    if (error) throw error;
-    renderAdminPrintList(_filterBroderies(data));
-  } catch(e) {
-    // Fallback to default prints table if configured one fails
-    if (PRINTS_TABLE !== DEFAULT_PRINTS_TABLE) {
-      console.warn('Primary prints table failed, falling back to default:', DEFAULT_PRINTS_TABLE);
-      try {
-        const { data, error } = await sbClient.from(DEFAULT_PRINTS_TABLE).select('*').order('id', { ascending: true });
-        if (error) throw error;
-        renderAdminPrintList(_filterBroderies(data));
-        showToast('Info', `Utilisation de la table par défaut (${DEFAULT_PRINTS_TABLE})`);
-        return;
-      } catch (fallbackErr) {
-        console.error('Fallback prints load failed:', fallbackErr);
-      }
-    }
-    list.innerHTML = `<p style="color:#f87171;text-align:center;padding:2rem">Table non configurée.</p>`;
-  }
-}
-
-
-// Helper to create the prints table via Supabase RPC (requires appropriate permission)
-async function createPrintsTable() {
-  const CREATE_TABLE_SQL = `
-    create table if not exists ${PRINTS_TABLE} (
-      id bigserial primary key,
-      name text not null,
-      image_url text not null,
-      category text,
-      price integer,
-      stock integer,
-      colors jsonb,
-      active boolean default true
-    );`;
-  try {
-    const { error } = await sbClient.rpc('run_sql', { sql: CREATE_TABLE_SQL });
-    if (error) throw error;
-    showToast('Succès', 'Table des imprimés créée avec succès.');
-    await loadAdminPrints();
-  } catch (err) {
-    console.error('Create table error:', err);
-    showToast('Erreur', 'Impossible de créer la table. Vérifiez les permissions.', '#ef4444');
-  }
-}
-
-
-
-function buildOrderItem() {
-  if (!selectedPrint) return null;
-  const price = selectedPrint.price != null ? selectedPrint.price : globalSettings.headwearBasePrice;
-  return {
-    key: `showcase-headwear-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${printSize}`,
-    id: `showcase-${selectedPrint.id}`,
-    name: `${productType === 'cap' ? 'Casquette' : 'Bob'} OVRG — ${selectedPrint.name}`,
-    price: price,
-    qty: 1,
-    size: selectedSize,
-    color: selectedColor,
-    img: selectedPrint.image_url || '',
-    type: 'showcase',
-    customization: {
-      placement: printPlacement,
-      placementLabel: printPlacement === 'front' ? 'Devant' : 'Côté',
-      scale: printSize === 'small' ? 'Petit' : 'Grand',
-      blend: 100
-    }
-  };
-}
-
-function addToCartShowcase() {
-  const item = buildOrderItem();
-  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
-  let cart = [];
-  try { cart = JSON.parse(localStorage.getItem('ovrg_cart') || '[]'); } catch(e) {}
-  const existing = cart.find(c => c.key === item.key);
-  if (existing) existing.qty += 1;
-  else cart.push(item);
-  localStorage.setItem('ovrg_cart', JSON.stringify(cart));
-  showToast('Ajouté au panier! 🛍', `${item.name} ajouté.`);
-}
-
-function orderViaWhatsApp() {
-  const item = buildOrderItem();
-  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
-  const c = item.customization;
-  const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'cap' ? 'casquette' : 'bob'}:%0A%0A`+
-              `🎨 Imprimé: ${selectedPrint.name}%0A`+
-              `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}%0A`+
-              `📏 Taille: ${item.size}%0A`+
-              `📍 Position: ${c.placementLabel}%0A`+
-              `💰 Prix: ${fmt(item.price)}`;
-  window.open(`https://wa.me/2250799108108?text=${msg}`, '_blank');
-}
-
-function goToCheckout() {
-  const item = buildOrderItem();
-  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
-  addToCartShowcase();
-  setTimeout(() => { window.location.href = 'index.html?cart=1'; }, 150);
-}
 
 
 // ============================================================
@@ -2990,6 +3021,15 @@ function pgHandleLeave() {
   </div>
 </div>
 
+
+<!-- Mobile bottom CTA bar -->
+<div class="mobile-cta-bar">
+  <div class="mobile-cta-price" id="mctaPrice">12,000 FCFA</div>
+  <div class="mobile-cta-btns">
+    <button class="mobile-cta-btn wa" onclick="orderViaWhatsApp()">WhatsApp</button>
+    <button class="mobile-cta-btn" onclick="addToCartShowcase()">🛒 Panier</button>
+  </div>
+</div>
 
 </body>
 </html>

@@ -569,6 +569,153 @@ footer .footer-admin {
 .zone-btn:hover { background: #e0e0e0; }
 .zone-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
+/* Drag and resize styles */
+.design-canvas-wrap {
+  pointer-events: all !important;
+  cursor: grab;
+  z-index: 5;
+  border-radius: 4px;
+}
+.design-canvas-wrap:active { cursor: grabbing; }
+.design-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--primary);
+  border: 2px solid white;
+  border-radius: 50%;
+  z-index: 10;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.handle-nw { top: -6px; left: -6px; cursor: nwse-resize; }
+.handle-ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.handle-sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.handle-se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+.design-hint-text {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 3px 8px;
+  font-size: 0.65rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  font-weight: 500;
+  display: none;
+  z-index: 12;
+}
+.design-canvas-wrap:hover .design-hint-text {
+  display: block;
+}
+
+.tier-btn {
+  border: 1px solid #333 !important;
+  color: #888 !important;
+  background: none !important;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.tier-btn:hover {
+  border-color: #555 !important;
+  color: #fff !important;
+}
+.tier-btn.selected {
+  border-color: var(--primary) !important;
+  background: var(--primary) !important;
+  color: white !important;
+}
+
+
+/* Mobile responsive layout */
+@media (max-width: 900px) {
+  .showcase-main {
+    grid-template-columns: 1fr !important;
+    margin-top: 1rem !important;
+    gap: 1.5rem !important;
+  }
+  .mockup-card {
+    position: static !important;
+    box-shadow: none !important;
+    padding: 1rem !important;
+  }
+  .mockup-stage {
+    min-height: 300px !important;
+  }
+  .shirt-wrapper canvas.shirt-img {
+    width: 240px !important;
+  }
+  .controls-card {
+    padding: 1.2rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .mockup-stage {
+    min-height: 250px !important;
+  }
+  .shirt-wrapper canvas.shirt-img {
+    width: 200px !important;
+  }
+  .view-tabs {
+    flex-wrap: wrap !important;
+    gap: 0.3rem !important;
+  }
+  .view-btn {
+    font-size: 0.75rem !important;
+    padding: 0.3rem 0.7rem !important;
+  }
+}
+
+/* Mobile bottom CTA bar */
+.mobile-cta-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--dark);
+  padding: 0.75rem 1rem;
+  z-index: 1000;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 2px solid var(--primary);
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
+}
+.mobile-cta-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: white;
+}
+.mobile-cta-btns {
+  display: flex;
+  gap: 0.5rem;
+}
+.mobile-cta-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mobile-cta-btn.wa {
+  background: #25D366;
+}
+@media (max-width: 768px) {
+  .mobile-cta-bar {
+    display: flex;
+  }
+  body {
+    padding-bottom: 60px !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -628,6 +775,7 @@ footer .footer-admin {
         <div id="threeContainer" style="width: 100%; height: 100%; min-height: 400px;"></div>
       </div>
       <div class="no-print-msg" id="noPrintMsg">Sélectionnez une broderie ci-dessous</div>
+      <div class="design-drag-hint" style="color: rgba(255,255,255,0.35); text-align: center; font-size: 0.72rem; margin-top: 0.5rem;">Faites glisser pour placer · Tirez le coin pour redimensionner</div>
     </div>
 
     
@@ -726,6 +874,16 @@ footer .footer-admin {
           <span id="labelPreviewText" style="font-size:1.4rem;font-weight:900;letter-spacing:0.08em"></span>
         </div>
       </div>
+    </div>
+
+    <div class="ctrl-section">
+      <label class="ctrl-label">Qualité du vêtement</label>
+      <div class="tier-select-row" id="tierSelectRow" style="display:flex;gap:0.5rem">
+        <button class="tier-btn selected" data-tier="standard" onclick="selectTier('standard')" style="flex:1;padding:0.6rem;border-radius:8px;font-weight:700;cursor:pointer">Standard</button>
+        <button class="tier-btn" data-tier="highend" onclick="selectTier('highend')" style="flex:1;padding:0.6rem;border-radius:8px;font-weight:700;cursor:pointer">High-End</button>
+        <button class="tier-btn" data-tier="premium" onclick="selectTier('premium')" style="flex:1;padding:0.6rem;border-radius:8px;font-weight:700;cursor:pointer">Premium</button>
+      </div>
+      <div id="tierStockInfo" style="font-size:0.8rem;color:#888;margin-top:0.4rem"></div>
     </div>
 
     <div class="ctrl-section">
@@ -1060,44 +1218,60 @@ const shirtSource = { front: null, back: null, 'sleeve-left': null, 'sleeve-righ
 const fabricData = { front: null, back: null, 'sleeve-left': null, 'sleeve-right': null };
 
 function analyzeFabric(side) {
-  const img = shirtSource[side];
-  if (!img) return;
-  const w = img.naturalWidth, h = img.naturalHeight;
-  const offscreen = document.createElement('canvas');
-  offscreen.width = w; offscreen.height = h;
-  const ctx = offscreen.getContext('2d', { willReadFrequently: true });
-  ctx.drawImage(img, 0, 0, w, h);
-  const imageData = ctx.getImageData(0, 0, w, h);
-  const data = imageData.data;
+  try {
+    const img = shirtSource[side];
+    if (!img) return;
+    const w = img.naturalWidth, h = img.naturalHeight;
+    const offscreen = document.createElement('canvas');
+    offscreen.width = w; offscreen.height = h;
+    const ctx = offscreen.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, w, h);
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
 
-  const LUM_THRESHOLD = 0.30;
-  const lum = new Float32Array(w * h);
-  const mask = new Uint8Array(w * h);
-  let lumSum = 0, fabricCount = 0;
+    const LUM_THRESHOLD = 0.30;
+    const lum = new Float32Array(w * h);
+    const mask = new Uint8Array(w * h);
+    let lumSum = 0, fabricCount = 0;
 
-  for (let i = 0; i < w * h; i++) {
-    const r = data[i*4] / 255, g = data[i*4+1] / 255, b = data[i*4+2] / 255;
-    const l = 0.2126*r + 0.7152*g + 0.0722*b;
-    lum[i] = l;
-    if (l > LUM_THRESHOLD) {
-      mask[i] = 1;
-      lumSum += l;
-      fabricCount++;
+    for (let i = 0; i < w * h; i++) {
+      const r = data[i*4] / 255, g = data[i*4+1] / 255, b = data[i*4+2] / 255;
+      const l = 0.2126*r + 0.7152*g + 0.0722*b;
+      lum[i] = l;
+      if (l > LUM_THRESHOLD) {
+        mask[i] = 1;
+        lumSum += l;
+        fabricCount++;
+      }
     }
-  }
-  const meanLum = fabricCount > 0 ? lumSum / fabricCount : 0.78;
+    const meanLum = fabricCount > 0 ? lumSum / fabricCount : 0.78;
 
-  const dx = new Float32Array(w * h);
-  const dy = new Float32Array(w * h);
-  for (let y = 1; y < h - 1; y++) {
-    for (let x = 1; x < w - 1; x++) {
-      const idx = y * w + x;
-      dx[idx] = (lum[idx + 1] - lum[idx - 1]) * 0.5;
-      dy[idx] = (lum[idx + w] - lum[idx - w]) * 0.5;
+    const dx = new Float32Array(w * h);
+    const dy = new Float32Array(w * h);
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const idx = y * w + x;
+        dx[idx] = (lum[idx + 1] - lum[idx - 1]) * 0.5;
+        dy[idx] = (lum[idx + w] - lum[idx - w]) * 0.5;
+      }
     }
-  }
 
-  fabricData[side] = { lum, dx, dy, mask, meanLum, w, h };
+    fabricData[side] = { lum, dx, dy, mask, meanLum, w, h };
+  } catch (e) {
+    console.warn(`Fabric analysis failed for ${side} (possibly CORS), using flat shading fallback`, e);
+    const img = shirtSource[side];
+    const w = img ? img.naturalWidth : 600;
+    const h = img ? img.naturalHeight : 600;
+    fabricData[side] = {
+      lum: new Float32Array(w * h).fill(0.78),
+      dx: new Float32Array(w * h),
+      dy: new Float32Array(w * h),
+      mask: new Uint8Array(w * h).fill(1),
+      meanLum: 0.78,
+      w,
+      h
+    };
+  }
 }
 
 function loadShirtImages() {
@@ -1169,6 +1343,54 @@ function initSupabase() {
   }
 }
 
+let lestockConfig = null;
+let selectedTier = 'standard';
+
+async function loadLeStock() {
+  try {
+    const { data, error } = await sbClient.from('showcase_settings').select('color_mockups').eq('id', 5).single();
+    if (data && data.color_mockups && data.color_mockups[0] && data.color_mockups[0].inventory) {
+      lestockConfig = data.color_mockups[0].inventory[productType];
+      const urlParams = new URLSearchParams(window.location.search);
+      const tierParam = urlParams.get('tier');
+      if (tierParam && lestockConfig.tiers[tierParam]) {
+        selectedTier = tierParam;
+      }
+      applyTier();
+    }
+  } catch(e) {
+    console.error("Failed to load LeStock config:", e);
+  }
+}
+
+function selectTier(tier) {
+  selectedTier = tier;
+  applyTier();
+}
+
+function applyTier() {
+  if (!lestockConfig) return;
+  const tierData = lestockConfig.tiers[selectedTier];
+  globalSettings.outerwearBasePrice = tierData.price;
+  
+  document.querySelectorAll('.tier-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.getAttribute('data-tier') === selectedTier);
+  });
+
+  const stockInfo = document.getElementById('tierStockInfo');
+  if (stockInfo) {
+    if (tierData.stock <= 0) {
+      stockInfo.innerHTML = `<span style="color:#ef4444;font-weight:700">⚠️ En rupture de stock</span>`;
+    } else if (tierData.stock <= 10) {
+      stockInfo.innerHTML = `<span style="color:#f59e0b;font-weight:600">⚠️ Stock très limité: ${tierData.stock} restants</span>`;
+    } else {
+      stockInfo.innerHTML = `<span style="color:var(--success);font-weight:600">✓ En stock (${tierData.stock} disponibles)</span>`;
+    }
+  }
+
+  updatePrice();
+}
+
 // ============================================================
 //  LOAD DATA
 // ============================================================
@@ -1180,6 +1402,8 @@ async function loadSettings() {
       if (data.global_colors && data.global_colors.length) {
         globalSettings.global_colors = data.global_colors;
       }
+      globalSettings.front_image_url = data.front_image_url || null;
+      globalSettings.back_image_url = data.back_image_url || null;
       // Restore color-specific mockups (the main source of truth)
       if (data.color_mockups && Array.isArray(data.color_mockups) && data.color_mockups.length) {
         globalSettings.color_mockups = data.color_mockups;
@@ -1201,6 +1425,7 @@ async function loadSettings() {
       if (cached) globalSettings.color_mockups = JSON.parse(cached);
     } catch(e2) {}
   }
+  await loadLeStock();
 }
 
 async function loadPrints() {
@@ -1386,7 +1611,10 @@ function updatePrice() {
     }
   }
   
-  document.getElementById('priceMain').textContent = fmt(total);
+  const formattedPrice = fmt(total);
+  document.getElementById('priceMain').textContent = formattedPrice;
+  const mPrice = document.getElementById('mctaPrice');
+  if (mPrice) mPrice.textContent = formattedPrice;
 }
 
 // Push ALL active zone prints to the 3D viewer
@@ -1633,6 +1861,21 @@ function setPrintPlacement(preset, render = true) {
     window.zoneCustomizations[activeZoneId].placement = preset;
     window.zoneCustomizations[activeZoneId].preset = preset;
     window.zoneCustomizations[activeZoneId].scale = scaleMultiplier;
+    
+    // Initialize 2D coordinates mapping
+    const ds = designState[activeZoneId];
+    if (ds) {
+      const zId = getZoneIdForSideAndPreset(activeZoneId, preset);
+      const zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.jacket;
+      const zone = zones.find(z => z.id === zId) || zones[0];
+      const zWpx = zone.w * scaleMultiplier;
+      const zHpx = zone.h * scaleMultiplier;
+      ds.wPct = zWpx / 600 * 100;
+      ds.hPct = zHpx / 600 * 100;
+      ds.xPct = (zone.cx - zWpx / 2) / 600 * 100;
+      ds.yPct = (zone.cy - zHpx / 2) / 600 * 100;
+    }
+
     if (window.setZoneCustomization) {
       window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
     }
@@ -1658,6 +1901,23 @@ function onScaleSliderInput(val) {
   const el = document.getElementById('scaleDisplay');
   if (el) el.textContent = val + '%';
   
+  // Update designState size based on scale
+  const preset = printPlacement;
+  const zId = getZoneIdForSideAndPreset(activeZoneId, preset);
+  const zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.jacket;
+  const zone = zones.find(z => z.id === zId) || zones[0];
+  const ds = designState[activeZoneId];
+  if (ds) {
+    const prevW = ds.wPct;
+    const prevH = ds.hPct;
+    const newW = (zone.w * scaleMultiplier) / 600 * 100;
+    const newH = (zone.h * scaleMultiplier) / 600 * 100;
+    ds.wPct = newW;
+    ds.hPct = newH;
+    ds.xPct = Math.max(0, ds.xPct - (ds.wPct - prevW) / 2);
+    ds.yPct = Math.max(0, ds.yPct - (ds.hPct - prevH) / 2);
+  }
+
   // Save scale to current zone customization
   if (window.zoneCustomizations[activeZoneId]) {
     window.zoneCustomizations[activeZoneId].scale = scaleMultiplier;
@@ -1683,6 +1943,21 @@ function setEmbroiderySize(sz) {
   const mults = { S: 0.65, M: 1.0, L: 1.40 };
   scaleMultiplier = mults[sz];
   
+  // Update designState size based on scale
+  const preset = printPlacement;
+  const zId = getZoneIdForSideAndPreset(activeZoneId, preset);
+  const zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.jacket;
+  const zone = zones.find(z => z.id === zId) || zones[0];
+  const ds = designState[activeZoneId];
+  if (ds) {
+    const prevW = ds.wPct;
+    const prevH = ds.hPct;
+    ds.wPct = (zone.w * scaleMultiplier) / 600 * 100;
+    ds.hPct = (zone.h * scaleMultiplier) / 600 * 100;
+    ds.xPct = Math.max(0, ds.xPct - (ds.wPct - prevW) / 2);
+    ds.yPct = Math.max(0, ds.yPct - (ds.hPct - prevH) / 2);
+  }
+
   // Save scale to current zone customization
   if (window.zoneCustomizations[activeZoneId]) {
     window.zoneCustomizations[activeZoneId].scale = scaleMultiplier;
@@ -1759,14 +2034,11 @@ function renderDesign(side) {
   const zone = zones.find(z => z.id === subZoneId) || zones[0];
   const mult = (customized.scale || scaleMultiplier);
   
-  // Zone is defined in 600×600 px space; wrapper height is ~600px rendered size.
-  // Convert to % of displayed wrapper.
-  const zWpx = zone.w * mult;
-  const zHpx = zone.h * mult;
-  const leftPct = (zone.cx - zWpx / 2) / 600 * 100;
-  const topPct  = (zone.cy - zHpx / 2) / 600 * 100;
-  const wPct    = zWpx / 600 * 100;
-  const hPct    = zHpx / 600 * 100;
+  const ds = designState[side];
+  const leftPct = ds.xPct;
+  const topPct  = ds.yPct;
+  const wPct    = ds.wPct;
+  const hPct    = ds.hPct;
 
   // Position the overlay wrapper
   s.wrap.style.left    = leftPct + '%';
@@ -2056,24 +2328,44 @@ function initDraggable(side) {
   const s = sides[side];
   if (!s || !s.wrap) return;
 
-  // Resize handle
-  const handle = document.createElement('div');
-  handle.className = 'design-resize-handle';
-  handle.textContent = '↘';
-  handle.title = 'Redimensionner';
-  s.wrap.appendChild(handle);
+  // Clear any existing handles/hints
+  const oldHandles = s.wrap.querySelectorAll('.design-handle, .design-hint-text, .design-resize-handle');
+  oldHandles.forEach(el => el.remove());
+
+  // Add styling to wrap
+  s.wrap.style.border = '1.5px dashed var(--primary)';
+  s.wrap.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.2)';
+
+  // Create 4 corner handles
+  const corners = ['nw', 'ne', 'sw', 'se'];
+  const handles = {};
+  corners.forEach(c => {
+    const h = document.createElement('div');
+    h.className = `design-handle handle-${c}`;
+    h.title = 'Redimensionner';
+    s.wrap.appendChild(h);
+    handles[c] = h;
+  });
+
+  // Instruction hint
+  const hint = document.createElement('div');
+  hint.className = 'design-hint-text';
+  hint.innerText = 'Glisser pour placer · Tirer les coins pour redimensionner';
+  s.wrap.appendChild(hint);
 
   let mode = null;   // 'drag' | 'resize'
+  let activeHandle = null;
   let startX, startY, snapXPct, snapYPct, snapWPct, snapHPct;
 
   function getParentRect() {
     return (s.wrap.parentElement || document.body).getBoundingClientRect();
   }
 
-  function onStart(e, isResize) {
+  function onStart(e, isResize, handleClass) {
     e.stopPropagation();
     const pt = e.touches ? e.touches[0] : e;
     mode = isResize ? 'resize' : 'drag';
+    activeHandle = handleClass;
     startX = pt.clientX; startY = pt.clientY;
     snapXPct = designState[side].xPct;
     snapYPct = designState[side].yPct;
@@ -2090,41 +2382,115 @@ function initDraggable(side) {
     const dx = (pt.clientX - startX) / pr.width  * 100;
     const dy = (pt.clientY - startY) / pr.height * 100;
     const ds = designState[side];
+
     if (mode === 'drag') {
       ds.xPct = Math.max(0, Math.min(95 - ds.wPct, snapXPct + dx));
       ds.yPct = Math.max(0, Math.min(95 - ds.hPct, snapYPct + dy));
     } else {
-      ds.wPct = Math.max(5, Math.min(90, snapWPct + dx));
-      ds.hPct = Math.max(5, Math.min(90, snapHPct + dy));
-      // Keep centre-aligned as user resizes
-      ds.xPct = Math.max(0, snapXPct - (ds.wPct - snapWPct)/2);
-      ds.yPct = Math.max(0, snapYPct - (ds.hPct - snapHPct)/2);
+      let change = dx;
+      if (activeHandle === 'nw') change = -dx;
+      else if (activeHandle === 'ne') change = dx;
+      else if (activeHandle === 'sw') change = -dx;
+      else if (activeHandle === 'se') change = dx;
+
+      const aspect = snapHPct / snapWPct;
+      const newW = Math.max(5, Math.min(90, snapWPct + change * 2));
+      const newH = newW * aspect;
+
+      ds.wPct = newW;
+      ds.hPct = newH;
+      // Keep centered as user resizes
+      ds.xPct = Math.max(0, Math.min(100 - ds.wPct, snapXPct - (ds.wPct - snapWPct)/2));
+      ds.yPct = Math.max(0, Math.min(100 - ds.hPct, snapYPct - (ds.hPct - snapHPct)/2));
+      
+      const preset = window.zoneCustomizations[side]?.preset || 'center';
+      const zId = getZoneIdForSideAndPreset(side, preset);
+      const zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.jacket;
+      const zone = zones.find(z => z.id === zId) || zones[0];
+      const baseWPct = zone.w / 600 * 100;
+      scaleMultiplier = ds.wPct / baseWPct;
+
       // Sync slider
       const slider = document.getElementById('scaleSlider');
       if (slider) {
-        slider.value = Math.round(ds.wPct);
-        document.getElementById('scaleDisplay').textContent = Math.round(ds.wPct) + '%';
+        slider.value = Math.round(scaleMultiplier * 100);
+        document.getElementById('scaleDisplay').textContent = Math.round(scaleMultiplier * 100) + '%';
         updateSliderBg(slider);
       }
     }
+    
+    // Sync to 3D config
+    sync2DTo3D(side);
+
     renderDesign(side);
     e.preventDefault();
+  }
+
+  function sync2DTo3D(side) {
+    const ds = designState[side];
+    if (!ds) return;
+    const config = window.zoneCustomizations[side];
+    if (!config) return;
+
+    const cx = ds.xPct + ds.wPct / 2;
+    const cy = ds.yPct + ds.hPct / 2;
+
+    let vert = 'mid';
+    if (cy < 38) vert = 'top';
+    else if (cy > 62) vert = 'bottom';
+
+    let horiz = 'center';
+    if (cx < 38) horiz = 'left';
+    else if (cx > 62) horiz = 'right';
+
+    let preset = (vert === 'mid' && horiz === 'center') ? 'center' : `${vert}-${horiz}`;
+
+    config.preset = preset;
+    config.placement = preset;
+    if (side === activeZoneId) printPlacement = preset;
+    
+    const zId = getZoneIdForSideAndPreset(side, preset);
+    const zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.jacket;
+    const zone = zones.find(z => z.id === zId) || zones[0];
+    const baseWPct = zone.w / 600 * 100;
+    config.scale = ds.wPct / baseWPct;
+
+    if (window.setZoneCustomization) {
+      window.setZoneCustomization(side, config);
+    }
+
+    // Highlight button
+    if (side === activeZoneId) {
+      const btn = document.querySelector(`.placement-btn[data-preset="${preset}"]`);
+      if (btn) {
+        document.querySelectorAll('#placementGrid .placement-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      }
+    }
   }
 
   function onEnd() {
     if (mode === 'drag') s.wrap.style.cursor = 'grab';
     mode = null;
+    activeHandle = null;
   }
 
   // Mouse
-  s.wrap.addEventListener('mousedown',   e => onStart(e, false));
-  handle.addEventListener('mousedown',   e => onStart(e, true));
+  s.wrap.addEventListener('mousedown', e => {
+    if (!e.target.classList.contains('design-handle')) onStart(e, false);
+  });
+  corners.forEach(c => {
+    handles[c].addEventListener('mousedown', e => onStart(e, true, c));
+    handles[c].addEventListener('touchstart', e => onStart(e, true, c), { passive: false });
+  });
+
   document.addEventListener('mousemove', e => { if (mode) onMove(e); });
   document.addEventListener('mouseup',   onEnd);
 
   // Touch
-  s.wrap.addEventListener('touchstart',  e => onStart(e, false), { passive: false });
-  handle.addEventListener('touchstart',  e => onStart(e, true),  { passive: false });
+  s.wrap.addEventListener('touchstart',  e => {
+    if (!e.target.classList.contains('design-handle')) onStart(e, false);
+  }, { passive: false });
   document.addEventListener('touchmove', e => { if (mode) onMove(e); }, { passive: false });
   document.addEventListener('touchend',  onEnd);
 }
@@ -2612,21 +2978,40 @@ function updateShirtImagesForColor(hex) {
 }
 
 
+function calculateTotalPrice() {
+  let total = globalSettings.outerwearBasePrice || 25000;
+  for (const zoneId in window.zoneCustomizations) {
+    const config = window.zoneCustomizations[zoneId];
+    if (config.print) {
+      if (config.type === 'embroidery') {
+        total += 9000;
+      } else {
+        total += (config.print.price != null ? config.print.price : 10000);
+      }
+    }
+    if (config.labelText) {
+      const chars = config.labelText.replace(/\s/g, '').length;
+      total += chars * 150;
+    }
+  }
+  return total;
+}
+
 function buildOrderItem() {
   // Use active zone's print if global selectedPrint is not set
   const activePrint = selectedPrint ||
     (window.zoneCustomizations[activeZoneId] && window.zoneCustomizations[activeZoneId].print) || null;
   if (!activePrint) return null;
 
-  const price = activePrint.price != null ? activePrint.price : (globalSettings.outerwearBasePrice || 25000);
+  const price = calculateTotalPrice();
   const zone = getActiveZone();
   const placementLabel = zone ? zone.label : printPlacement;
   const sizeLabel = embroiderySize === 'S' ? 'Petit' : (embroiderySize === 'L' ? 'Grand' : 'Moyen');
 
   return {
-    key: `outerwear-${activePrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${embroiderySize}`,
+    key: `outerwear-${activePrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${embroiderySize}-${selectedTier}`,
     id: `outerwear-${activePrint.id}`,
-    name: `${productType === 'jacket' ? 'Veste' : 'Hoodie'} OVRG — ${activePrint.name}`,
+    name: `${productType === 'jacket' ? 'Veste' : 'Hoodie'} OVRG (${selectedTier.toUpperCase()}) — ${activePrint.name}`,
     price: price,
     qty: 1,
     size: selectedSize,
@@ -2637,7 +3022,8 @@ function buildOrderItem() {
       placement: printPlacement,
       placementLabel: placementLabel,
       scale: sizeLabel,
-      blend: 100
+      blend: 100,
+      tier: selectedTier
     }
   };
 }
@@ -2645,6 +3031,16 @@ function buildOrderItem() {
 function addToCartShowcase() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
+
+  // Check garment tier stock
+  if (lestockConfig) {
+    const tierData = lestockConfig.tiers[selectedTier];
+    if (tierData && tierData.stock <= 0) {
+      showToast('Rupture de stock', `Le modèle ${productType === 'jacket' ? 'Veste' : 'Hoodie'} ${tierData.label} est en rupture de stock.`, '#ef4444');
+      return;
+    }
+  }
+
   let cart = [];
   try { cart = JSON.parse(localStorage.getItem('ovrg_cart') || '[]'); } catch(e) {}
   const existing = cart.find(c => c.key === item.key);
@@ -3036,6 +3432,15 @@ function pgHandleLeave() {
       </div>
 
     </div>
+  </div>
+</div>
+
+<!-- Mobile bottom CTA bar -->
+<div class="mobile-cta-bar">
+  <div class="mobile-cta-price" id="mctaPrice">35,000 FCFA</div>
+  <div class="mobile-cta-btns">
+    <button class="mobile-cta-btn wa" onclick="orderViaWhatsApp()">WhatsApp</button>
+    <button class="mobile-cta-btn" onclick="addToCartShowcase()">🛒 Panier</button>
   </div>
 </div>
 

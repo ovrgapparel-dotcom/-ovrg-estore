@@ -395,6 +395,153 @@ footer .footer-admin {
 .zone-btn:hover { background: #e0e0e0; }
 .zone-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
+/* Drag and resize styles */
+.design-canvas-wrap {
+  pointer-events: all !important;
+  cursor: grab;
+  z-index: 5;
+  border-radius: 4px;
+}
+.design-canvas-wrap:active { cursor: grabbing; }
+
+.design-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--primary);
+  border: 2px solid white;
+  border-radius: 50%;
+  z-index: 10;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.handle-nw { top: -6px; left: -6px; cursor: nwse-resize; }
+.handle-ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.handle-sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.handle-se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+.design-hint-text {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 3px 8px;
+  font-size: 0.65rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  font-weight: 500;
+  display: none;
+  z-index: 12;
+}
+.design-canvas-wrap:hover .design-hint-text {
+  display: block;
+}
+
+.tier-btn {
+  border: 1px solid #333 !important;
+  color: #888 !important;
+  background: none !important;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.tier-btn:hover {
+  border-color: #555 !important;
+  color: #fff !important;
+}
+.tier-btn.selected {
+  border-color: var(--primary) !important;
+  background: var(--primary) !important;
+  color: white !important;
+}
+
+/* Mobile responsive layout */
+@media (max-width: 900px) {
+  .showcase-main {
+    grid-template-columns: 1fr !important;
+    margin-top: 1rem !important;
+    gap: 1.5rem !important;
+  }
+  .mockup-card {
+    position: static !important;
+    box-shadow: none !important;
+    padding: 1rem !important;
+  }
+  .mockup-stage {
+    min-height: 300px !important;
+  }
+  .shirt-wrapper canvas.shirt-img {
+    width: 240px !important;
+  }
+  .controls-card {
+    padding: 1.2rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .mockup-stage {
+    min-height: 250px !important;
+  }
+  .shirt-wrapper canvas.shirt-img {
+    width: 200px !important;
+  }
+  .view-tabs {
+    flex-wrap: wrap !important;
+    gap: 0.3rem !important;
+  }
+  .view-btn {
+    font-size: 0.75rem !important;
+    padding: 0.3rem 0.7rem !important;
+  }
+}
+
+/* Mobile bottom CTA bar */
+.mobile-cta-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--dark);
+  padding: 0.75rem 1rem;
+  z-index: 1000;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 2px solid var(--primary);
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
+}
+.mobile-cta-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: white;
+}
+.mobile-cta-btns {
+  display: flex;
+  gap: 0.5rem;
+}
+.mobile-cta-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mobile-cta-btn.wa {
+  background: #25D366;
+}
+@media (max-width: 768px) {
+  .mobile-cta-bar {
+    display: flex;
+  }
+  body {
+    padding-bottom: 60px !important;
+  }
+}
 </style>
 <script type="importmap">
   {
@@ -405,7 +552,7 @@ footer .footer-admin {
     }
   }
 </script>
-  <script type="module" crossorigin src="/assets/three-viewer-f3IiIJbY.js"></script>
+  <script type="module" crossorigin src="/assets/three-viewer-BVz8u4Pd.js"></script>
 </head>
 <body>
 
@@ -452,6 +599,7 @@ footer .footer-admin {
         <div id="threeContainer" style="width: 100%; height: 100%;"></div>
       </div>
       <div class="no-print-msg" id="noPrintMsg">Sélectionnez un imprimé ci-dessous ↓</div>
+      <div class="design-drag-hint" style="color: rgba(255,255,255,0.35); text-align: center; font-size: 0.72rem; margin-top: 0.5rem;">Faites glisser pour placer · Tirez le coin pour redimensionner</div>
     </div>
 
     
@@ -490,8 +638,8 @@ footer .footer-admin {
       <div class="ctrl-section">
         <label class="ctrl-label">Taille de l'imprimé</label>
         <div class="slider-row">
-          <input type="range" id="printScale" min="50" max="150" value="50" class="range-input">
-          <span class="slider-value" id="printScaleValue">50%</span>
+          <input type="range" id="printScale" min="50" max="150" value="80" class="range-input">
+          <span class="slider-value" id="printScaleValue">80%</span>
         </div>
       </div>
 
@@ -521,6 +669,16 @@ footer .footer-admin {
           <span id="blendHintHigh">100% : fondu dans le tissu</span>
         </div>
       </div>
+    </div>
+
+    <div class="ctrl-section">
+      <label class="ctrl-label">Qualité du t-shirt</label>
+      <div class="tier-select-row" id="tierSelectRow" style="display:flex;gap:0.5rem">
+        <button class="tier-btn selected" data-tier="standard" onclick="selectTier('standard')" style="flex:1;padding:0.6rem;border-radius:8px;font-weight:700;cursor:pointer">Standard</button>
+        <button class="tier-btn" data-tier="highend" onclick="selectTier('highend')" style="flex:1;padding:0.6rem;border-radius:8px;font-weight:700;cursor:pointer">High-End</button>
+        <button class="tier-btn" data-tier="premium" onclick="selectTier('premium')" style="flex:1;padding:0.6rem;border-radius:8px;font-weight:700;cursor:pointer">Premium</button>
+      </div>
+      <div id="tierStockInfo" style="font-size:0.8rem;color:#888;margin-top:0.4rem"></div>
     </div>
 
     <div class="ctrl-section">
@@ -842,6 +1000,17 @@ function selectPrint(p) {
         window.zoneCustomizations[activeZoneId].scale = printScale;
       }
       window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
+      
+      // Initialize 2D coordinates mapping
+      const ds = designState[activeZoneId];
+      if (ds) {
+        const lookupPreset = printPreset.replace(/^back-/, '');
+        const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
+        ds.wPct = cfg.w * printScale;
+        ds.hPct = cfg.h * printScale;
+        ds.xPct = cfg.left + (cfg.w - ds.wPct) / 2;
+        ds.yPct = cfg.top + (cfg.h - ds.hPct) / 2;
+      }
     } else {
       window.clearZoneCustomization && window.clearZoneCustomization(activeZoneId);
     }
@@ -903,7 +1072,10 @@ function updatePrice() {
     }
   }
   
-  document.getElementById('priceMain').textContent = fmt(total);
+  const formattedPrice = fmt(total);
+  document.getElementById('priceMain').textContent = formattedPrice;
+  const mPrice = document.getElementById('mctaPrice');
+  if (mPrice) mPrice.textContent = formattedPrice;
 }
 
 // ── Zone-aware render: update 2D canvas from zoneCustomizations ──
@@ -968,6 +1140,176 @@ function switchProduct(product) {
 }
 
 
+// Drag and Resize State
+const designState = {
+  front: { xPct: 30, yPct: 30, wPct: 40, hPct: 32 },
+  back:  { xPct: 30, yPct: 30, wPct: 40, hPct: 32 }
+};
+
+function initDraggable(side) {
+  const s = sides[side];
+  if (!s || !s.wrap) return;
+
+  // Clear any existing handles/hints
+  const oldHandles = s.wrap.querySelectorAll('.design-handle, .design-hint-text, .design-resize-handle');
+  oldHandles.forEach(el => el.remove());
+
+  // Add styling to wrap
+  s.wrap.style.border = '1.5px dashed var(--primary)';
+  s.wrap.style.boxShadow = '0 0 0 1px rgba(255,255,255,0.2)';
+
+  // Create 4 corner handles
+  const corners = ['nw', 'ne', 'sw', 'se'];
+  const handles = {};
+  corners.forEach(c => {
+    const h = document.createElement('div');
+    h.className = `design-handle handle-${c}`;
+    h.title = 'Redimensionner';
+    s.wrap.appendChild(h);
+    handles[c] = h;
+  });
+
+  // Instruction hint
+  const hint = document.createElement('div');
+  hint.className = 'design-hint-text';
+  hint.innerText = 'Glisser pour placer · Tirer les coins pour redimensionner';
+  s.wrap.appendChild(hint);
+
+  let mode = null;   // 'drag' | 'resize'
+  let activeHandle = null;
+  let startX, startY, snapXPct, snapYPct, snapWPct, snapHPct;
+
+  function getParentRect() {
+    return (s.wrap.parentElement || document.body).getBoundingClientRect();
+  }
+
+  function onStart(e, isResize, handleClass) {
+    e.stopPropagation();
+    const pt = e.touches ? e.touches[0] : e;
+    mode = isResize ? 'resize' : 'drag';
+    activeHandle = handleClass;
+    startX = pt.clientX; startY = pt.clientY;
+    snapXPct = designState[side].xPct;
+    snapYPct = designState[side].yPct;
+    snapWPct = designState[side].wPct;
+    snapHPct = designState[side].hPct;
+    if (!isResize) s.wrap.style.cursor = 'grabbing';
+    e.preventDefault();
+  }
+
+  function onMove(e) {
+    if (!mode) return;
+    const pt = e.touches ? e.touches[0] : e;
+    const pr = getParentRect();
+    const dx = (pt.clientX - startX) / pr.width  * 100;
+    const dy = (pt.clientY - startY) / pr.height * 100;
+    const ds = designState[side];
+
+    if (mode === 'drag') {
+      ds.xPct = Math.max(0, Math.min(100 - ds.wPct, snapXPct + dx));
+      ds.yPct = Math.max(0, Math.min(100 - ds.hPct, snapYPct + dy));
+    } else {
+      let change = dx;
+      if (activeHandle === 'nw') change = -dx;
+      else if (activeHandle === 'ne') change = dx;
+      else if (activeHandle === 'sw') change = -dx;
+      else if (activeHandle === 'se') change = dx;
+
+      const aspect = snapHPct / snapWPct;
+      const newW = Math.max(5, Math.min(90, snapWPct + change * 2));
+      const newH = newW * aspect;
+
+      ds.wPct = newW;
+      ds.hPct = newH;
+      // Keep centered as user resizes
+      ds.xPct = Math.max(0, Math.min(100 - ds.wPct, snapXPct - (ds.wPct - snapWPct)/2));
+      ds.yPct = Math.max(0, Math.min(100 - ds.hPct, snapYPct - (ds.hPct - snapHPct)/2));
+      
+      // Update printScale value and slider
+      const lookupPreset = printPreset.replace(/^back-/, '');
+      const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
+      printScale = ds.wPct / cfg.w;
+      
+      const slider = document.getElementById('printScale');
+      if (slider) {
+        slider.value = Math.round(printScale * 100);
+        document.getElementById('printScaleValue').textContent = Math.round(printScale * 100) + '%';
+      }
+    }
+    
+    // Sync to 3D config
+    sync2DTo3D(side);
+    
+    renderDesign(side);
+    e.preventDefault();
+  }
+
+  function onEnd() {
+    if (mode === 'drag') s.wrap.style.cursor = 'grab';
+    mode = null;
+    activeHandle = null;
+  }
+
+  s.wrap.addEventListener('mousedown', e => {
+    if (!e.target.classList.contains('design-handle')) onStart(e, false);
+  });
+  corners.forEach(c => {
+    handles[c].addEventListener('mousedown', e => onStart(e, true, c));
+    handles[c].addEventListener('touchstart', e => onStart(e, true, c), { passive: false });
+  });
+
+  document.addEventListener('mousemove', e => { if (mode) onMove(e); });
+  document.addEventListener('mouseup',   onEnd);
+
+  s.wrap.addEventListener('touchstart',  e => {
+    if (!e.target.classList.contains('design-handle')) onStart(e, false);
+  }, { passive: false });
+  document.addEventListener('touchmove', e => { if (mode) onMove(e); }, { passive: false });
+  document.addEventListener('touchend',  onEnd);
+}
+
+function sync2DTo3D(side) {
+  const ds = designState[side];
+  if (!ds) return;
+  const config = window.zoneCustomizations[side];
+  if (!config) return;
+
+  const cx = ds.xPct + ds.wPct / 2;
+  const cy = ds.yPct + ds.hPct / 2;
+
+  let vert = 'mid';
+  if (cy < 38) vert = 'top';
+  else if (cy > 62) vert = 'bottom';
+
+  let horiz = 'center';
+  if (cx < 38) horiz = 'left';
+  else if (cx > 62) horiz = 'right';
+
+  let preset = (vert === 'mid' && horiz === 'center') ? 'center' : `${vert}-${horiz}`;
+  if (side === 'back' && !preset.startsWith('back-')) {
+    preset = 'back-' + preset;
+  }
+
+  config.preset = preset;
+  config.placement = preset;
+  
+  // Calculate relative scale multiplier
+  const lookupPreset = preset.replace(/^back-/, '');
+  const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
+  config.scale = ds.wPct / cfg.w;
+
+  if (window.setZoneCustomization) {
+    window.setZoneCustomization(side, config);
+  }
+
+  // Highlight button
+  const btn = document.querySelector(`.placement-btn[data-preset="${lookupPreset}"]`);
+  if (btn) {
+    document.querySelectorAll('.placement-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+}
+
 const sides = {
   front: { wrap: document.getElementById('canvas-front'), canvas: document.querySelector('#canvas-front canvas'), img: null },
   back:  { wrap: document.getElementById('canvas-back'),  canvas: document.querySelector('#canvas-back canvas'),  img: null }
@@ -988,45 +1330,61 @@ const shirtSource = { front: null, back: null }; // loaded <img> elements (sourc
 const fabricData = { front: null, back: null };
 
 function analyzeFabric(side) {
-  const img = shirtSource[side];
-  if (!img) return;
-  const w = img.naturalWidth, h = img.naturalHeight;
-  const offscreen = document.createElement('canvas');
-  offscreen.width = w; offscreen.height = h;
-  const ctx = offscreen.getContext('2d', { willReadFrequently: true });
-  ctx.drawImage(img, 0, 0, w, h);
-  const imageData = ctx.getImageData(0, 0, w, h);
-  const data = imageData.data;
+  try {
+    const img = shirtSource[side];
+    if (!img) return;
+    const w = img.naturalWidth, h = img.naturalHeight;
+    const offscreen = document.createElement('canvas');
+    offscreen.width = w; offscreen.height = h;
+    const ctx = offscreen.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, w, h);
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
 
-  const LUM_THRESHOLD = 0.30; // below = background/mannequin
-  const lum = new Float32Array(w * h);
-  const mask = new Uint8Array(w * h); // 1 = fabric, 0 = background
-  let lumSum = 0, fabricCount = 0;
+    const LUM_THRESHOLD = 0.30; // below = background/mannequin
+    const lum = new Float32Array(w * h);
+    const mask = new Uint8Array(w * h); // 1 = fabric, 0 = background
+    let lumSum = 0, fabricCount = 0;
 
-  for (let i = 0; i < w * h; i++) {
-    const r = data[i*4] / 255, g = data[i*4+1] / 255, b = data[i*4+2] / 255;
-    const l = 0.2126*r + 0.7152*g + 0.0722*b;
-    lum[i] = l;
-    if (l > LUM_THRESHOLD) {
-      mask[i] = 1;
-      lumSum += l;
-      fabricCount++;
+    for (let i = 0; i < w * h; i++) {
+      const r = data[i*4] / 255, g = data[i*4+1] / 255, b = data[i*4+2] / 255;
+      const l = 0.2126*r + 0.7152*g + 0.0722*b;
+      lum[i] = l;
+      if (l > LUM_THRESHOLD) {
+        mask[i] = 1;
+        lumSum += l;
+        fabricCount++;
+      }
     }
-  }
-  const meanLum = fabricCount > 0 ? lumSum / fabricCount : 0.78;
+    const meanLum = fabricCount > 0 ? lumSum / fabricCount : 0.78;
 
-  // Compute luminance gradients (Sobel-like, horizontal & vertical)
-  const dx = new Float32Array(w * h);
-  const dy = new Float32Array(w * h);
-  for (let y = 1; y < h - 1; y++) {
-    for (let x = 1; x < w - 1; x++) {
-      const idx = y * w + x;
-      dx[idx] = (lum[idx + 1] - lum[idx - 1]) * 0.5;
-      dy[idx] = (lum[idx + w] - lum[idx - w]) * 0.5;
+    // Compute luminance gradients (Sobel-like, horizontal & vertical)
+    const dx = new Float32Array(w * h);
+    const dy = new Float32Array(w * h);
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const idx = y * w + x;
+        dx[idx] = (lum[idx + 1] - lum[idx - 1]) * 0.5;
+        dy[idx] = (lum[idx + w] - lum[idx - w]) * 0.5;
+      }
     }
-  }
 
-  fabricData[side] = { lum, dx, dy, mask, meanLum, w, h };
+    fabricData[side] = { lum, dx, dy, mask, meanLum, w, h };
+  } catch (e) {
+    console.warn(`Fabric analysis failed for ${side} (possibly CORS), using flat shading fallback`, e);
+    const img = shirtSource[side];
+    const w = img ? img.naturalWidth : 600;
+    const h = img ? img.naturalHeight : 600;
+    fabricData[side] = {
+      lum: new Float32Array(w * h).fill(0.78),
+      dx: new Float32Array(w * h),
+      dy: new Float32Array(w * h),
+      mask: new Uint8Array(w * h).fill(1),
+      meanLum: 0.78,
+      w,
+      h
+    };
+  }
 }
 
 function loadShirtImages() {
@@ -1098,7 +1456,7 @@ const PRESET_CONFIGS = {
 };
 
 // Print customization state — applies to both front & back
-let printScale = 0.5;     // 0.5 – 1.5  (50%–150%)
+let printScale = 0.8;     // 0.5 – 1.5  (50%–150%)
 let printPreset = 'center';
 let printBlend = 0.4;     // 0 – 1  (0% flat print, 100% blended into fabric)
 
@@ -1132,6 +1490,54 @@ function initSupabase() {
   }
 }
 
+let lestockConfig = null;
+let selectedTier = 'standard';
+
+async function loadLeStock() {
+  try {
+    const { data, error } = await sbClient.from('showcase_settings').select('color_mockups').eq('id', 5).single();
+    if (data && data.color_mockups && data.color_mockups[0] && data.color_mockups[0].inventory) {
+      lestockConfig = data.color_mockups[0].inventory.tshirt;
+      const urlParams = new URLSearchParams(window.location.search);
+      const tierParam = urlParams.get('tier');
+      if (tierParam && lestockConfig.tiers[tierParam]) {
+        selectedTier = tierParam;
+      }
+      applyTier();
+    }
+  } catch(e) {
+    console.error("Failed to load LeStock config:", e);
+  }
+}
+
+function selectTier(tier) {
+  selectedTier = tier;
+  applyTier();
+}
+
+function applyTier() {
+  if (!lestockConfig) return;
+  const tierData = lestockConfig.tiers[selectedTier];
+  SHOWCASE_PRICE = tierData.price;
+  
+  document.querySelectorAll('.tier-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.getAttribute('data-tier') === selectedTier);
+  });
+
+  const stockInfo = document.getElementById('tierStockInfo');
+  if (stockInfo) {
+    if (tierData.stock <= 0) {
+      stockInfo.innerHTML = `<span style="color:#ef4444;font-weight:700">⚠️ En rupture de stock</span>`;
+    } else if (tierData.stock <= 10) {
+      stockInfo.innerHTML = `<span style="color:#f59e0b;font-weight:600">⚠️ Stock très limité: ${tierData.stock} restants</span>`;
+    } else {
+      stockInfo.innerHTML = `<span style="color:var(--success);font-weight:600">✓ En stock (${tierData.stock} disponibles)</span>`;
+    }
+  }
+
+  updatePrice();
+}
+
 // ============================================================
 //  LOAD DATA (SETTINGS + PRINTS)
 // ============================================================
@@ -1154,6 +1560,7 @@ async function loadSettings() {
   } catch(e) {
     console.error('Load settings error:', e);
   }
+  await loadLeStock();
 }
 
 async function loadPrints() {
@@ -1257,7 +1664,20 @@ function scheduleRender() {
 document.getElementById('printScale').addEventListener('input', e => {
   printScale = parseInt(e.target.value) / 100;
   document.getElementById('printScaleValue').textContent = e.target.value + '%';
-  // Also store scale in active zone config
+  
+  // Update designState size based on scale
+  const lookupPreset = printPreset.replace(/^back-/, '');
+  const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
+  const ds = designState[activeZoneId];
+  if (ds) {
+    const prevW = ds.wPct;
+    const prevH = ds.hPct;
+    ds.wPct = cfg.w * printScale;
+    ds.hPct = cfg.h * printScale;
+    ds.xPct = Math.max(0, ds.xPct - (ds.wPct - prevW) / 2);
+    ds.yPct = Math.max(0, ds.yPct - (ds.hPct - prevH) / 2);
+  }
+
   if (window.zoneCustomizations[activeZoneId]) {
     window.zoneCustomizations[activeZoneId].scale = printScale;
     if (window.setZoneCustomization) window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
@@ -1268,12 +1688,21 @@ document.getElementById('printScale').addEventListener('input', e => {
 document.getElementById('placementGrid').addEventListener('click', e => {
   const btn = e.target.closest('.placement-btn');
   if (!btn) return;
-  // The preset key is zone-aware: back zone forces back-* prefix
   printPreset = (activeZoneId === 'back' && !btn.dataset.preset.startsWith('back'))
     ? 'back-' + btn.dataset.preset
     : btn.dataset.preset;
   document.querySelectorAll('.placement-btn').forEach(b => b.classList.toggle('selected', b===btn));
-  // Also sync preset into zone config and 3D viewer
+  
+  const lookupPreset = btn.dataset.preset;
+  const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
+  const ds = designState[activeZoneId];
+  if (ds) {
+    ds.wPct = cfg.w * printScale;
+    ds.hPct = cfg.h * printScale;
+    ds.xPct = cfg.left + (cfg.w - ds.wPct) / 2;
+    ds.yPct = cfg.top + (cfg.h - ds.hPct) / 2;
+  }
+
   if (window.zoneCustomizations[activeZoneId]) {
     window.zoneCustomizations[activeZoneId].preset = printPreset;
     if (window.setZoneCustomization) window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
@@ -1340,17 +1769,11 @@ function renderDesign(side) {
   const wW = rect.width, wH = rect.height;
   if (wW < 10 || wH < 10) { requestAnimationFrame(() => renderDesign(side)); return; }
 
-  // Use the preset stored for this specific zone, falling back to the global one
-  const zonePreset = (window.zoneCustomizations[side] && window.zoneCustomizations[side].preset) ? window.zoneCustomizations[side].preset : printPreset;
-  // Strip 'back-' prefix since PRESET_CONFIGS keys don't have it
-  const lookupPreset = zonePreset.replace(/^back-/, '');
-  const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
-
-  const zoneScale = (window.zoneCustomizations[side] && window.zoneCustomizations[side].scale) ? window.zoneCustomizations[side].scale : printScale;
-  const w = cfg.w * zoneScale;
-  const h = cfg.h * zoneScale;
-  const top = cfg.top + (cfg.h - h) / 2;
-  const left = cfg.left + (cfg.w - w) / 2;
+  const ds = designState[side];
+  const w = ds.wPct;
+  const h = ds.hPct;
+  const top = ds.yPct;
+  const left = ds.xPct;
 
   s.wrap.style.top = top + '%';
   s.wrap.style.left = left + '%';
@@ -1586,9 +2009,9 @@ function buildOrderItem() {
       const scale = cfg.scale || printScale;
       const preset = cfg.preset || (zoneId === 'back' ? 'back-center' : 'center');
       return {
-        key: `showcase-${p.id}-${zoneId}-${color}-${size}-${preset}-${Math.round(scale*100)}`,
+        key: `showcase-${p.id}-${zoneId}-${color}-${size}-${preset}-${Math.round(scale*100)}-${selectedTier}`,
         id: `showcase-${p.id}-${zoneId}`,
-        name: `T-Shirt OVRG — ${p.name} (${zoneId === 'back' ? 'Dos' : 'Devant'})${cfg.type === 'embroidery' ? ' (Broderie)' : ''}`,
+        name: `T-Shirt OVRG (${selectedTier.toUpperCase()}) — ${p.name} (${zoneId === 'back' ? 'Dos' : 'Devant'})${cfg.type === 'embroidery' ? ' (Broderie)' : ''}`,
         price: totalPrice,
         qty: 1,
         size,
@@ -1601,7 +2024,8 @@ function buildOrderItem() {
           placementLabel: PLACEMENT_LABELS[preset] || preset,
           scale: Math.round(scale * 100),
           blend: Math.round(printBlend * 100),
-          embroidery: cfg.type === 'embroidery'
+          embroidery: cfg.type === 'embroidery',
+          tier: selectedTier
         }
       };
     });
@@ -1612,16 +2036,16 @@ function buildOrderItem() {
     const basePrice = selectedPrint.price != null ? selectedPrint.price : SHOWCASE_PRICE;
     const totalPrice = basePrice + (embroiderySelected ? EMBROIDERY_SURCHARGE : 0);
     return {
-      key: `showcase-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPreset}-${Math.round(printScale*100)}-${Math.round(printBlend*100)}`,
+      key: `showcase-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPreset}-${Math.round(printScale*100)}-${Math.round(printBlend*100)}-${selectedTier}`,
       id: `showcase-${selectedPrint.id}`,
-      name: `T-Shirt OVRG — ${selectedPrint.name}${embroiderySelected ? ' (Broderie)' : ''}`,
+      name: `T-Shirt OVRG (${selectedTier.toUpperCase()}) — ${selectedPrint.name}${embroiderySelected ? ' (Broderie)' : ''}`,
       price: totalPrice,
       qty: 1,
       size: selectedSize,
       color: selectedColor,
       img: selectedPrint.image_url || '',
       type: 'showcase',
-      customization: { placement: printPreset, placementLabel: PLACEMENT_LABELS[printPreset] || printPreset, scale: Math.round(printScale * 100), blend: Math.round(printBlend * 100), embroidery: embroiderySelected }
+      customization: { placement: printPreset, placementLabel: PLACEMENT_LABELS[printPreset] || printPreset, scale: Math.round(printScale * 100), blend: Math.round(printBlend * 100), embroidery: embroiderySelected, tier: selectedTier }
     };
   }
 
@@ -1633,6 +2057,15 @@ function addToCartShowcase() {
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé dans la bibliothèque.", '#f59e0b'); return; }
   const stock = selectedPrint.stock != null ? selectedPrint.stock : null;
   if (stock !== null && stock <= 0) { showToast('Rupture de stock', "Cet imprimé n'est plus disponible.", '#ef4444'); return; }
+
+  // Check garment tier stock
+  if (lestockConfig) {
+    const tierData = lestockConfig.tiers[selectedTier];
+    if (tierData && tierData.stock <= 0) {
+      showToast('Rupture de stock', `Le modèle T-Shirt ${tierData.label} est en rupture de stock.`, '#ef4444');
+      return;
+    }
+  }
 
   // Shared cart format with the main e-store (localStorage key: ovrg_cart)
   let cart = [];
@@ -2396,5 +2829,15 @@ window.saveCustomText = typeof saveCustomText !== "undefined" ? saveCustomText :
 window.selectPrint = typeof selectPrint !== "undefined" ? selectPrint : undefined;
 window.switchProduct = typeof switchProduct !== "undefined" ? switchProduct : undefined;
 </script>
+
+<!-- MOBILE BOTTOM CTA BAR -->
+<div class="mobile-cta-bar">
+  <div class="mobile-cta-price" id="mctaPrice">18,000 FCFA</div>
+  <div class="mobile-cta-btns">
+    <button class="mobile-cta-btn wa" onclick="orderViaWhatsApp()">WhatsApp</button>
+    <button class="mobile-cta-btn" onclick="addToCartShowcase()">🛒 Panier</button>
+  </div>
+</div>
+
 </body>
 </html>

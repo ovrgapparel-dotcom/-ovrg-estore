@@ -634,7 +634,7 @@ function _doRebuildAllDecals() {
     if (IS_JEANS) {
       const preset = config.placement || config.preset || 'center';
       const jFrontZ = box.max.z - boxSize.z * 0.10;
-      const jBackZ  = box.min.z + boxSize.z * 0.10;
+      const jBackZ  = box.min.z - boxSize.z * 0.02;
       const dx = boxSize.x * 0.12; // lateral offset
       // Vertical reference: normalized height 2.0, chest is ~70–76% from bottom
       const jTopY    = box.min.y + boxSize.y * 0.76;  // upper chest / breast pocket
@@ -715,19 +715,18 @@ function _doRebuildAllDecals() {
         } else if (preset.startsWith('bottom')) {
           py = hFrontBotY;
         }
-        // Horizontal X — hoodie -90° Y rotation: world +X = screen-LEFT.
-        // So "right" (screen-right) needs world -X = cx-dx; "left" needs cx+dx.
+        // Horizontal X — camera at +Z, so screen-LEFT = world -X, screen-RIGHT = world +X.
         if (preset.endsWith('left')) {
-          px = cx + dx; ori.y = -Math.PI / 12;
-        } else if (preset.endsWith('right')) {
           px = cx - dx; ori.y = Math.PI / 12;
+        } else if (preset.endsWith('right')) {
+          px = cx + dx; ori.y = -Math.PI / 12;
         } else {
           px = cx; ori.y = 0;
         }
       } else if (zoneId === 'back') {
-        // Torso back surface is near box.min.z (front of bounding box in Three.js coords when hood extends back).
-        // Use box.min.z + 14% to target the flat back torso panel, avoiding the hood tip geometry.
-        const hTorsoBackZ = box.min.z + boxSize.z * 0.14;
+        // Torso back surface is near box.min.z but hood tip extends back.
+        // Place projector at max.z - 78% depth to miss the hood tip while projecting onto torso back.
+        const hTorsoBackZ = box.max.z - boxSize.z * 0.78;
         pz = hTorsoBackZ;
         ori.y = Math.PI;
         // Vertical Y — back uses DIFFERENT refs than front (back area is taller)
@@ -818,7 +817,7 @@ function _doRebuildAllDecals() {
       if (zoneId === 'sleeve-left' || zoneId === 'sleeve-right' || subZoneId.includes('sleeve')) {
         depth = boxSize.z * 0.60;
       } else if (IS_HOODIES && zoneId === 'back') {
-        depth = boxSize.z * 0.32;  // deeper stamp: covers full back torso panel without reaching hood tip
+        depth = boxSize.z * 0.30;  // covers back torso panel without reaching hood tip
       } else if (IS_HOODIES && zoneId === 'front') {
         depth = boxSize.z * 0.40;  // moderate: chest panel only, skip outer drawstring meshes
       } else {

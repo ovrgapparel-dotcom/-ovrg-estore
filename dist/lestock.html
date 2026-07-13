@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OVRG — LeStock</title>
+<meta name="description" content="Découvrez les stocks et qualités de nos vêtements vierges prêts pour la personnalisation.">
+<meta name="theme-color" content="#FF6B35">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL    = 'https://mihpdlhbijlvbdcqvzdw.supabase.co';
+  const SUPABASE_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paHBkbGhiaWpsdmJkY3F2emR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDkzMTgsImV4cCI6MjA4Nzk4NTMxOH0.X-2XjKKi3enHck1KBtlga-RiVjXN3BS5EhW3fnF3oTE';
+  const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+</script>
+<style>
+:root {
+  --primary: #FF6B35;
+  --primary-dark: #e55a2b;
+  --dark: #0d0d0d;
+  --dark2: #161616;
+  --gray: #888;
+  --light: #f5f4f1;
+  --white: #ffffff;
+  --border: #e8e5e0;
+  --border-dark: #222;
+  --success: #22c55e;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--dark);
+  color: #fff;
+  line-height: 1.6;
+}
+
+/* Header styling */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(13, 13, 13, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-dark);
+}
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.2rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.logo {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: 1.8rem;
+  letter-spacing: -0.05em;
+  color: #fff;
+  text-decoration: none;
+}
+.logo span { color: var(--primary); }
+nav a {
+  color: #aaa;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-left: 1.5rem;
+  transition: color 0.2s;
+}
+nav a:hover, nav a.active { color: var(--primary); }
+
+.back-link {
+  color: #aaa;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+.back-link:hover { color: #fff; }
+
+/* Hero section */
+.hero {
+  padding: 5rem 1.5rem 3rem;
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.hero-tag {
+  display: inline-block;
+  background: rgba(255, 107, 53, 0.1);
+  color: var(--primary);
+  padding: 0.4rem 1rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.hero h1 {
+  font-family: 'Inter', sans-serif;
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  margin-bottom: 1rem;
+}
+.hero h1 span { color: var(--primary); }
+.hero p { color: #aaa; font-size: 1.1rem; }
+
+/* Stock Grid */
+.stock-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem 5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 2rem;
+}
+.stock-card {
+  background: var(--dark2);
+  border: 1px solid var(--border-dark);
+  border-radius: 20px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.3s, border-color 0.3s;
+}
+.stock-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(255,107,53,0.3);
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.card-icon {
+  font-size: 2.2rem;
+  background: rgba(255, 107, 53, 0.1);
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+}
+.card-title h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+}
+.card-title p {
+  color: #666;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Tier selections */
+.tiers-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.tier-row {
+  border: 1px solid #222;
+  background: #111;
+  border-radius: 12px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tier-row.selected {
+  border-color: var(--primary);
+  background: rgba(255,107,53,0.03);
+}
+.tier-row-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.3rem;
+}
+.tier-label {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #fff;
+}
+.tier-price {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.tier-desc {
+  font-size: 0.85rem;
+  color: #888;
+  margin-bottom: 0.4rem;
+}
+.tier-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+}
+.tier-stock {
+  color: var(--success);
+  font-weight: 600;
+}
+.tier-stock.low-stock { color: #f59e0b; }
+.tier-stock.out-of-stock { color: #ef4444; }
+
+.action-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  width: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+.action-btn:hover {
+  background: var(--primary-dark);
+}
+
+/* Footer & Admin */
+footer {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  border-top: 1px solid var(--border-dark);
+  color: #555;
+  font-size: 0.85rem;
+}
+.footer-admin {
+  margin-top: 1rem;
+}
+.footer-admin button {
+  background: none;
+  border: none;
+  color: #444;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.85rem;
+}
+.footer-admin button:hover { color: var(--primary); }
+
+/* Admin Modal Overlay */
+.admin-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.admin-overlay.open { display: flex; }
+.admin-box {
+  background: #111;
+  border: 1px solid var(--border-dark);
+  border-radius: 20px;
+  max-width: 500px;
+  width: 100%;
+  padding: 2rem;
+  color: white;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.admin-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-dark);
+  padding-bottom: 1rem;
+}
+.admin-hdr h2 { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+.close-admin-btn { background: none; border: none; color: #aaa; font-size: 1.5rem; cursor: pointer; }
+.close-admin-btn:hover { color: #fff; }
+
+.login-form, .edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+.form-group label { font-size: 0.8rem; font-weight: 700; color: #888; text-transform: uppercase; }
+.form-group input, .form-group select {
+  background: #1c1c1c;
+  border: 1px solid #333;
+  padding: 0.8rem;
+  border-radius: 8px;
+  color: white;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+.form-group input:focus, .form-group select:focus {
+  outline: none; border-color: var(--primary);
+}
+.admin-btn {
+  background: var(--primary); color: white; border: none; padding: 0.8rem; border-radius: 8px; font-weight: 700; cursor: pointer;
+}
+.admin-btn:hover { background: var(--primary-dark); }
+
+/* Toast */
+.toast-container {
+  position: fixed; bottom: 20px; right: 20px; z-index: 2000;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.toast {
+  background: #1f1f1f; border-left: 4px solid var(--primary);
+  padding: 1rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  color: white; min-width: 280px; display: flex; flex-direction: column; gap: 0.2rem;
+  animation: slideIn 0.3s ease;
+}
+.toast-title { font-weight: 700; font-size: 0.95rem; }
+.toast-body { font-size: 0.85rem; color: #aaa; }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@media(max-width: 768px) {
+  .hero h1 { font-size: 2.2rem; }
+  .stock-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo">OVRG<span>.</span></a>
+    <a href="index.html" class="back-link">← Boutique</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-tag">Inventaire & Qualité</div>
+  <h1>Notre <span>Stock</span> de Blanks</h1>
+  <p>Consultez la disponibilité et les tarifs de nos vêtements vierges prêts pour vos personnalisations en broderie ou impression.</p>
+</section>
+
+<main>
+  <div class="stock-grid" id="stockGrid">
+    <div style="grid-column: 1/-1; text-align: center; padding: 3rem;">Chargement des données...</div>
+  </div>
+</main>
+
+<footer>
+  <p>&copy; 2026 OVRG Apparel. Tous droits réservés.</p>
+  <div class="footer-admin">
+    <button id="adminToggleBtn" onclick="openLogin()">Espace Admin</button>
+  </div>
+</footer>
+
+<!-- Toast Notifications -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Login Modal -->
+<div class="admin-overlay" id="loginOverlay" onclick="if(event.target===this)closeLogin()">
+  <div class="admin-box" style="max-width: 400px;">
+    <div class="admin-hdr">
+      <h2>Connexion Admin</h2>
+      <button class="close-admin-btn" onclick="closeLogin()">&times;</button>
+    </div>
+    <form class="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" placeholder="admin@ovrg.com" required>
+      </div>
+      <div class="form-group">
+        <label for="loginPass">Mot de passe</label>
+        <input type="password" id="loginPass" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="admin-btn">Se connecter</button>
+    </form>
+  </div>
+</div>
+
+<!-- Admin Settings Modal -->
+<div class="admin-overlay" id="adminOverlay" onclick="if(event.target===this)closeAdmin()">
+  <div class="admin-box">
+    <div class="admin-hdr">
+      <h2>Gestion LeStock</h2>
+      <button class="close-admin-btn" onclick="closeAdmin()">&times;</button>
+    </div>
+    <div class="edit-form">
+      <div class="form-group">
+        <label for="editProduct">Produit</label>
+        <select id="editProduct" onchange="loadProductTierForm()">
+          <option value="tshirt">👕 T-Shirt</option>
+          <option value="cap">🧢 Casquette</option>
+          <option value="bobble">🎿 Bonnet</option>
+          <option value="jacket">🧥 Veste en Jean</option>
+          <option value="hoodie">🫡 Hoodie</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="editTier">Qualité (Tier)</label>
+        <select id="editTier" onchange="loadProductTierForm()">
+          <option value="standard">Standard</option>
+          <option value="highend">High-End</option>
+          <option value="premium">Premium</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="editPrice">Prix (FCFA)</label>
+        <input type="number" id="editPrice" required>
+      </div>
+      <div class="form-group">
+        <label for="editStock">Stock disponible</label>
+        <input type="number" id="editStock" required>
+      </div>
+      <div class="form-group">
+        <label for="editDesc">Description</label>
+        <input type="text" id="editDesc" required>
+      </div>
+      <button class="admin-btn" onclick="saveAdminTier()">Enregistrer la modification</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let lestockInventory = {};
+  const selectedTiers = {
+    tshirt: 'standard',
+    cap: 'standard',
+    bobble: 'standard',
+    jacket: 'standard',
+    hoodie: 'standard'
+  };
+
+  async function loadInventory() {
+    try {
+      const { data, error } = await sbClient.from('showcase_settings').select('color_mockups').eq('id', 5).single();
+      if (error) throw error;
+      if (data && data.color_mockups && data.color_mockups[0] && data.color_mockups[0].inventory) {
+        lestockInventory = data.color_mockups[0].inventory;
+        renderInventory();
+      } else {
+        showToast('Erreur configuration', 'Données de stock indisponibles.', '#ef4444');
+      }
+    } catch(err) {
+      console.error('Error fetching LeStock:', err);
+      showToast('Erreur', 'Impossible de récupérer l\'inventaire.', '#ef4444');
+    }
+  }
+
+  function renderInventory() {
+    const grid = document.getElementById('stockGrid');
+    grid.innerHTML = '';
+
+    for (const key in lestockInventory) {
+      const prod = lestockInventory[key];
+      const selectedTier = selectedTiers[key];
+      const tierData = prod[selectedTier];
+
+      // Formatter price
+      const priceFmt = new Intl.NumberFormat('fr-FR').format(tierData.price) + ' FCFA';
+      
+      const card = document.createElement('div');
+      card.className = 'stock-card';
+      
+      let stockClass = '';
+      let stockText = `${tierData.stock} pièces disponibles`;
+      if (tierData.stock <= 0) {
+        stockClass = 'out-of-stock';
+        stockText = 'En rupture de stock';
+      } else if (tierData.stock <= 10) {
+        stockClass = 'low-stock';
+        stockText = `Stock très limité: ${tierData.stock} restants`;
+      }
+
+      card.innerHTML = `
+        <div>
+          <div class="card-header">
+            <div class="card-icon">${prod.icon || '👕'}</div>
+            <div class="card-title">
+              <h3>${prod.name}</h3>
+              <p>Type: ${key.toUpperCase()}</p>
+            </div>
+          </div>
+          <div class="tiers-container">
+            <div class="tier-row ${selectedTier === 'standard' ? 'selected' : ''}" onclick="selectProductTier('${key}', 'standard')">
+              <div class="tier-row-hdr">
+                <span class="tier-label">Standard</span>
+                <span class="tier-price">${new Intl.NumberFormat('fr-FR').format(prod.standard.price)} FCFA</span>
+              </div>
+              <p class="tier-desc">${prod.standard.description || ''}</p>
+              <div class="tier-meta">
+                <span>Stock:</span>
+                <span class="tier-stock ${prod.standard.stock <= 0 ? 'out-of-stock' : (prod.standard.stock <= 10 ? 'low-stock' : '')}">${prod.standard.stock > 0 ? prod.standard.stock + ' dispo' : 'Rupture'}</span>
+              </div>
+            </div>
+            <div class="tier-row ${selectedTier === 'highend' ? 'selected' : ''}" onclick="selectProductTier('${key}', 'highend')">
+              <div class="tier-row-hdr">
+                <span class="tier-label">High-End</span>
+                <span class="tier-price">${new Intl.NumberFormat('fr-FR').format(prod.highend.price)} FCFA</span>
+              </div>
+              <p class="tier-desc">${prod.highend.description || ''}</p>
+              <div class="tier-meta">
+                <span>Stock:</span>
+                <span class="tier-stock ${prod.highend.stock <= 0 ? 'out-of-stock' : (prod.highend.stock <= 10 ? 'low-stock' : '')}">${prod.highend.stock > 0 ? prod.highend.stock + ' dispo' : 'Rupture'}</span>
+              </div>
+            </div>
+            <div class="tier-row ${selectedTier === 'premium' ? 'selected' : ''}" onclick="selectProductTier('${key}', 'premium')">
+              <div class="tier-row-hdr">
+                <span class="tier-label">Premium</span>
+                <span class="tier-price">${new Intl.NumberFormat('fr-FR').format(prod.premium.price)} FCFA</span>
+              </div>
+              <p class="tier-desc">${prod.premium.description || ''}</p>
+              <div class="tier-meta">
+                <span>Stock:</span>
+                <span class="tier-stock ${prod.premium.stock <= 0 ? 'out-of-stock' : (prod.premium.stock <= 10 ? 'low-stock' : '')}">${prod.premium.stock > 0 ? prod.premium.stock + ' dispo' : 'Rupture'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <a href="${prod.customizer}${prod.customizer.includes('?') ? '&' : '?'}tier=${selectedTier}" class="action-btn">
+          ✨ Personnaliser ce vêtement
+        </a>
+      `;
+      grid.appendChild(card);
+    }
+  }
+
+  function selectProductTier(productKey, tier) {
+    selectedTiers[productKey] = tier;
+    renderInventory();
+  }
+
+  // Toasts
+  function showToast(title, body, borderCol = '#FF6B35') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.style.borderLeftColor = borderCol;
+    t.innerHTML = `<div class="toast-title">${title}</div><div class="toast-body">${body}</div>`;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+  }
+
+  // Admin connect
+  function openLogin() {
+    sbClient.auth.getSession().then(({data}) => {
+      if (data.session) openAdmin();
+      else document.getElementById('loginOverlay').classList.add('open');
+    });
+  }
+  function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
+  
+  async function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPass').value;
+    try {
+      const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      closeLogin();
+      showToast('Connexion réussie', 'Accès admin accordé.');
+      openAdmin();
+    } catch(err) {
+      showToast('Erreur connexion', err.message, '#ef4444');
+    }
+  }
+
+  // Admin Control Panel
+  function openAdmin() {
+    document.getElementById('adminOverlay').classList.add('open');
+    loadProductTierForm();
+  }
+  function closeAdmin() { document.getElementById('adminOverlay').classList.remove('open'); }
+
+  function loadProductTierForm() {
+    const product = document.getElementById('editProduct').value;
+    const tier = document.getElementById('editTier').value;
+    const item = lestockInventory[product][tier];
+    document.getElementById('editPrice').value = item.price;
+    document.getElementById('editStock').value = item.stock;
+    document.getElementById('editDesc').value = item.description || '';
+  }
+
+  async function saveAdminTier() {
+    const product = document.getElementById('editProduct').value;
+    const tier = document.getElementById('editTier').value;
+    
+    // Update local state
+    lestockInventory[product][tier].price = parseInt(document.getElementById('editPrice').value);
+    lestockInventory[product][tier].stock = parseInt(document.getElementById('editStock').value);
+    lestockInventory[product][tier].description = document.getElementById('editDesc').value;
+
+    try {
+      // Update Supabase
+      const payload = [{ _type: 'lestock_v1', inventory: lestockInventory }];
+      const { error } = await sbClient.from('showcase_settings')
+        .update({ color_mockups: payload })
+        .eq('id', 5);
+        
+      if (error) throw error;
+      showToast('Succès', 'Les configurations ont été enregistrées.');
+      renderInventory();
+      closeAdmin();
+    } catch(err) {
+      showToast('Erreur sauvegarde', err.message, '#ef4444');
+    }
+  }
+
+  // Init
+  loadInventory();
+</script>
+</body>
+</html>
