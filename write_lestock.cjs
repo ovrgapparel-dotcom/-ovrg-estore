@@ -1,4 +1,6 @@
-<!doctype html>
+const fs = require('fs');
+
+const html = `<!doctype html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -8,12 +10,12 @@
 <meta name="theme-color" content="#FF6B35">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>
 <script>
   const SUPABASE_URL  = 'https://mihpdlhbijlvbdcqvzdw.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paHBkbGhiaWpsdmJkY3F2emR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDkzMTgsImV4cCI6MjA4Nzk4NTMxOH0.X-2XjKKi3enHck1KBtlga-RiVjXN3BS5EhW3fnF3oTE';
   const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-</script>
+<\/script>
 <style>
 :root{--primary:#FF6B35;--primary-dark:#e55a2b;--dark:#0d0d0d;--dark2:#161616;--gray:#888;--light:#f5f4f1;--white:#ffffff;--border:#e8e5e0;--border-dark:#222;--success:#22c55e}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -352,14 +354,14 @@ function tierRowHTML(key,prod,tierKey,label,badgeCls,sel){
   const si = stockInfo(t.stock);
   const price = new Intl.NumberFormat('fr-FR').format(t.price);
   const selected = sel===tierKey ? 'selected' : '';
-  return `<div class="tier-row ${selected}" onclick="selectProductTier('${key}','${tierKey}')">
+  return \`<div class="tier-row \${selected}" onclick="selectProductTier('\${key}','\${tierKey}')">
     <div class="tier-row-hdr">
-      <span class="tier-label">${label} <span class="tier-badge ${badgeCls}">${label}</span></span>
-      <span class="tier-price">${price} FCFA</span>
+      <span class="tier-label">\${label} <span class="tier-badge \${badgeCls}">\${label}</span></span>
+      <span class="tier-price">\${price} FCFA</span>
     </div>
-    <p class="tier-desc">${t.description||''}</p>
-    <div class="tier-meta"><span>Stock:</span><span class="tier-stock ${si.cls}">${si.txt}</span></div>
-  </div>`;
+    <p class="tier-desc">\${t.description||''}</p>
+    <div class="tier-meta"><span>Stock:</span><span class="tier-stock \${si.cls}">\${si.txt}</span></div>
+  </div>\`;
 }
 
 function renderInventory(){
@@ -369,25 +371,25 @@ function renderInventory(){
     const prod = lestockInventory[key];
     const sel = selectedTiers[key];
     const imgHTML = prod.image
-      ? `<img src="${prod.image}" alt="${prod.name}" loading="lazy">`
-      : `<div class="card-img-placeholder">${prod.icon||'👕'}<p>${prod.name||key}</p></div>`;
+      ? \`<img src="\${prod.image}" alt="\${prod.name}" loading="lazy">\`
+      : \`<div class="card-img-placeholder">\${prod.icon||'👕'}<p>\${prod.name||key}</p></div>\`;
     const custUrl = prod.customizer + (prod.customizer.includes('?')? '&':'?') + 'tier=' + sel;
     const card = document.createElement('div');
     card.className = 'stock-card';
-    card.innerHTML = `
-      <div class="card-img-slot">${imgHTML}</div>
+    card.innerHTML = \`
+      <div class="card-img-slot">\${imgHTML}</div>
       <div class="card-body">
         <div class="card-header">
-          <div class="card-icon">${prod.icon||'👕'}</div>
-          <div class="card-title"><h3>${prod.name||key}</h3><p>3 qualités disponibles</p></div>
+          <div class="card-icon">\${prod.icon||'👕'}</div>
+          <div class="card-title"><h3>\${prod.name||key}</h3><p>3 qualités disponibles</p></div>
         </div>
         <div class="tiers-container">
-          ${tierRowHTML(key,prod,'standard','Standard','badge-standard',sel)}
-          ${tierRowHTML(key,prod,'highend','High-End','badge-highend',sel)}
-          ${tierRowHTML(key,prod,'premium','Premium','badge-premium',sel)}
+          \${tierRowHTML(key,prod,'standard','Standard','badge-standard',sel)}
+          \${tierRowHTML(key,prod,'highend','High-End','badge-highend',sel)}
+          \${tierRowHTML(key,prod,'premium','Premium','badge-premium',sel)}
         </div>
-        <a href="${custUrl}" class="action-btn">✨ Personnaliser ce vêtement</a>
-      </div>`;
+        <a href="\${custUrl}" class="action-btn">✨ Personnaliser ce vêtement</a>
+      </div>\`;
     grid.appendChild(card);
   }
 }
@@ -461,19 +463,19 @@ function renderAdminList(){
   for(const key in lestockInventory){
     const prod=lestockInventory[key];
     const total=(prod.standard?.stock||0)+(prod.highend?.stock||0)+(prod.premium?.stock||0);
-    const thumbHTML=prod.image?`<img src="${prod.image}" alt="${prod.name}">`:(prod.icon||'👕');
+    const thumbHTML=prod.image?\`<img src="\${prod.image}" alt="\${prod.name}">\`:(prod.icon||'👕');
     const item=document.createElement('div');item.className='admin-product-item';
-    item.innerHTML=`
-      <div class="admin-product-thumb">${thumbHTML}</div>
+    item.innerHTML=\`
+      <div class="admin-product-thumb">\${thumbHTML}</div>
       <div class="admin-product-meta">
-        <h4>${prod.name||key}</h4>
-        <p>Std: ${new Intl.NumberFormat('fr-FR').format(prod.standard?.price||0)} | Hi: ${new Intl.NumberFormat('fr-FR').format(prod.highend?.price||0)} | Pre: ${new Intl.NumberFormat('fr-FR').format(prod.premium?.price||0)} FCFA</p>
-        <p style="margin-top:0.2rem">Stock total: ${total} pièces</p>
+        <h4>\${prod.name||key}</h4>
+        <p>Std: \${new Intl.NumberFormat('fr-FR').format(prod.standard?.price||0)} | Hi: \${new Intl.NumberFormat('fr-FR').format(prod.highend?.price||0)} | Pre: \${new Intl.NumberFormat('fr-FR').format(prod.premium?.price||0)} FCFA</p>
+        <p style="margin-top:0.2rem">Stock total: \${total} pièces</p>
       </div>
       <div class="admin-product-actions">
-        <button class="btn-edit" onclick="editProduct('${key}')">✏️ Éditer</button>
-        <button class="btn-edit" style="background:#1e3a5f" onclick="editProductImage('${key}')">🖼 Photo</button>
-      </div>`;
+        <button class="btn-edit" onclick="editProduct('\${key}')">✏️ Éditer</button>
+        <button class="btn-edit" style="background:#1e3a5f" onclick="editProductImage('\${key}')">🖼 Photo</button>
+      </div>\`;
     list.appendChild(item);
   }
 }
@@ -567,6 +569,9 @@ function showToast(title,body,borderCol){
 sbClient.auth.onAuthStateChange((event,session)=>{currentUser=session?.user??null;updateAdminUI();});
 sbClient.auth.getSession().then(({data})=>{currentUser=data.session?.user??null;updateAdminUI();});
 loadInventory();
-</script>
+<\/script>
 </body>
-</html>
+</html>`;
+
+fs.writeFileSync('lestock.html', html, 'utf8');
+console.log('lestock.html written, size:', fs.statSync('lestock.html').size, 'bytes');
