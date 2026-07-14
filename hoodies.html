@@ -1876,13 +1876,26 @@ function setEmbroiderySize(sz) {
   _sync3DOverlay();
 }
 
-// Push zone + size to the 3D overlay
+// Push zone + position + size to the 3D overlay (OUTERWEAR version)
 function _sync3DOverlay() {
-  const z    = getActiveZone();
-  const mult = scaleMultiplier;
-  // Convert canvas px (600×600 base) to fraction of canvas size
-  const scaleFrac = (z.w * mult) / 600;   // fraction of model bounding box
-  if (window.setHeadwearDecalScale) window.setHeadwearDecalScale(scaleFrac * 100);
+  // _syncAll3DZones already pushes the full zone config to the 3D viewer.
+  // This function additionally computes posNormX/posNormY from the 2D bounding
+  // box drag position so the 3D decal moves to match where the user placed it.
+  const side = activeZoneId; // 'front', 'back', 'sleeve-left', 'sleeve-right'
+  if (!window.zoneCustomizations[side]) return;
+
+  const ds = designState && designState[side];
+  if (ds) {
+    // Convert bounding box centre position in % space (0–100) to 0–1 norm
+    const normX = Math.max(0, Math.min(1, (ds.xPct + ds.wPct / 2) / 100));
+    const normY = Math.max(0, Math.min(1, (ds.yPct + ds.hPct / 2) / 100));
+    window.zoneCustomizations[side].posNormX = normX;
+    window.zoneCustomizations[side].posNormY = normY;
+    // Also sync scale from bounding box width
+    const scaleVal = Math.max(0.4, Math.min(2.5, ds.wPct / 30));
+    window.zoneCustomizations[side].scale = scaleVal;
+  }
+  _syncAll3DZones();
 }
 
 // ── CANVAS RENDER — showcase pipeline, adapted for zone-based headwear ─────────
@@ -2309,6 +2322,21 @@ function initDraggable(side) {
       }
     }
     renderDesign(side);
+    // Sync 3D viewer position & scale live during drag
+    if (window.zoneCustomizations && window.zoneCustomizations[side]) {
+      const ds = designState[side];
+      const normX = Math.max(0, Math.min(1, (ds.xPct + ds.wPct / 2) / 100));
+      const normY = Math.max(0, Math.min(1, (ds.yPct + ds.hPct / 2) / 100));
+      window.zoneCustomizations[side].posNormX = normX;
+      window.zoneCustomizations[side].posNormY = normY;
+      if (mode === 'resize') {
+        const scaleVal = Math.max(0.4, Math.min(2.5, ds.wPct / 30));
+        window.zoneCustomizations[side].scale = scaleVal;
+      }
+      if (window.setZoneCustomization) {
+        window.setZoneCustomization(side, window.zoneCustomizations[side]);
+      }
+    }
     e.preventDefault();
   }
 

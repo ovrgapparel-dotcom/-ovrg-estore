@@ -641,9 +641,9 @@ function _doRebuildAllDecals() {
       const jMidY    = box.min.y + boxSize.y * 0.70;  // mid-chest center
       const jBotY    = box.min.y + boxSize.y * 0.62;  // lower chest
 
-      if (zoneId === 'front') {
+    if (zoneId === 'front') {
         pz = jFrontZ;
-        // Vertical Y
+        // Vertical Y — support all 9 preset positions
         if (preset.startsWith('top')) {
           py = jTopY;
         } else if (preset.startsWith('mid') || preset === 'center') {
@@ -658,6 +658,13 @@ function _doRebuildAllDecals() {
           px = cx + dx; ori.y = -Math.PI / 12;
         } else {
           px = cx; ori.y = 0;
+        }
+        // Continuous override from bounding box drag (0–1 range)
+        if (config.posNormX !== undefined) {
+          px = cx + (config.posNormX - 0.5) * boxSize.x * 0.7;
+        }
+        if (config.posNormY !== undefined) {
+          py = box.min.y + boxSize.y * (0.40 + (1 - config.posNormY) * 0.42);
         }
       } else if (zoneId === 'back') {
         pz = jBackZ;
@@ -677,6 +684,13 @@ function _doRebuildAllDecals() {
           px = cx - dx; ori.y = -Math.PI * 11/12;
         } else {
           px = cx;
+        }
+        // Continuous override from bounding box drag (back camera: X is mirrored)
+        if (config.posNormX !== undefined) {
+          px = cx + (0.5 - config.posNormX) * boxSize.x * 0.7;
+        }
+        if (config.posNormY !== undefined) {
+          py = box.min.y + boxSize.y * (0.40 + (1 - config.posNormY) * 0.42);
         }
       } else if (zoneId === 'sleeve-left') {
         px = cx - boxSize.x * 0.45; py = jMidY; pz = cz; ori.y = Math.PI / 2;
@@ -707,7 +721,7 @@ function _doRebuildAllDecals() {
 
       if (zoneId === 'front') {
         pz = hFrontZ;
-        // Vertical Y
+        // Vertical Y — support all 9 preset positions
         if (preset.startsWith('top')) {
           py = hFrontTopY;
         } else if (preset.startsWith('mid') || preset === 'center') {
@@ -722,6 +736,13 @@ function _doRebuildAllDecals() {
           px = cx + dx; ori.y = -Math.PI / 12;
         } else {
           px = cx; ori.y = 0;
+        }
+        // Continuous override from bounding box drag
+        if (config.posNormX !== undefined) {
+          px = cx + (config.posNormX - 0.5) * boxSize.x * 0.7;
+        }
+        if (config.posNormY !== undefined) {
+          py = box.min.y + boxSize.y * (0.44 + (1 - config.posNormY) * 0.36);
         }
       } else if (zoneId === 'back') {
         // Torso back surface is near box.min.z but hood tip extends back.
@@ -745,6 +766,13 @@ function _doRebuildAllDecals() {
           px = cx - dx; ori.y = -Math.PI * 11/12;
         } else {
           px = cx;
+        }
+        // Continuous override from bounding box drag (back camera: X is mirrored)
+        if (config.posNormX !== undefined) {
+          px = cx + (0.5 - config.posNormX) * boxSize.x * 0.7;
+        }
+        if (config.posNormY !== undefined) {
+          py = box.min.y + boxSize.y * (0.24 + (1 - config.posNormY) * 0.52);
         }
       } else if (zoneId === 'sleeve-left') {
         px = cx - boxSize.x * 0.45; py = hFrontMidY; pz = hFrontZ; ori.y = Math.PI / 2;
