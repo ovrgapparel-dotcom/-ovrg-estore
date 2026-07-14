@@ -1295,12 +1295,14 @@ async function loadLeStock() {
     const { data, error } = await sbClient.from('showcase_settings').select('color_mockups').eq('id', 5).single();
     if (data && data.color_mockups && data.color_mockups[0] && data.color_mockups[0].inventory) {
       lestockConfig = data.color_mockups[0].inventory[productType];
-      const urlParams = new URLSearchParams(window.location.search);
-      const tierParam = urlParams.get('tier');
-      if (tierParam && lestockConfig.tiers[tierParam]) {
-        selectedTier = tierParam;
+      if (lestockConfig) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tierParam = urlParams.get('tier');
+        if (tierParam && lestockConfig[tierParam]) {
+          selectedTier = tierParam;
+        }
+        applyTier();
       }
-      applyTier();
     }
   } catch(e) {
     console.error("Failed to load LeStock config:", e);
@@ -1314,7 +1316,7 @@ function selectTier(tier) {
 
 function applyTier() {
   if (!lestockConfig) return;
-  const tierData = lestockConfig.tiers[selectedTier];
+  const tierData = lestockConfig[selectedTier];
   globalSettings.outerwearBasePrice = tierData.price;
   
   document.querySelectorAll('.tier-btn').forEach(btn => {
@@ -2875,7 +2877,7 @@ function addToCartShowcase() {
 
   // Check garment tier stock
   if (lestockConfig) {
-    const tierData = lestockConfig.tiers[selectedTier];
+    const tierData = lestockConfig[selectedTier];
     if (tierData && tierData.stock <= 0) {
       showToast('Rupture de stock', `Le modèle ${productType === 'jacket' ? 'Veste' : 'Hoodie'} ${tierData.label} est en rupture de stock.`, '#ef4444');
       return;
