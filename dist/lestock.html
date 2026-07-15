@@ -7,334 +7,130 @@
 <meta name="description" content="Découvrez les stocks et qualités de nos vêtements vierges prêts pour la personnalisation.">
 <meta name="theme-color" content="#FF6B35">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  const SUPABASE_URL    = 'https://mihpdlhbijlvbdcqvzdw.supabase.co';
-  const SUPABASE_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paHBkbGhiaWpsdmJkY3F2emR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDkzMTgsImV4cCI6MjA4Nzk4NTMxOH0.X-2XjKKi3enHck1KBtlga-RiVjXN3BS5EhW3fnF3oTE';
+  const SUPABASE_URL  = 'https://mihpdlhbijlvbdcqvzdw.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1paHBkbGhiaWpsdmJkY3F2emR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDkzMTgsImV4cCI6MjA4Nzk4NTMxOH0.X-2XjKKi3enHck1KBtlga-RiVjXN3BS5EhW3fnF3oTE';
   const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 </script>
 <style>
-:root {
-  --primary: #FF6B35;
-  --primary-dark: #e55a2b;
-  --dark: #0d0d0d;
-  --dark2: #161616;
-  --gray: #888;
-  --light: #f5f4f1;
-  --white: #ffffff;
-  --border: #e8e5e0;
-  --border-dark: #222;
-  --success: #22c55e;
-}
-
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--dark);
-  color: #fff;
-  line-height: 1.6;
-}
-
-/* Header styling */
-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(13, 13, 13, 0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border-dark);
-}
-.header-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1.2rem 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.logo {
-  font-family: 'Inter', sans-serif;
-  font-weight: 900;
-  font-size: 1.8rem;
-  letter-spacing: -0.05em;
-  color: #fff;
-  text-decoration: none;
-}
-.logo span { color: var(--primary); }
-nav a {
-  color: #aaa;
-  text-decoration: none;
-  font-size: 0.95rem;
-  font-weight: 500;
-  margin-left: 1.5rem;
-  transition: color 0.2s;
-}
-nav a:hover, nav a.active { color: var(--primary); }
-
-.back-link {
-  color: #aaa;
-  text-decoration: none;
-  font-size: 0.9rem;
-  transition: color 0.2s;
-}
-.back-link:hover { color: #fff; }
-
-/* Hero section */
-.hero {
-  padding: 5rem 1.5rem 3rem;
-  text-align: center;
-  max-width: 800px;
-  margin: 0 auto;
-}
-.hero-tag {
-  display: inline-block;
-  background: rgba(255, 107, 53, 0.1);
-  color: var(--primary);
-  padding: 0.4rem 1rem;
-  border-radius: 50px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  margin-bottom: 1rem;
-}
-.hero h1 {
-  font-family: 'Inter', sans-serif;
-  font-size: 3rem;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  margin-bottom: 1rem;
-}
-.hero h1 span { color: var(--primary); }
-.hero p { color: #aaa; font-size: 1.1rem; }
-
-/* Stock Grid */
-.stock-grid {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.5rem 5rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-  gap: 2rem;
-}
-.stock-card {
-  background: var(--dark2);
-  border: 1px solid var(--border-dark);
-  border-radius: 20px;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: transform 0.3s, border-color 0.3s;
-}
-.stock-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(255,107,53,0.3);
-}
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.card-icon {
-  font-size: 2.2rem;
-  background: rgba(255, 107, 53, 0.1);
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 14px;
-}
-.card-title h3 {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #fff;
-}
-.card-title p {
-  color: #666;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* Tier selections */
-.tiers-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.tier-row {
-  border: 1px solid #222;
-  background: #111;
-  border-radius: 12px;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.tier-row.selected {
-  border-color: var(--primary);
-  background: rgba(255,107,53,0.03);
-}
-.tier-row-hdr {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.3rem;
-}
-.tier-label {
-  font-weight: 700;
-  font-size: 1.05rem;
-  color: #fff;
-}
-.tier-price {
-  color: var(--primary);
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-.tier-desc {
-  font-size: 0.85rem;
-  color: #888;
-  margin-bottom: 0.4rem;
-}
-.tier-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-}
-.tier-stock {
-  color: var(--success);
-  font-weight: 600;
-}
-.tier-stock.low-stock { color: #f59e0b; }
-.tier-stock.out-of-stock { color: #ef4444; }
-
-.action-btn {
-  background: var(--primary);
-  color: white;
-  border: none;
-  width: 100%;
-  padding: 1rem;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  text-decoration: none;
-}
-.action-btn:hover {
-  background: var(--primary-dark);
-}
-
-/* Footer & Admin */
-footer {
-  text-align: center;
-  padding: 3rem 1.5rem;
-  border-top: 1px solid var(--border-dark);
-  color: #555;
-  font-size: 0.85rem;
-}
-.footer-admin {
-  margin-top: 1rem;
-}
-.footer-admin button {
-  background: none;
-  border: none;
-  color: #444;
-  cursor: pointer;
-  text-decoration: underline;
-  font-size: 0.85rem;
-}
-.footer-admin button:hover { color: var(--primary); }
-
-/* Admin Modal Overlay */
-.admin-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.85);
-  z-index: 1000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-}
-.admin-overlay.open { display: flex; }
-.admin-box {
-  background: #111;
-  border: 1px solid var(--border-dark);
-  border-radius: 20px;
-  max-width: 500px;
-  width: 100%;
-  padding: 2rem;
-  color: white;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-.admin-hdr {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-dark);
-  padding-bottom: 1rem;
-}
-.admin-hdr h2 { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
-.close-admin-btn { background: none; border: none; color: #aaa; font-size: 1.5rem; cursor: pointer; }
-.close-admin-btn:hover { color: #fff; }
-
-.login-form, .edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-}
-.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
-.form-group label { font-size: 0.8rem; font-weight: 700; color: #888; text-transform: uppercase; }
-.form-group input, .form-group select {
-  background: #1c1c1c;
-  border: 1px solid #333;
-  padding: 0.8rem;
-  border-radius: 8px;
-  color: white;
-  font-family: inherit;
-  font-size: 0.95rem;
-}
-.form-group input:focus, .form-group select:focus {
-  outline: none; border-color: var(--primary);
-}
-.admin-btn {
-  background: var(--primary); color: white; border: none; padding: 0.8rem; border-radius: 8px; font-weight: 700; cursor: pointer;
-}
-.admin-btn:hover { background: var(--primary-dark); }
-
-/* Toast */
-.toast-container {
-  position: fixed; bottom: 20px; right: 20px; z-index: 2000;
-  display: flex; flex-direction: column; gap: 10px;
-}
-.toast {
-  background: #1f1f1f; border-left: 4px solid var(--primary);
-  padding: 1rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  color: white; min-width: 280px; display: flex; flex-direction: column; gap: 0.2rem;
-  animation: slideIn 0.3s ease;
-}
-.toast-title { font-weight: 700; font-size: 0.95rem; }
-.toast-body { font-size: 0.85rem; color: #aaa; }
-
-@keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-@media(max-width: 768px) {
-  .hero h1 { font-size: 2.2rem; }
-  .stock-grid { grid-template-columns: 1fr; }
-}
+:root{--primary:#FF6B35;--primary-dark:#e55a2b;--dark:#0d0d0d;--dark2:#161616;--gray:#888;--light:#f5f4f1;--white:#ffffff;--border:#e8e5e0;--border-dark:#222;--success:#22c55e}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--dark);color:#fff;line-height:1.6}
+header{position:sticky;top:0;z-index:100;background:rgba(13,13,13,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-dark)}
+.header-inner{max-width:1200px;margin:0 auto;padding:1.2rem 1.5rem;display:flex;justify-content:space-between;align-items:center}
+.logo{font-family:'Inter',sans-serif;font-weight:900;font-size:1.8rem;letter-spacing:-0.05em;color:#fff;text-decoration:none}
+.logo span{color:var(--primary)}
+nav a{color:#aaa;text-decoration:none;font-size:0.9rem;font-weight:500;margin-left:1.3rem;transition:color 0.2s}
+nav a:hover{color:#fff}
+nav a.active{color:var(--primary);font-weight:700}
+.cart-link{color:#aaa;text-decoration:none;font-size:0.9rem;margin-left:1.3rem;transition:color 0.2s}
+.cart-link:hover{color:#fff}
+.hero{padding:5rem 1.5rem 3rem;text-align:center;max-width:800px;margin:0 auto}
+.hero-tag{display:inline-block;background:rgba(255,107,53,0.12);color:var(--primary);padding:0.4rem 1rem;border-radius:50px;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:4rem;letter-spacing:0.04em;margin-bottom:1rem;line-height:1}
+.hero h1 span{color:var(--primary)}
+.hero p{color:#aaa;font-size:1.05rem;max-width:560px;margin:0 auto}
+.stock-grid{max-width:1280px;margin:0 auto;padding:0 1.5rem 6rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:2rem}
+.stock-card{background:var(--dark2);border:1px solid var(--border-dark);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;transition:transform 0.3s,border-color 0.3s,box-shadow 0.3s}
+.stock-card:hover{transform:translateY(-6px);border-color:rgba(255,107,53,0.35);box-shadow:0 20px 50px rgba(0,0,0,0.4)}
+.card-img-slot{width:100%;aspect-ratio:4/3;background:#111;position:relative;overflow:hidden;border-bottom:1px solid var(--border-dark);display:flex;align-items:center;justify-content:center}
+.card-img-slot img{width:100%;height:100%;object-fit:cover;transition:transform 0.4s ease}
+.stock-card:hover .card-img-slot img{transform:scale(1.04)}
+.card-img-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.5rem;font-size:4rem;color:#222}
+.card-img-placeholder p{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#333}
+.card-body{padding:1.5rem;flex:1;display:flex;flex-direction:column}
+.card-header{display:flex;align-items:center;gap:0.9rem;margin-bottom:1.2rem}
+.card-icon{font-size:1.8rem;background:rgba(255,107,53,0.1);width:52px;height:52px;display:flex;align-items:center;justify-content:center;border-radius:12px;flex-shrink:0}
+.card-title h3{font-size:1.2rem;font-weight:700;color:#fff}
+.card-title p{color:#555;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em}
+.tiers-container{display:flex;flex-direction:column;gap:0.7rem;margin-bottom:1.2rem;flex:1}
+.tier-row{border:1px solid #1e1e1e;background:#0f0f0f;border-radius:10px;padding:0.85rem 1rem;cursor:pointer;transition:all 0.2s}
+.tier-row:hover{border-color:#333}
+.tier-row.selected{border-color:var(--primary);background:rgba(255,107,53,0.04)}
+.tier-row-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem}
+.tier-label{font-weight:700;font-size:0.95rem;color:#fff;display:flex;align-items:center;gap:0.4rem}
+.tier-badge{font-size:0.63rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:4px;text-transform:uppercase;letter-spacing:0.06em}
+.badge-standard{background:rgba(136,136,136,0.15);color:#888}
+.badge-highend{background:rgba(59,130,246,0.15);color:#60a5fa}
+.badge-premium{background:rgba(234,179,8,0.15);color:#fbbf24}
+.tier-price{color:var(--primary);font-weight:700;font-size:1rem}
+.tier-desc{font-size:0.8rem;color:#666;margin-bottom:0.3rem}
+.tier-meta{display:flex;justify-content:space-between;font-size:0.75rem;color:#555}
+.tier-stock{font-weight:600}
+.tier-stock.in-stock{color:var(--success)}
+.tier-stock.low-stock{color:#f59e0b}
+.tier-stock.out-of-stock{color:#ef4444}
+.action-btn{background:var(--primary);color:white;border:none;width:100%;padding:0.95rem;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;transition:background 0.2s,transform 0.15s;display:flex;align-items:center;justify-content:center;gap:0.5rem;text-decoration:none;margin-top:auto}
+.action-btn:hover{background:var(--primary-dark);transform:scale(1.01)}
+/* ADMIN */
+.admin-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:500;overflow-y:auto;padding:1rem;align-items:flex-start;justify-content:center}
+.admin-overlay.open{display:flex}
+.admin-box{background:var(--dark2);border-radius:16px;max-width:780px;width:100%;margin:2rem auto;overflow:hidden;color:white;animation:modalIn 0.25s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.admin-hdr{background:var(--dark);padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--primary)}
+.admin-hdr h2{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;letter-spacing:0.05em;color:var(--primary)}
+.admin-content{padding:1.8rem 2rem}
+.btn-close{background:#333;color:white;border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.1rem;transition:background 0.2s}
+.btn-close:hover{background:#444}
+.admin-form label{font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#aaa;display:block;margin-bottom:0.4rem}
+.admin-form{display:flex;flex-direction:column;gap:1rem}
+.admin-form input,.admin-form select,.admin-form textarea{width:100%;padding:0.75rem 1rem;background:#111;border:1.5px solid #333;border-radius:8px;color:white;font-family:'DM Sans',sans-serif;font-size:0.95rem;transition:border-color 0.2s}
+.admin-form input:focus,.admin-form select:focus,.admin-form textarea:focus{outline:none;border-color:var(--primary)}
+.admin-form textarea{resize:vertical;min-height:72px}
+.admin-grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:560px){.admin-grid2{grid-template-columns:1fr}}
+.admin-tabs{display:flex;border-bottom:1px solid #333;margin-bottom:1.2rem}
+.admin-tab{padding:0.8rem 1.1rem;cursor:pointer;font-size:0.85rem;font-weight:600;color:#888;border-bottom:2px solid transparent;transition:all 0.2s}
+.admin-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.supabase-status{display:flex;align-items:center;gap:0.5rem;font-size:0.75rem;padding:0.5rem 1rem;border-radius:6px;margin-bottom:1rem}
+.supabase-status.connected{background:rgba(34,197,94,0.1);color:#22c55e}
+.supabase-status.disconnected{background:rgba(239,68,68,0.1);color:#ef4444}
+.supabase-status.loading{background:rgba(59,130,246,0.1);color:#3b82f6}
+.admin-product-list{display:flex;flex-direction:column;gap:0.6rem;margin-top:0.8rem}
+.admin-product-item{background:#1a1a1a;border-radius:10px;padding:0.9rem 1rem;display:flex;gap:1rem;align-items:center;border:1px solid #222;transition:border-color 0.2s}
+.admin-product-item:hover{border-color:#333}
+.admin-product-thumb{width:56px;height:56px;border-radius:8px;background:#111;flex-shrink:0;overflow:hidden;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+.admin-product-thumb img{width:100%;height:100%;object-fit:cover}
+.admin-product-meta{flex:1;min-width:0}
+.admin-product-meta h4{font-size:0.9rem;margin-bottom:0.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-product-meta p{font-size:0.75rem;color:#666}
+.admin-product-actions{display:flex;gap:0.4rem}
+.admin-product-actions button{padding:0.35rem 0.7rem;border-radius:6px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.75rem;font-weight:600;transition:all 0.2s}
+.btn-edit{background:#2d3748;color:white}
+.btn-edit:hover{background:var(--primary)}
+.upload-slot{aspect-ratio:4/3;max-width:240px;border-radius:10px;background:#111;border:2px dashed #333;overflow:hidden;position:relative;cursor:pointer;transition:border-color 0.2s;display:flex;align-items:center;justify-content:center}
+.upload-slot:hover{border-color:var(--primary)}
+.upload-slot img{width:100%;height:100%;object-fit:cover}
+.upload-slot-icon{font-size:2rem;opacity:0.25}
+.upload-slot-label{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);padding:0.4rem;font-size:0.7rem;text-align:center;color:#888}
+.upload-progress{display:none;position:absolute;inset:0;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;font-size:0.75rem;color:white}
+.upload-progress.show{display:flex}
+.login-box{text-align:center;padding:2.5rem}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--primary);letter-spacing:0.1em;margin-bottom:0.5rem}
+.login-box h3{font-size:0.95rem;font-weight:500;color:#aaa;margin-bottom:1.6rem}
+.login-field{margin-bottom:1rem}
+.login-field input{width:100%;padding:0.75rem 1rem;background:#111;border:1.5px solid #333;border-radius:8px;color:white;font-family:'DM Sans',sans-serif;font-size:0.95rem;transition:border-color 0.2s}
+.login-field input:focus{outline:none;border-color:var(--primary)}
+.btn-login{width:100%;background:var(--primary);color:white;border:none;padding:0.9rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;margin-top:0.5rem;transition:background 0.2s}
+.btn-login:hover{background:var(--primary-dark)}
+.login-error{color:#f87171;font-size:0.85rem;margin-top:0.75rem;min-height:1.2rem}
+.btn-cancel-login{background:none;border:none;color:#666;font-size:0.85rem;cursor:pointer;margin-top:1rem;font-family:'DM Sans',sans-serif}
+.btn-cancel-login:hover{color:#aaa}
+.btn-save{background:var(--primary);color:white;border:none;padding:0.75rem 1.5rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer;transition:background 0.2s}
+.btn-save:hover{background:var(--primary-dark)}
+.btn-sm-sec{background:#222;color:#aaa;border:1px solid #333;padding:0.65rem 1.2rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s}
+.btn-sm-sec:hover{border-color:#555;color:#fff}
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:10px}
+.toast{background:#1f1f1f;border-left:4px solid var(--primary);padding:1rem 1.2rem;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.5);color:white;min-width:260px;display:flex;flex-direction:column;gap:0.2rem;animation:slideIn 0.3s ease}
+.toast-title{font-weight:700;font-size:0.9rem}
+.toast-body{font-size:0.82rem;color:#aaa}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+footer{background:var(--dark);padding:2rem 1.5rem;text-align:center;color:#555;font-size:0.8rem;border-top:1px solid var(--border-dark)}
+.footer-admin{display:inline-block;background:none;border:none;cursor:pointer;color:#1a1a1a;font-size:0.6rem;margin-left:0.5rem;opacity:0.15;transition:opacity 0.3s;padding:2px 4px;border-radius:3px}
+.footer-admin:hover{opacity:0.5}
+@media(max-width:768px){.hero h1{font-size:3rem}.stock-grid{grid-template-columns:1fr}nav{display:none}}
 </style>
 </head>
 <body>
@@ -342,283 +138,440 @@ footer {
 <header>
   <div class="header-inner">
     <a href="index.html" class="logo">OVRG<span>.</span></a>
-    <a href="index.html" class="back-link">← Boutique</a>
+    <nav>
+      <a href="showcase.html">Showcase</a>
+      <a href="headwear.html">Bobs &amp; Hats</a>
+      <a href="jeans.html">Vestes en Jean</a>
+      <a href="hoodies.html">Hoodies</a>
+      <a href="lestock.html" class="active">LeStock</a>
+      <a href="index.html#contact">Contact</a>
+    </nav>
+    <a href="index.html?cart=1" class="cart-link">🛍 Panier</a>
   </div>
 </header>
 
 <section class="hero">
-  <div class="hero-tag">Inventaire & Qualité</div>
-  <h1>Notre <span>Stock</span> de Blanks</h1>
+  <div class="hero-tag">Inventaire &amp; Qualité</div>
+  <h1>LE<span>STOCK</span></h1>
   <p>Consultez la disponibilité et les tarifs de nos vêtements vierges prêts pour vos personnalisations en broderie ou impression.</p>
 </section>
 
 <main>
   <div class="stock-grid" id="stockGrid">
-    <div style="grid-column: 1/-1; text-align: center; padding: 3rem;">Chargement des données...</div>
+    <div style="grid-column:1/-1;text-align:center;padding:4rem;color:#444">
+      <div style="font-size:2rem;margin-bottom:1rem">⏳</div>
+      Chargement des données...
+    </div>
   </div>
 </main>
 
 <footer>
-  <p>&copy; 2026 OVRG Apparel. Tous droits réservés.</p>
-  <div class="footer-admin">
-    <button id="adminToggleBtn" onclick="openLogin()">Espace Admin</button>
-  </div>
+  <p>© 2026 OVRG Apparel. Tous droits réservés.
+    <button class="footer-admin" id="adminToggleBtn" onclick="handleAdminClick()"
+      onmouseenter="this.style.opacity='0.5'" onmouseleave="this.style.opacity='0.15'">⚙</button>
+  </p>
 </footer>
 
-<!-- Toast Notifications -->
 <div class="toast-container" id="toastContainer"></div>
 
-<!-- Login Modal -->
-<div class="admin-overlay" id="loginOverlay" onclick="if(event.target===this)closeLogin()">
-  <div class="admin-box" style="max-width: 400px;">
-    <div class="admin-hdr">
-      <h2>Connexion Admin</h2>
-      <button class="close-admin-btn" onclick="closeLogin()">&times;</button>
+<!-- ADMIN LOGIN -->
+<div class="admin-overlay" id="loginOverlay">
+  <div class="admin-box" style="max-width:420px">
+    <div class="login-box">
+      <div class="login-logo">OVRG.</div>
+      <h3>Accès Administrateur — LeStock</h3>
+      <div class="login-field"><input type="email" id="loginEmail" placeholder="Email admin" autocomplete="email"></div>
+      <div class="login-field"><input type="password" id="loginPassword" placeholder="Mot de passe" autocomplete="current-password"></div>
+      <button class="btn-login" onclick="doLogin()">Se connecter</button>
+      <div class="login-error" id="loginError"></div>
+      <button class="btn-cancel-login" onclick="closeLogin()">Annuler</button>
     </div>
-    <form class="login-form" onsubmit="handleLogin(event)">
-      <div class="form-group">
-        <label for="loginEmail">Email</label>
-        <input type="email" id="loginEmail" placeholder="admin@ovrg.com" required>
-      </div>
-      <div class="form-group">
-        <label for="loginPass">Mot de passe</label>
-        <input type="password" id="loginPass" placeholder="••••••••" required>
-      </div>
-      <button type="submit" class="admin-btn">Se connecter</button>
-    </form>
   </div>
 </div>
 
-<!-- Admin Settings Modal -->
+<!-- ADMIN PANEL -->
 <div class="admin-overlay" id="adminOverlay" onclick="if(event.target===this)closeAdmin()">
   <div class="admin-box">
     <div class="admin-hdr">
-      <h2>Gestion LeStock</h2>
-      <button class="close-admin-btn" onclick="closeAdmin()">&times;</button>
+      <h2>Admin — LeStock</h2>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn-cancel-login" onclick="doLogout()" style="font-size:0.8rem;color:#aaa">Déconnexion</button>
+        <button class="btn-close" onclick="closeAdmin()">✕</button>
+      </div>
     </div>
-    <div class="edit-form">
-      <div class="form-group">
-        <label for="editProduct">Produit</label>
-        <select id="editProduct" onchange="loadProductTierForm()">
-          <option value="tshirt">👕 T-Shirt</option>
-          <option value="cap">🧢 Casquette</option>
-          <option value="bobble">🎿 Bonnet</option>
-          <option value="jacket">🧥 Veste en Jean</option>
-          <option value="hoodie">🫡 Hoodie</option>
-        </select>
+    <div class="admin-content">
+      <div id="supabaseStatus" class="supabase-status loading">⏳ Connexion à Supabase...</div>
+      <div class="admin-tabs">
+        <div class="admin-tab active" id="tabInventory" onclick="showAdminTab('Inventory',this)">📦 Inventaire</div>
+        <div class="admin-tab" id="tabEdit" onclick="showAdminTab('Edit',this)">✏️ Modifier</div>
+        <div class="admin-tab" id="tabImages" onclick="showAdminTab('Images',this)">🖼 Photos</div>
       </div>
-      <div class="form-group">
-        <label for="editTier">Qualité (Tier)</label>
-        <select id="editTier" onchange="loadProductTierForm()">
-          <option value="standard">Standard</option>
-          <option value="highend">High-End</option>
-          <option value="premium">Premium</option>
-        </select>
+
+      <!-- INVENTORY TAB -->
+      <div id="adminTabInventory">
+        <div class="admin-product-list" id="adminProductList">
+          <p style="color:#555;text-align:center;padding:2rem">Chargement...</p>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="editPrice">Prix (FCFA)</label>
-        <input type="number" id="editPrice" required>
+
+      <!-- EDIT TAB -->
+      <div id="adminTabEdit" style="display:none">
+        <div class="admin-form">
+          <div class="admin-grid2">
+            <div>
+              <label for="editProduct">Produit</label>
+              <select id="editProduct" onchange="loadProductTierForm()">
+                <option value="tshirt">👕 T-Shirt</option>
+                <option value="cap">🧢 Casquette</option>
+                <option value="bobble">🧣 Bonnet</option>
+                <option value="jacket">🧥 Veste en Jean</option>
+                <option value="hoodie">🫡 Hoodie</option>
+              </select>
+            </div>
+            <div>
+              <label for="editTier">Qualité (Tier)</label>
+              <select id="editTier" onchange="loadProductTierForm()">
+                <option value="standard">Standard</option>
+                <option value="highend">High-End</option>
+                <option value="premium">Premium</option>
+              </select>
+            </div>
+          </div>
+          <div class="admin-grid2">
+            <div>
+              <label for="editPrice">Prix (FCFA)</label>
+              <input type="number" id="editPrice" min="0" step="500" placeholder="15000">
+            </div>
+            <div>
+              <label for="editStock">Stock disponible</label>
+              <input type="number" id="editStock" min="0" step="1" placeholder="50">
+            </div>
+          </div>
+          <div>
+            <label for="editDesc">Description</label>
+            <textarea id="editDesc" placeholder="Ex: Coton 100% premium, grammage 220g/m²"></textarea>
+          </div>
+          <div style="display:flex;gap:0.8rem;flex-wrap:wrap">
+            <button class="btn-save" onclick="saveAdminTier()">💾 Enregistrer ce tier</button>
+            <button class="btn-sm-sec" onclick="loadProductTierForm()">↺ Recharger</button>
+          </div>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="editStock">Stock disponible</label>
-        <input type="number" id="editStock" required>
+
+      <!-- IMAGES TAB -->
+      <div id="adminTabImages" style="display:none">
+        <div class="admin-form">
+          <div>
+            <label for="imgProduct">Produit à modifier</label>
+            <select id="imgProduct" onchange="loadImagePreview()">
+              <option value="tshirt">👕 T-Shirt</option>
+              <option value="cap">🧢 Casquette</option>
+              <option value="bobble">🧣 Bonnet</option>
+              <option value="jacket">🧥 Veste en Jean</option>
+              <option value="hoodie">🫡 Hoodie</option>
+            </select>
+          </div>
+          <div>
+            <label>Photo du produit (recommandé: 800×600, ratio 4:3)</label>
+            <div style="display:flex;gap:1.2rem;align-items:flex-start;flex-wrap:wrap">
+              <div class="upload-slot" id="imgUploadSlot" onclick="document.getElementById('imgFileInput').click()">
+                <div class="upload-slot-icon" id="imgPlaceholderIcon">🖼</div>
+                <img id="imgPreview" style="display:none;width:100%;height:100%;object-fit:cover" alt="preview">
+                <div class="upload-progress" id="imgUploadProgress">Upload en cours...</div>
+                <div class="upload-slot-label">Cliquez pour changer</div>
+              </div>
+              <div style="flex:1;min-width:180px">
+                <p style="color:#666;font-size:0.82rem;line-height:1.8">
+                  Formats: JPG, PNG, WebP<br>
+                  Taille recommandée: 800×600px<br>
+                  Ratio: 4:3<br>
+                  Max: 5 Mo
+                </p>
+                <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="uploadProductImage(event)">
+                <button class="btn-sm-sec" style="margin-top:1rem" onclick="removeProductImage()">🗑 Supprimer la photo</button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label>URL de l'image (optionnel — coller un lien direct)</label>
+            <input type="url" id="imgUrlInput" placeholder="https://...">
+            <button class="btn-save" style="margin-top:0.6rem" onclick="saveImageUrl()">💾 Utiliser cette URL</button>
+          </div>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="editDesc">Description</label>
-        <input type="text" id="editDesc" required>
-      </div>
-      <button class="admin-btn" onclick="saveAdminTier()">Enregistrer la modification</button>
     </div>
   </div>
 </div>
 
 <script>
-  let lestockInventory = {};
-  const selectedTiers = {
-    tshirt: 'standard',
-    cap: 'standard',
-    bobble: 'standard',
-    jacket: 'standard',
-    hoodie: 'standard'
-  };
+let lestockInventory = {};
+let currentUser = null;
+const selectedTiers = {tshirt:'standard',cap:'standard',bobble:'standard',jacket:'standard',hoodie:'standard'};
 
-  async function loadInventory() {
-    try {
-      const { data, error } = await sbClient.from('showcase_settings').select('color_mockups').eq('id', 5).single();
-      if (error) throw error;
-      if (data && data.color_mockups && data.color_mockups[0] && data.color_mockups[0].inventory) {
-        lestockInventory = data.color_mockups[0].inventory;
-        renderInventory();
-      } else {
-        showToast('Erreur configuration', 'Données de stock indisponibles.', '#ef4444');
+async function loadInventory() {
+  try {
+    const {data,error} = await sbClient.from('showcase_settings').select('color_mockups').eq('id',5).single();
+    if(error) throw error;
+    if(data && data.color_mockups && data.color_mockups[0] && data.color_mockups[0].inventory){
+      lestockInventory = data.color_mockups[0].inventory;
+      // Restore any product types that were lost from the DB (e.g. jacket, tshirt)
+      const defaults = buildDefaultInventory();
+      for (const k in defaults) {
+        if (!lestockInventory[k]) lestockInventory[k] = defaults[k];
       }
-    } catch(err) {
-      console.error('Error fetching LeStock:', err);
-      showToast('Erreur', 'Impossible de récupérer l\'inventaire.', '#ef4444');
+    } else {
+      lestockInventory = buildDefaultInventory();
     }
-  }
-
-  function renderInventory() {
-    const grid = document.getElementById('stockGrid');
-    grid.innerHTML = '';
-
-    for (const key in lestockInventory) {
-      const prod = lestockInventory[key];
-      const selectedTier = selectedTiers[key];
-      const tierData = prod[selectedTier];
-
-      // Formatter price
-      const priceFmt = new Intl.NumberFormat('fr-FR').format(tierData.price) + ' FCFA';
-      
-      const card = document.createElement('div');
-      card.className = 'stock-card';
-      
-      let stockClass = '';
-      let stockText = `${tierData.stock} pièces disponibles`;
-      if (tierData.stock <= 0) {
-        stockClass = 'out-of-stock';
-        stockText = 'En rupture de stock';
-      } else if (tierData.stock <= 10) {
-        stockClass = 'low-stock';
-        stockText = `Stock très limité: ${tierData.stock} restants`;
-      }
-
-      card.innerHTML = `
-        <div>
-          <div class="card-header">
-            <div class="card-icon">${prod.icon || '👕'}</div>
-            <div class="card-title">
-              <h3>${prod.name}</h3>
-              <p>Type: ${key.toUpperCase()}</p>
-            </div>
-          </div>
-          <div class="tiers-container">
-            <div class="tier-row ${selectedTier === 'standard' ? 'selected' : ''}" onclick="selectProductTier('${key}', 'standard')">
-              <div class="tier-row-hdr">
-                <span class="tier-label">Standard</span>
-                <span class="tier-price">${new Intl.NumberFormat('fr-FR').format(prod.standard.price)} FCFA</span>
-              </div>
-              <p class="tier-desc">${prod.standard.description || ''}</p>
-              <div class="tier-meta">
-                <span>Stock:</span>
-                <span class="tier-stock ${prod.standard.stock <= 0 ? 'out-of-stock' : (prod.standard.stock <= 10 ? 'low-stock' : '')}">${prod.standard.stock > 0 ? prod.standard.stock + ' dispo' : 'Rupture'}</span>
-              </div>
-            </div>
-            <div class="tier-row ${selectedTier === 'highend' ? 'selected' : ''}" onclick="selectProductTier('${key}', 'highend')">
-              <div class="tier-row-hdr">
-                <span class="tier-label">High-End</span>
-                <span class="tier-price">${new Intl.NumberFormat('fr-FR').format(prod.highend.price)} FCFA</span>
-              </div>
-              <p class="tier-desc">${prod.highend.description || ''}</p>
-              <div class="tier-meta">
-                <span>Stock:</span>
-                <span class="tier-stock ${prod.highend.stock <= 0 ? 'out-of-stock' : (prod.highend.stock <= 10 ? 'low-stock' : '')}">${prod.highend.stock > 0 ? prod.highend.stock + ' dispo' : 'Rupture'}</span>
-              </div>
-            </div>
-            <div class="tier-row ${selectedTier === 'premium' ? 'selected' : ''}" onclick="selectProductTier('${key}', 'premium')">
-              <div class="tier-row-hdr">
-                <span class="tier-label">Premium</span>
-                <span class="tier-price">${new Intl.NumberFormat('fr-FR').format(prod.premium.price)} FCFA</span>
-              </div>
-              <p class="tier-desc">${prod.premium.description || ''}</p>
-              <div class="tier-meta">
-                <span>Stock:</span>
-                <span class="tier-stock ${prod.premium.stock <= 0 ? 'out-of-stock' : (prod.premium.stock <= 10 ? 'low-stock' : '')}">${prod.premium.stock > 0 ? prod.premium.stock + ' dispo' : 'Rupture'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <a href="${prod.customizer}${prod.customizer.includes('?') ? '&' : '?'}tier=${selectedTier}" class="action-btn">
-          ✨ Personnaliser ce vêtement
-        </a>
-      `;
-      grid.appendChild(card);
-    }
-  }
-
-  function selectProductTier(productKey, tier) {
-    selectedTiers[productKey] = tier;
     renderInventory();
+  } catch(err){
+    console.error(err);
+    lestockInventory = buildDefaultInventory();
+    renderInventory();
+    showToast('Mode hors-ligne','Données par défaut chargées.','#f59e0b');
   }
+}
 
-  // Toasts
-  function showToast(title, body, borderCol = '#FF6B35') {
-    const c = document.getElementById('toastContainer');
-    const t = document.createElement('div');
-    t.className = 'toast';
-    t.style.borderLeftColor = borderCol;
-    t.innerHTML = `<div class="toast-title">${title}</div><div class="toast-body">${body}</div>`;
-    c.appendChild(t);
-    setTimeout(() => t.remove(), 4000);
+function buildDefaultInventory(){
+  function tiers(s,h,p){return{
+    standard:{price:s,stock:50,description:'Qualité standard, polyester/coton blend'},
+    highend:{price:h,stock:30,description:'Coton premium 180g/m²'},
+    premium:{price:p,stock:15,description:'Coton supima 220g/m², Made in Portugal'}
+  };}
+  return{
+    tshirt: {name:'T-Shirt',       icon:'👕',customizer:'showcase.html',          image:null,...tiers(9000,14000,22000)},
+    cap:    {name:'Casquette',      icon:'🧢',customizer:'headwear.html?type=cap', image:null,...tiers(7500,12000,18000)},
+    bobble: {name:'Bonnet',         icon:'🧣',customizer:'headwear.html?type=bobble',image:null,...tiers(6000,10000,16000)},
+    jacket: {name:'Veste en Jean',  icon:'🧥',customizer:'jeans.html',            image:null,...tiers(25000,38000,55000)},
+    hoodie: {name:'Hoodie',         icon:'🫡',customizer:'hoodies.html',           image:null,...tiers(18000,27000,42000)},
+  };
+}
+
+function stockInfo(n){
+  if(n<=0)  return{cls:'out-of-stock',txt:'Rupture de stock'};
+  if(n<=10) return{cls:'low-stock',txt:'Stock limité: '+n};
+  return        {cls:'in-stock',txt:n+' disponibles'};
+}
+
+function tierRowHTML(key,prod,tierKey,label,badgeCls,sel){
+  const t = prod[tierKey]; if(!t) return '';
+  const si = stockInfo(t.stock);
+  const price = new Intl.NumberFormat('fr-FR').format(t.price);
+  const selected = sel===tierKey ? 'selected' : '';
+  return `<div class="tier-row ${selected}" onclick="selectProductTier('${key}','${tierKey}')">
+    <div class="tier-row-hdr">
+      <span class="tier-label">${label} <span class="tier-badge ${badgeCls}">${label}</span></span>
+      <span class="tier-price">${price} FCFA</span>
+    </div>
+    <p class="tier-desc">${t.description||''}</p>
+    <div class="tier-meta"><span>Stock:</span><span class="tier-stock ${si.cls}">${si.txt}</span></div>
+  </div>`;
+}
+
+function renderInventory(){
+  const grid = document.getElementById('stockGrid');
+  grid.innerHTML = '';
+  for(const key in lestockInventory){
+    const prod = lestockInventory[key];
+    const sel = selectedTiers[key];
+    const imgHTML = prod.image
+      ? `<img src="${prod.image}" alt="${prod.name}" loading="lazy">`
+      : `<div class="card-img-placeholder">${prod.icon||'👕'}<p>${prod.name||key}</p></div>`;
+    const custUrl = prod.customizer + (prod.customizer.includes('?')? '&':'?') + 'tier=' + sel;
+    const card = document.createElement('div');
+    card.className = 'stock-card';
+    card.innerHTML = `
+      <div class="card-img-slot">${imgHTML}</div>
+      <div class="card-body">
+        <div class="card-header">
+          <div class="card-icon">${prod.icon||'👕'}</div>
+          <div class="card-title"><h3>${prod.name||key}</h3><p>3 qualités disponibles</p></div>
+        </div>
+        <div class="tiers-container">
+          ${tierRowHTML(key,prod,'standard','Standard','badge-standard',sel)}
+          ${tierRowHTML(key,prod,'highend','High-End','badge-highend',sel)}
+          ${tierRowHTML(key,prod,'premium','Premium','badge-premium',sel)}
+        </div>
+        <a href="${custUrl}" class="action-btn">✨ Personnaliser ce vêtement</a>
+      </div>`;
+    grid.appendChild(card);
   }
+}
 
-  // Admin connect
-  function openLogin() {
-    sbClient.auth.getSession().then(({data}) => {
-      if (data.session) openAdmin();
-      else document.getElementById('loginOverlay').classList.add('open');
-    });
+function selectProductTier(productKey,tier){selectedTiers[productKey]=tier;renderInventory();}
+
+/* AUTH */
+function handleAdminClick(){if(currentUser)openAdmin();else openLogin();}
+function openLogin(){
+  document.getElementById('loginEmail').value='';
+  document.getElementById('loginPassword').value='';
+  document.getElementById('loginError').textContent='';
+  document.getElementById('loginOverlay').classList.add('open');
+}
+function closeLogin(){document.getElementById('loginOverlay').classList.remove('open');}
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const password=document.getElementById('loginPassword').value;
+  document.getElementById('loginError').textContent='';
+  if(!email||!password){document.getElementById('loginError').textContent='Veuillez remplir tous les champs.';return;}
+  try{
+    await sbClient.auth.signOut().catch(()=>{});
+    const{data,error}=await sbClient.auth.signInWithPassword({email,password});
+    if(error)throw error;
+    currentUser=data.user;closeLogin();openAdmin();updateAdminUI();
+  }catch(e){document.getElementById('loginError').textContent='Email ou mot de passe incorrect.';}
+}
+async function doLogout(){
+  await sbClient.auth.signOut().catch(()=>{});
+  currentUser=null;closeAdmin();updateAdminUI();
+  showToast('Déconnecté','Session admin terminée.','#888');
+}
+function updateAdminUI(){
+  const btn=document.getElementById('adminToggleBtn');if(!btn)return;
+  if(currentUser){btn.textContent='⚙●';btn.style.color='#22c55e';btn.style.opacity='0.4';}
+  else{btn.textContent='⚙';btn.style.color='#1a1a1a';btn.style.opacity='0.15';}
+}
+
+/* PANEL */
+function openAdmin(){
+  document.getElementById('adminOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  checkSupabaseConnection();renderAdminList();
+  showAdminTab('Inventory',document.getElementById('tabInventory'));
+}
+function closeAdmin(){document.getElementById('adminOverlay').classList.remove('open');document.body.style.overflow='';}
+
+async function checkSupabaseConnection(){
+  const el=document.getElementById('supabaseStatus');
+  el.className='supabase-status loading';el.textContent='⏳ Vérification...';
+  try{
+    const{error}=await sbClient.from('showcase_settings').select('id').eq('id',5).single();
+    if(error)throw error;
+    el.className='supabase-status connected';el.textContent='✓ Connecté à Supabase';
+  }catch{el.className='supabase-status disconnected';el.textContent='✕ Connexion échouée';}
+}
+
+function showAdminTab(name,el){
+  ['Inventory','Edit','Images'].forEach(t=>{
+    const d=document.getElementById('adminTab'+t);if(d)d.style.display='none';
+  });
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+  const target=document.getElementById('adminTab'+name);if(target)target.style.display='';
+  if(el)el.classList.add('active');
+  if(name==='Edit')loadProductTierForm();
+  if(name==='Images')loadImagePreview();
+}
+
+function renderAdminList(){
+  const list=document.getElementById('adminProductList');list.innerHTML='';
+  for(const key in lestockInventory){
+    const prod=lestockInventory[key];
+    const total=(prod.standard?.stock||0)+(prod.highend?.stock||0)+(prod.premium?.stock||0);
+    const thumbHTML=prod.image?`<img src="${prod.image}" alt="${prod.name}">`:(prod.icon||'👕');
+    const item=document.createElement('div');item.className='admin-product-item';
+    item.innerHTML=`
+      <div class="admin-product-thumb">${thumbHTML}</div>
+      <div class="admin-product-meta">
+        <h4>${prod.name||key}</h4>
+        <p>Std: ${new Intl.NumberFormat('fr-FR').format(prod.standard?.price||0)} | Hi: ${new Intl.NumberFormat('fr-FR').format(prod.highend?.price||0)} | Pre: ${new Intl.NumberFormat('fr-FR').format(prod.premium?.price||0)} FCFA</p>
+        <p style="margin-top:0.2rem">Stock total: ${total} pièces</p>
+      </div>
+      <div class="admin-product-actions">
+        <button class="btn-edit" onclick="editProduct('${key}')">✏️ Éditer</button>
+        <button class="btn-edit" style="background:#1e3a5f" onclick="editProductImage('${key}')">🖼 Photo</button>
+      </div>`;
+    list.appendChild(item);
   }
-  function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
-  
-  async function handleLogin(e) {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPass').value;
-    try {
-      const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      closeLogin();
-      showToast('Connexion réussie', 'Accès admin accordé.');
-      openAdmin();
-    } catch(err) {
-      showToast('Erreur connexion', err.message, '#ef4444');
-    }
-  }
+}
 
-  // Admin Control Panel
-  function openAdmin() {
-    document.getElementById('adminOverlay').classList.add('open');
-    loadProductTierForm();
-  }
-  function closeAdmin() { document.getElementById('adminOverlay').classList.remove('open'); }
+/* EDIT TAB */
+function loadProductTierForm(){
+  const product=document.getElementById('editProduct').value;
+  const tier=document.getElementById('editTier').value;
+  const item=lestockInventory[product]?.[tier];if(!item)return;
+  document.getElementById('editPrice').value=item.price||'';
+  document.getElementById('editStock').value=item.stock??'';
+  document.getElementById('editDesc').value=item.description||'';
+}
+function editProduct(key){
+  document.getElementById('editProduct').value=key;
+  document.getElementById('editTier').value='standard';
+  showAdminTab('Edit',document.getElementById('tabEdit'));
+}
+async function saveAdminTier(){
+  const product=document.getElementById('editProduct').value;
+  const tier=document.getElementById('editTier').value;
+  if(!lestockInventory[product]?.[tier]){showToast('Erreur','Produit introuvable.','#ef4444');return;}
+  lestockInventory[product][tier].price=parseInt(document.getElementById('editPrice').value)||0;
+  lestockInventory[product][tier].stock=parseInt(document.getElementById('editStock').value)||0;
+  lestockInventory[product][tier].description=document.getElementById('editDesc').value;
+  await persistInventory();
+}
 
-  function loadProductTierForm() {
-    const product = document.getElementById('editProduct').value;
-    const tier = document.getElementById('editTier').value;
-    const item = lestockInventory[product][tier];
-    document.getElementById('editPrice').value = item.price;
-    document.getElementById('editStock').value = item.stock;
-    document.getElementById('editDesc').value = item.description || '';
-  }
+/* IMAGE TAB */
+function loadImagePreview(){
+  const key=document.getElementById('imgProduct').value;
+  const prod=lestockInventory[key];
+  const preview=document.getElementById('imgPreview');
+  const icon=document.getElementById('imgPlaceholderIcon');
+  if(prod?.image){preview.src=prod.image;preview.style.display='';icon.style.display='none';document.getElementById('imgUrlInput').value=prod.image;}
+  else{preview.style.display='none';icon.style.display='';document.getElementById('imgUrlInput').value='';}
+}
+function editProductImage(key){document.getElementById('imgProduct').value=key;showAdminTab('Images',document.getElementById('tabImages'));}
+async function uploadProductImage(event){
+  const file=event.target.files[0];if(!file)return;
+  const key=document.getElementById('imgProduct').value;
+  const progress=document.getElementById('imgUploadProgress');progress.classList.add('show');
+  try{
+    const fileName='lestock/'+key+'_'+Date.now()+'.'+file.name.split('.').pop();
+    const{error:uploadError}=await sbClient.storage.from('product-images').upload(fileName,file,{upsert:true});
+    if(uploadError)throw uploadError;
+    const{data:{publicUrl}}=sbClient.storage.from('product-images').getPublicUrl(fileName);
+    lestockInventory[key].image=publicUrl;
+    await persistInventory();loadImagePreview();renderAdminList();renderInventory();
+    showToast('Photo uploadée','Image mise à jour.');
+  }catch(err){showToast('Erreur upload',err.message,'#ef4444');}
+  finally{progress.classList.remove('show');}
+}
+async function saveImageUrl(){
+  const key=document.getElementById('imgProduct').value;
+  const url=document.getElementById('imgUrlInput').value.trim();
+  if(!url){showToast('Erreur','URL vide.','#ef4444');return;}
+  lestockInventory[key].image=url;
+  await persistInventory();loadImagePreview();renderAdminList();renderInventory();
+  showToast('Image mise à jour','URL enregistrée.');
+}
+async function removeProductImage(){
+  const key=document.getElementById('imgProduct').value;
+  lestockInventory[key].image=null;
+  await persistInventory();loadImagePreview();renderAdminList();renderInventory();
+  showToast('Photo supprimée','');
+}
 
-  async function saveAdminTier() {
-    const product = document.getElementById('editProduct').value;
-    const tier = document.getElementById('editTier').value;
-    
-    // Update local state
-    lestockInventory[product][tier].price = parseInt(document.getElementById('editPrice').value);
-    lestockInventory[product][tier].stock = parseInt(document.getElementById('editStock').value);
-    lestockInventory[product][tier].description = document.getElementById('editDesc').value;
+async function persistInventory(){
+  try{
+    const payload=[{_type:'lestock_v1',inventory:lestockInventory}];
+    const{error}=await sbClient.from('showcase_settings').update({color_mockups:payload}).eq('id',5);
+    if(error)throw error;
+    renderInventory();renderAdminList();
+    showToast('Enregistré','Modifications sauvegardées.');
+  }catch(err){showToast('Erreur',''+err.message,'#ef4444');}
+}
 
-    try {
-      // Update Supabase
-      const payload = [{ _type: 'lestock_v1', inventory: lestockInventory }];
-      const { error } = await sbClient.from('showcase_settings')
-        .update({ color_mockups: payload })
-        .eq('id', 5);
-        
-      if (error) throw error;
-      showToast('Succès', 'Les configurations ont été enregistrées.');
-      renderInventory();
-      closeAdmin();
-    } catch(err) {
-      showToast('Erreur sauvegarde', err.message, '#ef4444');
-    }
-  }
+function showToast(title,body,borderCol){
+  borderCol=borderCol||'#FF6B35';
+  const c=document.getElementById('toastContainer');
+  const t=document.createElement('div');t.className='toast';t.style.borderLeftColor=borderCol;
+  t.innerHTML='<div class="toast-title">'+title+'</div><div class="toast-body">'+body+'</div>';
+  c.appendChild(t);setTimeout(()=>t.remove(),4000);
+}
 
-  // Init
-  loadInventory();
+['loginEmail','loginPassword'].forEach(id=>{
+  const el=document.getElementById(id);if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+});
+
+sbClient.auth.onAuthStateChange((event,session)=>{currentUser=session?.user??null;updateAdminUI();});
+sbClient.auth.getSession().then(({data})=>{currentUser=data.session?.user??null;updateAdminUI();});
+loadInventory();
 </script>
 </body>
 </html>
