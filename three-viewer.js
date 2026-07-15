@@ -422,6 +422,33 @@ function _drawImageFit(ctx, img, x, y, w, h) {
   ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
 }
 
+// Draw a label text into a region of tmpCtx
+function _renderLabelToCtx(tmpCtx, x, y, w, h) {
+  const text  = (document.getElementById('customLabelInput')?.value || '').trim().toUpperCase();
+  if (!text) return;
+  const color = document.getElementById('customLabelColor')?.value || '#ffffff';
+  tmpCtx.save();
+  // Start with a font size based on available height
+  let sz = h * 0.72;
+  tmpCtx.font = `900 ${sz}px "Arial Black", Arial, sans-serif`;
+  // Shrink until text fits within 92% of available width
+  const maxW = w * 0.92;
+  let measured = tmpCtx.measureText(text).width;
+  if (measured > maxW) {
+    sz = sz * (maxW / measured);
+    tmpCtx.font = `900 ${sz}px "Arial Black", Arial, sans-serif`;
+  }
+  tmpCtx.textAlign     = 'center';
+  tmpCtx.textBaseline  = 'middle';
+  tmpCtx.strokeStyle   = color === '#ffffff' ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.5)';
+  tmpCtx.lineWidth     = sz * 0.09;
+  tmpCtx.lineJoin      = 'round';
+  tmpCtx.strokeText(text, x + w / 2, y + h / 2);
+  tmpCtx.fillStyle = color;
+  tmpCtx.fillText(text, x + w / 2, y + h / 2);
+  tmpCtx.restore();
+}
+
 function _drawLabelText(ctx, text, color, cx, cy, maxW, maxH) {
   if (!text) return;
   ctx.save(); // Save state before drawing
@@ -801,19 +828,25 @@ function _doRebuildAllDecals() {
       }
 
     } else if (IS_HEADWEAR) {
+      // Push projector INSIDE the cap surface so DecalGeometry stamps onto the mesh
+      // instead of floating in front of it. 30% inset from the front gives reliable
+      // contact with the curved crown without punching through to the back.
+      const hwInset = boxSize.z * 0.30;
       if (zoneId === 'front' || zoneId === 'front-center') {
-      } else if (zoneId === 'front-left') {
-        px = cx - boxSize.x * 0.16; pz = cz - boxSize.z * 0.05; ori.y = Math.PI / 6;
-      } else if (zoneId === 'front-right') {
-        px = cx + boxSize.x * 0.16; pz = cz - boxSize.z * 0.05; ori.y = -Math.PI / 6;
-      } else if (zoneId === 'back-center' || zoneId === 'back') {
-        px = cx; pz = box.min.z; ori.y = Math.PI;
-      } else if (zoneId === 'brim-front') {
-        py = box.min.y + boxSize.y * 0.18; pz = box.max.z + 0.08; ori.x = -Math.PI / 6;
+        pz = cz - hwInset;
+        py = box.min.y + boxSize.y * 0.62; // upper-front panel
       } else if (zoneId === 'front-high') {
-        py = cy + boxSize.y * 0.12; pz = cz - boxSize.z * 0.08; ori.x = -Math.PI / 12;
+        py = box.min.y + boxSize.y * 0.75; pz = cz - hwInset; ori.x = -Math.PI / 18;
       } else if (zoneId === 'front-low') {
-        py = cy - boxSize.y * 0.10; pz = cz - boxSize.z * 0.02; ori.x = Math.PI / 24;
+        py = box.min.y + boxSize.y * 0.50; pz = cz - hwInset; ori.x = Math.PI / 24;
+      } else if (zoneId === 'front-left') {
+        px = cx - boxSize.x * 0.16; pz = cz - hwInset; ori.y = Math.PI / 6;
+      } else if (zoneId === 'front-right') {
+        px = cx + boxSize.x * 0.16; pz = cz - hwInset; ori.y = -Math.PI / 6;
+      } else if (zoneId === 'back-center' || zoneId === 'back') {
+        pz = box.min.z + boxSize.z * 0.30; ori.y = Math.PI;
+      } else if (zoneId === 'brim-front') {
+        py = box.min.y + boxSize.y * 0.18; pz = cz - boxSize.z * 0.10; ori.x = -Math.PI / 6;
       }
     } else {
       // T-shirt: bounding-box-relative placement
@@ -877,7 +910,7 @@ function _doRebuildAllDecals() {
       } else {
         depth = boxSize.z * 0.85;
       }
-    } else if (IS_HEADWEAR) depth = Math.max(2.0, boxSize.z * 1.5);
+    } else if (IS_HEADWEAR) depth = boxSize.z * 0.55; // tight stamp — avoids punching through to back of cap
     else depth = Math.min(boxSize.z * 0.70, 0.45); // T-shirt: deeper stamp to cover curved front panel without punch-through
 
     const size = new THREE.Vector3(planeW, planeW, depth);

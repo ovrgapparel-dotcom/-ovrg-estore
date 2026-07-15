@@ -1837,9 +1837,17 @@ function _renderLabelToCtx(tmpCtx, x, y, w, h) {
   const text  = (document.getElementById('customLabelInput')?.value || '').trim().toUpperCase();
   if (!text) return;
   const color = document.getElementById('customLabelColor')?.value || '#ffffff';
-  const sz    = Math.min(h * 0.80, w / Math.max(text.length, 1) * 1.5);
   tmpCtx.save();
-  tmpCtx.font          = `900 ${sz}px "Arial Black", Arial, sans-serif`;
+  // Start with a font size based on available height
+  let sz = h * 0.72;
+  tmpCtx.font = `900 ${sz}px "Arial Black", Arial, sans-serif`;
+  // Shrink until text fits within 92% of available width
+  const maxW = w * 0.92;
+  const measured = tmpCtx.measureText(text).width;
+  if (measured > maxW) {
+    sz = sz * (maxW / measured);
+    tmpCtx.font = `900 ${sz}px "Arial Black", Arial, sans-serif`;
+  }
   tmpCtx.textAlign     = 'center';
   tmpCtx.textBaseline  = 'middle';
   tmpCtx.strokeStyle   = color === '#ffffff' ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.5)';
