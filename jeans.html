@@ -1863,6 +1863,8 @@ function setPrintPlacement(preset, render = true) {
     window.zoneCustomizations[activeZoneId].placement = preset;
     window.zoneCustomizations[activeZoneId].preset = preset;
     window.zoneCustomizations[activeZoneId].scale = scaleMultiplier;
+    delete window.zoneCustomizations[activeZoneId].posNormX;
+    delete window.zoneCustomizations[activeZoneId].posNormY;
     
     // Initialize 2D coordinates mapping
     const ds = designState[activeZoneId];
@@ -1986,13 +1988,16 @@ function setEmbroiderySize(sz) {
 
 // Push zone + position + size to the 3D overlay (OUTERWEAR version)
 function _sync3DOverlay() {
-  // Computes posNormX/posNormY from the 2D bounding box drag position
-  // so the 3D decal moves to match exactly where the user placed it.
-  const side = activeZoneId; // 'front', 'back', 'sleeve-left', 'sleeve-right'
+  // posNormX/posNormY are ONLY written when the user has dragged the bounding box.
+  // When a preset button is clicked, setPrintPlacement deletes posNormX/posNormY
+  // so the 3D viewer uses the exact preset formula in three-viewer.js.
+  // We must NOT re-compute them here from designState in that case.
+  const side = activeZoneId;
   if (!window.zoneCustomizations[side]) return;
 
   const ds = designState && designState[side];
-  if (ds) {
+  if (ds && window.zoneCustomizations[side].posNormX !== undefined) {
+    // Only update if posNormX was already set (i.e., user has dragged)
     const normX = Math.max(0, Math.min(1, (ds.xPct + ds.wPct / 2) / 100));
     const normY = Math.max(0, Math.min(1, (ds.yPct + ds.hPct / 2) / 100));
     window.zoneCustomizations[side].posNormX = normX;

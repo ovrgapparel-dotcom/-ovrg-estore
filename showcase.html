@@ -1706,6 +1706,8 @@ document.getElementById('placementGrid').addEventListener('click', e => {
 
   if (window.zoneCustomizations[activeZoneId]) {
     window.zoneCustomizations[activeZoneId].preset = printPreset;
+    delete window.zoneCustomizations[activeZoneId].posNormX;
+    delete window.zoneCustomizations[activeZoneId].posNormY;
     if (window.setZoneCustomization) window.setZoneCustomization(activeZoneId, window.zoneCustomizations[activeZoneId]);
   }
   scheduleRender();

@@ -651,20 +651,21 @@ function _doRebuildAllDecals() {
         } else if (preset.startsWith('bottom')) {
           py = jBotY;
         }
-        // Horizontal X and orientation Y
+        // Horizontal X and orientation Y (Flipped to correct mirrored GLB coordinates)
         if (preset.endsWith('left')) {
-          px = cx - dx; ori.y = Math.PI / 12;
+          px = cx + dx; ori.y = Math.PI / 12;
         } else if (preset.endsWith('right')) {
-          px = cx + dx; ori.y = -Math.PI / 12;
+          px = cx - dx; ori.y = -Math.PI / 12;
         } else {
           px = cx; ori.y = 0;
         }
-        // Continuous override from bounding box drag (0–1 range)
+        // Continuous override from bounding box drag (0–1 range, flipped)
         if (config.posNormX !== undefined) {
-          px = cx + (config.posNormX - 0.5) * boxSize.x * 0.7;
+          px = cx + (0.5 - config.posNormX) * boxSize.x * 0.7;
         }
         if (config.posNormY !== undefined) {
-          py = box.min.y + boxSize.y * (0.40 + (1 - config.posNormY) * 0.42);
+          // Matches presets: top=0.76, mid≈0.69, bot=0.62 — was 0.40+0.42*(1-y) which exceeded collar at top
+          py = box.min.y + boxSize.y * (0.62 + (1 - config.posNormY) * 0.14);
         }
       } else if (zoneId === 'back') {
         pz = jBackZ;
@@ -677,17 +678,17 @@ function _doRebuildAllDecals() {
         } else if (preset.startsWith('bottom')) {
           py = jBotY;
         }
-        // Horizontal X and orientation Y
+        // Horizontal X and orientation Y (Flipped to correct mirrored GLB coordinates)
         if (preset.endsWith('left')) {
-          px = cx + dx; ori.y = Math.PI * 11/12;
+          px = cx - dx; ori.y = Math.PI * 11/12;
         } else if (preset.endsWith('right')) {
-          px = cx - dx; ori.y = -Math.PI * 11/12;
+          px = cx + dx; ori.y = -Math.PI * 11/12;
         } else {
           px = cx;
         }
-        // Continuous override from bounding box drag (back camera: X is mirrored)
+        // Continuous override from bounding box drag (back camera: corrected for mirrored GLB)
         if (config.posNormX !== undefined) {
-          px = cx + (0.5 - config.posNormX) * boxSize.x * 0.7;
+          px = cx + (config.posNormX - 0.5) * boxSize.x * 0.7;
         }
         if (config.posNormY !== undefined) {
           py = box.min.y + boxSize.y * (0.40 + (1 - config.posNormY) * 0.42);
@@ -708,15 +709,15 @@ function _doRebuildAllDecals() {
       // ─── FRONT Y positions ────────────────────────────────────────────────
 
       // Front chest area: from collar (Y≈0.25) to kangaroo pocket (Y≈-0.35)
-      const hFrontTopY = box.min.y + boxSize.y * 0.74;  // upper chest (below collar)
-      const hFrontMidY = box.min.y + boxSize.y * 0.66;  // mid-chest center
-      const hFrontBotY = box.min.y + boxSize.y * 0.56;  // lower chest (above pocket)
+      const hFrontTopY = box.min.y + boxSize.y * 0.63;  // upper chest (below collar) — was 0.74 but hood extends bounding box
+      const hFrontMidY = box.min.y + boxSize.y * 0.55;  // mid-chest center — was 0.66
+      const hFrontBotY = box.min.y + boxSize.y * 0.46;  // lower chest (above kangaroo pocket) — was 0.56
 
       // ─── BACK Y positions ─────────────────────────────────────────────────
       // Back area spans full height: shoulder blades to hem.
       // Adjusted so 'center' preset lands at true visual center of the back panel.
-      const hBackTopY  = box.min.y + boxSize.y * 0.72;  // upper back / shoulder blades
-      const hBackMidY  = box.min.y + boxSize.y * 0.57;  // true mid-back (visual centre of back panel)
+      const hBackTopY  = box.min.y + boxSize.y * 0.68;  // upper back / shoulder blades — was 0.72
+      const hBackMidY  = box.min.y + boxSize.y * 0.55;  // true mid-back (visual centre of back panel)
       const hBackBotY  = box.min.y + boxSize.y * 0.38;  // lower back (above hem)
 
       if (zoneId === 'front') {
@@ -729,20 +730,21 @@ function _doRebuildAllDecals() {
         } else if (preset.startsWith('bottom')) {
           py = hFrontBotY;
         }
-        // Horizontal X — camera at +Z, so screen-LEFT = world -X, screen-RIGHT = world +X.
+        // Horizontal X — camera at +Z, so screen-LEFT = world -X, screen-RIGHT = world +X. Flipped for mirrored GLB.
         if (preset.endsWith('left')) {
-          px = cx - dx; ori.y = Math.PI / 12;
+          px = cx + dx; ori.y = Math.PI / 12;
         } else if (preset.endsWith('right')) {
-          px = cx + dx; ori.y = -Math.PI / 12;
+          px = cx - dx; ori.y = -Math.PI / 12;
         } else {
           px = cx; ori.y = 0;
         }
-        // Continuous override from bounding box drag
+        // Continuous override from bounding box drag (flipped)
         if (config.posNormX !== undefined) {
-          px = cx + (config.posNormX - 0.5) * boxSize.x * 0.7;
+          px = cx + (0.5 - config.posNormX) * boxSize.x * 0.7;
         }
         if (config.posNormY !== undefined) {
-          py = box.min.y + boxSize.y * (0.44 + (1 - config.posNormY) * 0.36);
+          // Range: posNormY=0(top)→0.63, posNormY=0.5(center)→0.495, posNormY=1(bottom)→0.36
+          py = box.min.y + boxSize.y * (0.36 + (1 - config.posNormY) * 0.27);
         }
       } else if (zoneId === 'back') {
         // Torso back surface is near box.min.z but hood tip extends back.
@@ -758,21 +760,21 @@ function _doRebuildAllDecals() {
         } else if (preset.startsWith('bottom')) {
           py = hBackBotY;
         }
-        // Horizontal X — from the back camera, screen-LEFT = world +X.
-        // Same rule as jacket back. cx+dx for left, cx-dx for right.
+        // Horizontal X — from the back camera, screen-LEFT = world +X. Flipped for mirrored GLB.
         if (preset.endsWith('left')) {
-          px = cx + dx; ori.y = Math.PI * 11/12;
+          px = cx - dx; ori.y = Math.PI * 11/12;
         } else if (preset.endsWith('right')) {
-          px = cx - dx; ori.y = -Math.PI * 11/12;
+          px = cx + dx; ori.y = -Math.PI * 11/12;
         } else {
           px = cx;
         }
-        // Continuous override from bounding box drag (back camera: X is mirrored)
+        // Continuous override from bounding box drag (back camera: corrected for mirrored GLB)
         if (config.posNormX !== undefined) {
-          px = cx + (0.5 - config.posNormX) * boxSize.x * 0.7;
+          px = cx + (config.posNormX - 0.5) * boxSize.x * 0.7;
         }
         if (config.posNormY !== undefined) {
-          py = box.min.y + boxSize.y * (0.24 + (1 - config.posNormY) * 0.52);
+          // Range: posNormY=0(top)→0.68, posNormY=0.5(center)→0.465, posNormY=1(bottom)→0.25
+          py = box.min.y + boxSize.y * (0.25 + (1 - config.posNormY) * 0.43);
         }
       } else if (zoneId === 'sleeve-left') {
         px = cx - boxSize.x * 0.45; py = hFrontMidY; pz = hFrontZ; ori.y = Math.PI / 2;
