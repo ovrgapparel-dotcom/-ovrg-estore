@@ -377,7 +377,7 @@ function _updateTshirtDecals() {
 // on the plane with full transparency support. MeshBasicMaterial is used so
 // the design colour is always faithful regardless of scene lighting.
 
-const HW_SIZE = 512;
+const HW_SIZE = 768;
 
 function _getOrCreateCanvas() {
   if (!_hwCanvas) {
@@ -424,6 +424,7 @@ function _drawImageFit(ctx, img, x, y, w, h) {
 
 function _drawLabelText(ctx, text, color, cx, cy, maxW, maxH) {
   if (!text) return;
+  ctx.save(); // Save state before drawing
   // Start with a size based on height, then shrink to fit width.
   let sz = Math.min(maxH * 0.85, maxW * 0.9);
   ctx.font = `900 ${sz}px "Arial Black", Arial, sans-serif`;
@@ -441,7 +442,7 @@ function _drawLabelText(ctx, text, color, cx, cy, maxW, maxH) {
   ctx.strokeText(text, cx, cy);
   ctx.fillStyle = color;
   ctx.fillText(text, cx, cy);
-  ctx.restore();
+  ctx.restore(); // Restore state after drawing
 }
 
 function _clearHwOverlay() {
