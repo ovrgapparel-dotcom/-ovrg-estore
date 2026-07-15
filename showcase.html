@@ -2787,6 +2787,15 @@ function showToast(title, body, borderColor='#22c55e') {
 //  INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
+  // Wire up the sides overlay canvases now that the DOM is ready
+  sides.front.wrap   = document.getElementById('canvas-front');
+  sides.front.canvas = document.querySelector('#canvas-front canvas');
+  sides.back.wrap    = document.getElementById('canvas-back');
+  sides.back.canvas  = document.querySelector('#canvas-back canvas');
+
+  // Attach drag/resize corner-handle handlers to each side's overlay canvas
+  ['front', 'back'].forEach(side => initDraggable(side));
+
   // Retry initSupabase a few times in case the CDN script is still loading
   let ok = initSupabase();
   let tries = 0;

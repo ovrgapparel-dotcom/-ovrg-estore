@@ -314,6 +314,11 @@ async function loadInventory() {
     if(error) throw error;
     if(data && data.color_mockups && data.color_mockups[0] && data.color_mockups[0].inventory){
       lestockInventory = data.color_mockups[0].inventory;
+      // Restore any product types that were lost from the DB (e.g. jacket, tshirt)
+      const defaults = buildDefaultInventory();
+      for (const k in defaults) {
+        if (!lestockInventory[k]) lestockInventory[k] = defaults[k];
+      }
     } else {
       lestockInventory = buildDefaultInventory();
     }
@@ -518,9 +523,9 @@ async function uploadProductImage(event){
   const progress=document.getElementById('imgUploadProgress');progress.classList.add('show');
   try{
     const fileName='lestock/'+key+'_'+Date.now()+'.'+file.name.split('.').pop();
-    const{error:uploadError}=await sbClient.storage.from('showcase-assets').upload(fileName,file,{upsert:true});
+    const{error:uploadError}=await sbClient.storage.from('product-images').upload(fileName,file,{upsert:true});
     if(uploadError)throw uploadError;
-    const{data:{publicUrl}}=sbClient.storage.from('showcase-assets').getPublicUrl(fileName);
+    const{data:{publicUrl}}=sbClient.storage.from('product-images').getPublicUrl(fileName);
     lestockInventory[key].image=publicUrl;
     await persistInventory();loadImagePreview();renderAdminList();renderInventory();
     showToast('Photo uploadée','Image mise à jour.');

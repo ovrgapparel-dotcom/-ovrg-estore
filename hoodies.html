@@ -2323,20 +2323,7 @@ function initDraggable(side) {
     }
     renderDesign(side);
     // Sync 3D viewer position & scale live during drag
-    if (window.zoneCustomizations && window.zoneCustomizations[side]) {
-      const ds = designState[side];
-      const normX = Math.max(0, Math.min(1, (ds.xPct + ds.wPct / 2) / 100));
-      const normY = Math.max(0, Math.min(1, (ds.yPct + ds.hPct / 2) / 100));
-      window.zoneCustomizations[side].posNormX = normX;
-      window.zoneCustomizations[side].posNormY = normY;
-      if (mode === 'resize') {
-        const scaleVal = Math.max(0.4, Math.min(2.5, ds.wPct / 30));
-        window.zoneCustomizations[side].scale = scaleVal;
-      }
-      if (window.setZoneCustomization) {
-        window.setZoneCustomization(side, window.zoneCustomizations[side]);
-      }
-    }
+    sync2DTo3D(side);
     e.preventDefault();
   }
 
@@ -2364,6 +2351,54 @@ function initDraggable(side) {
   }, { passive: false });
   document.addEventListener('touchmove', e => { if (mode) onMove(e); }, { passive: false });
   document.addEventListener('touchend',  onEnd);
+}
+
+function sync2DTo3D(side) {
+  const ds = designState[side];
+  if (!ds) return;
+  const config = window.zoneCustomizations && window.zoneCustomizations[side];
+  if (!config) return;
+
+  const cx = ds.xPct + ds.wPct / 2;
+  const cy = ds.yPct + ds.hPct / 2;
+
+  let vert = 'mid';
+  if (cy < 38) vert = 'top';
+  else if (cy > 62) vert = 'bottom';
+
+  let horiz = 'center';
+  if (cx < 38) horiz = 'left';
+  else if (cx > 62) horiz = 'right';
+
+  let preset = (vert === 'mid' && horiz === 'center') ? 'center' : `${vert}-${horiz}`;
+
+  config.preset   = preset;
+  config.placement = preset;
+  if (side === activeZoneId) {
+    printPlacement = preset;
+    window.printPlacement = preset;
+  }
+
+  // Continuous position override — 3D decal follows exact drag pos
+  config.posNormX = Math.max(0, Math.min(1, cx / 100));
+  config.posNormY = Math.max(0, Math.min(1, cy / 100));
+
+  // Scale from wPct
+  const scaleVal = Math.max(0.4, Math.min(2.5, ds.wPct / 30));
+  config.scale = scaleVal;
+
+  if (window.setZoneCustomization) {
+    window.setZoneCustomization(side, config);
+  }
+
+  // Highlight matching preset button
+  if (side === activeZoneId) {
+    const btn = document.querySelector(`.placement-btn[data-preset="${preset}"]`);
+    if (btn) {
+      document.querySelectorAll('.placement-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    }
+  }
 }
 
 function renderAllDesigns() {
