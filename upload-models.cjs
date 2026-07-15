@@ -7,8 +7,8 @@ const fs   = require('fs');
 const path = require('path');
 const https = require('https');
 
-const SUPABASE_URL = 'https://mihpdlhbijlvbdcqvzdw.supabase.co';
-const ANON_KEY     = 'REMOVED_SECRET';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://mihpdlhbijlvbdcqvzdw.supabase.co';
+const ANON_KEY     = process.env.SUPABASE_SERVICE_KEY || '';
 const BUCKET       = 'product-images';
 
 // All models live in public/

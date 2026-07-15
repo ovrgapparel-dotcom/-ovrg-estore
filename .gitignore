@@ -12,3 +12,5 @@ pnpm-debug.log*
 logger.js
 .vercel
 scratch/
+
+upload-models.cjs
