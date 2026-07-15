@@ -90,6 +90,7 @@ window.load3DModel = function (modelUrl) {
     // Clone materials and force WHITE base colour
     // Find all large meshes (e.g., sleeves, panels) to apply decals to
     targetDecalMeshes = [];
+    console.log("=== TRAVERSING MODEL MESHES ===");
     model.traverse((child) => {
       if (!child.isMesh) return;
       
@@ -97,8 +98,11 @@ window.load3DModel = function (modelUrl) {
       const childBox = new THREE.Box3().setFromObject(child);
       const childSize = childBox.getSize(new THREE.Vector3());
       const childScore = childSize.x + childSize.y + childSize.z;
+      const isIncluded = childScore > modelScore * 0.01;
       
-      if (childScore > modelScore * 0.01) {
+      console.log(`Mesh: name="${child.name}" | score=${childScore.toFixed(4)} (threshold=${(modelScore * 0.01).toFixed(4)}) | included=${isIncluded}`);
+
+      if (isIncluded) {
         targetDecalMeshes.push(child);
       }
 
@@ -394,7 +398,7 @@ function _buildHwCanvas() {
   if (!hasPrint && !hasLabel) return null;
 
   const S   = HW_SIZE;
-  const PAD = 20;
+  const PAD = 30;
 
   if (hasPrint && hasLabel) {
     // Top 60% = image, bottom 35% = label
@@ -633,29 +637,37 @@ function _doRebuildAllDecals() {
 
     if (IS_JEANS) {
       const preset = config.placement || config.preset || 'center';
-      const jFrontZ = box.max.z - boxSize.z * 0.10;
-      const jBackZ  = box.min.z - boxSize.z * 0.02;
+      // Place projector INSIDE the surface — proven working pattern (same as hoodies).
+      // Jacket front panel is at box.max.z; inset 5% keeps projector close to surface.
+      const jFrontZ = box.max.z - boxSize.z * 0.05;
+      // Jacket back panel is at box.min.z; inset 5% from the back.
+      const jBackZ  = box.min.z + boxSize.z * 0.05;
       const dx = boxSize.x * 0.12; // lateral offset
-      // Vertical reference: normalized height 2.0, chest is ~70–76% from bottom
-      const jTopY    = box.min.y + boxSize.y * 0.76;  // upper chest / breast pocket
-      const jMidY    = box.min.y + boxSize.y * 0.70;  // mid-chest center
-      const jBotY    = box.min.y + boxSize.y * 0.62;  // lower chest
 
-    if (zoneId === 'front') {
+      // Vertical reference coordinates calibrated to the jacket torso (excluding collar/yoke inflation)
+      const jFrontTopY = box.min.y + boxSize.y * 0.73;
+      const jFrontMidY = box.min.y + boxSize.y * 0.63;
+      const jFrontBotY = box.min.y + boxSize.y * 0.53;
+
+      const jBackTopY  = box.min.y + boxSize.y * 0.73;
+      const jBackMidY  = box.min.y + boxSize.y * 0.58;
+      const jBackBotY  = box.min.y + boxSize.y * 0.43;
+
+      if (zoneId === 'front') {
         pz = jFrontZ;
         // Vertical Y — support all 9 preset positions
         if (preset.startsWith('top')) {
-          py = jTopY;
+          py = jFrontTopY;
         } else if (preset.startsWith('mid') || preset === 'center') {
-          py = jMidY;
+          py = jFrontMidY;
         } else if (preset.startsWith('bottom')) {
-          py = jBotY;
+          py = jFrontBotY;
         }
         // Horizontal X and orientation Y (Flipped to correct mirrored GLB coordinates)
         if (preset.endsWith('left')) {
-          px = cx + dx; ori.y = Math.PI / 12;
-        } else if (preset.endsWith('right')) {
           px = cx - dx; ori.y = -Math.PI / 12;
+        } else if (preset.endsWith('right')) {
+          px = cx + dx; ori.y = Math.PI / 12;
         } else {
           px = cx; ori.y = 0;
         }
@@ -664,61 +676,63 @@ function _doRebuildAllDecals() {
           px = cx + (0.5 - config.posNormX) * boxSize.x * 0.7;
         }
         if (config.posNormY !== undefined) {
-          // Matches presets: top=0.76, mid≈0.69, bot=0.62 — was 0.40+0.42*(1-y) which exceeded collar at top
-          py = box.min.y + boxSize.y * (0.62 + (1 - config.posNormY) * 0.14);
+          py = box.min.y + boxSize.y * (0.53 + (1 - config.posNormY) * 0.20);
         }
       } else if (zoneId === 'back') {
         pz = jBackZ;
         ori.y = Math.PI;
         // Vertical Y
         if (preset.startsWith('top')) {
-          py = jTopY;
+          py = jBackTopY;
         } else if (preset.startsWith('mid') || preset === 'center') {
-          py = jMidY;
+          py = jBackMidY;
         } else if (preset.startsWith('bottom')) {
-          py = jBotY;
+          py = jBackBotY;
         }
-        // Horizontal X and orientation Y (Flipped to correct mirrored GLB coordinates)
+        // Horizontal X — from the back camera, screen-LEFT = world +X.
+        // So 'back-left' = cx + dx, 'back-right' = cx - dx.
         if (preset.endsWith('left')) {
-          px = cx - dx; ori.y = Math.PI * 11/12;
+          px = cx + dx; ori.y = Math.PI * 11/12;
         } else if (preset.endsWith('right')) {
-          px = cx + dx; ori.y = -Math.PI * 11/12;
+          px = cx - dx; ori.y = -Math.PI * 11/12;
         } else {
           px = cx;
         }
-        // Continuous override from bounding box drag (back camera: corrected for mirrored GLB)
+        // Continuous override — mirror for back camera (dragging left on screen = world +X)
         if (config.posNormX !== undefined) {
-          px = cx + (config.posNormX - 0.5) * boxSize.x * 0.7;
+          px = cx + (0.5 - config.posNormX) * boxSize.x * 0.7;
         }
         if (config.posNormY !== undefined) {
-          py = box.min.y + boxSize.y * (0.40 + (1 - config.posNormY) * 0.42);
+          py = box.min.y + boxSize.y * (0.43 + (1 - config.posNormY) * 0.30);
         }
       } else if (zoneId === 'sleeve-left') {
-        px = cx - boxSize.x * 0.45; py = jMidY; pz = cz; ori.y = Math.PI / 2;
+        px = cx - boxSize.x * 0.45; py = jFrontMidY; pz = jFrontZ; ori.y = Math.PI / 2;
       } else if (zoneId === 'sleeve-right') {
-        px = cx + boxSize.x * 0.45; py = jMidY; pz = cz; ori.y = -Math.PI / 2;
+        px = cx + boxSize.x * 0.45; py = jFrontMidY; pz = jFrontZ; ori.y = -Math.PI / 2;
       }
     } else if (IS_HOODIES) {
       const preset = config.placement || config.preset || 'center';
-      // Front: push 20% inside front surface to skip drawstring/collar outer meshes
-      const hFrontZ = box.max.z - boxSize.z * 0.20;
-      const hBackZ  = box.min.z + boxSize.z * 0.12;
+      // Front: push 8% inside front surface — keeps projector close to the chest panel
+      // The hoodie GLB is rotated -90°Y so box.max.z IS the anatomical front surface.
+      const hFrontZ = box.max.z - boxSize.z * 0.08;
 
       const dx = boxSize.x * 0.15;  // lateral offset for L/R separation
 
       // ─── FRONT Y positions ────────────────────────────────────────────────
-
-      // Front chest area: from collar (Y≈0.25) to kangaroo pocket (Y≈-0.35)
-      const hFrontTopY = box.min.y + boxSize.y * 0.63;  // upper chest (below collar) — was 0.74 but hood extends bounding box
-      const hFrontMidY = box.min.y + boxSize.y * 0.55;  // mid-chest center — was 0.66
-      const hFrontBotY = box.min.y + boxSize.y * 0.46;  // lower chest (above kangaroo pocket) — was 0.56
+      // The hoodie bounding box is inflated vertically by the hood (≈ top 25–30% of total height).
+      // With model height ~2.0 units, the torso spans roughly 0.10 (hem) to 0.70 (shoulder).
+      // Hood extends from ~0.70 to the top of the bounding box.
+      // These percentages target the torso chest area (NOT the hood/collar).
+      const hFrontTopY = box.min.y + boxSize.y * 0.55;  // upper chest / breast (just below collar line)
+      const hFrontMidY = box.min.y + boxSize.y * 0.47;  // mid-chest center (true visual center of front panel)
+      const hFrontBotY = box.min.y + boxSize.y * 0.39;  // lower chest (above kangaroo pocket)
 
       // ─── BACK Y positions ─────────────────────────────────────────────────
       // Back area spans full height: shoulder blades to hem.
-      // Adjusted so 'center' preset lands at true visual center of the back panel.
-      const hBackTopY  = box.min.y + boxSize.y * 0.68;  // upper back / shoulder blades — was 0.72
-      const hBackMidY  = box.min.y + boxSize.y * 0.55;  // true mid-back (visual centre of back panel)
-      const hBackBotY  = box.min.y + boxSize.y * 0.38;  // lower back (above hem)
+      // Hood inflates top of bounding box, so back percentages also shifted down.
+      const hBackTopY  = box.min.y + boxSize.y * 0.58;  // upper back / shoulder blades
+      const hBackMidY  = box.min.y + boxSize.y * 0.47;  // true mid-back
+      const hBackBotY  = box.min.y + boxSize.y * 0.34;  // lower back (above hem)
 
       if (zoneId === 'front') {
         pz = hFrontZ;
@@ -730,26 +744,29 @@ function _doRebuildAllDecals() {
         } else if (preset.startsWith('bottom')) {
           py = hFrontBotY;
         }
-        // Horizontal X — camera at +Z, so screen-LEFT = world -X, screen-RIGHT = world +X. Flipped for mirrored GLB.
+        // Horizontal X — camera at +Z, screen-LEFT = world -X, screen-RIGHT = world +X.
+        // Note: hoodie GLB has mirrored X so left/right are NOT swapped for hoodies.
         if (preset.endsWith('left')) {
-          px = cx + dx; ori.y = Math.PI / 12;
-        } else if (preset.endsWith('right')) {
           px = cx - dx; ori.y = -Math.PI / 12;
+        } else if (preset.endsWith('right')) {
+          px = cx + dx; ori.y = Math.PI / 12;
         } else {
           px = cx; ori.y = 0;
         }
-        // Continuous override from bounding box drag (flipped)
+        // Slight downward tilt so decal stamp aligns with the curved chest surface
+        ori.x = Math.PI / 24;
+        // Continuous override from bounding box drag
         if (config.posNormX !== undefined) {
           px = cx + (0.5 - config.posNormX) * boxSize.x * 0.7;
         }
         if (config.posNormY !== undefined) {
-          // Range: posNormY=0(top)→0.63, posNormY=0.5(center)→0.495, posNormY=1(bottom)→0.36
-          py = box.min.y + boxSize.y * (0.36 + (1 - config.posNormY) * 0.27);
+          // Range: posNormY=0(top)→0.55, posNormY=0.5(center)→0.47, posNormY=1(bottom)→0.39
+          py = box.min.y + boxSize.y * (0.39 + (1 - config.posNormY) * 0.16);
         }
       } else if (zoneId === 'back') {
-        // Torso back surface is near box.min.z but hood tip extends back.
-        // Place projector at max.z - 78% depth to miss the hood tip while projecting onto torso back.
-        const hTorsoBackZ = box.max.z - boxSize.z * 0.78;
+        // Torso back surface is near box.min.z; the hood tip extends further back.
+        // Move projector to 88% of depth from max.z — closer to the torso back surface.
+        const hTorsoBackZ = box.max.z - boxSize.z * 0.88;
         pz = hTorsoBackZ;
         ori.y = Math.PI;
         // Vertical Y — back uses DIFFERENT refs than front (back area is taller)
@@ -760,7 +777,7 @@ function _doRebuildAllDecals() {
         } else if (preset.startsWith('bottom')) {
           py = hBackBotY;
         }
-        // Horizontal X — from the back camera, screen-LEFT = world +X. Flipped for mirrored GLB.
+        // Horizontal X — from the back camera, screen-LEFT = world +X. Not swapped for hoodies.
         if (preset.endsWith('left')) {
           px = cx - dx; ori.y = Math.PI * 11/12;
         } else if (preset.endsWith('right')) {
@@ -768,13 +785,13 @@ function _doRebuildAllDecals() {
         } else {
           px = cx;
         }
-        // Continuous override from bounding box drag (back camera: corrected for mirrored GLB)
+        // Continuous override from bounding box drag
         if (config.posNormX !== undefined) {
           px = cx + (config.posNormX - 0.5) * boxSize.x * 0.7;
         }
         if (config.posNormY !== undefined) {
-          // Range: posNormY=0(top)→0.68, posNormY=0.5(center)→0.465, posNormY=1(bottom)→0.25
-          py = box.min.y + boxSize.y * (0.25 + (1 - config.posNormY) * 0.43);
+          // Range: posNormY=0(top)→0.58, posNormY=0.5(center)→0.46, posNormY=1(bottom)→0.34
+          py = box.min.y + boxSize.y * (0.34 + (1 - config.posNormY) * 0.24);
         }
       } else if (zoneId === 'sleeve-left') {
         px = cx - boxSize.x * 0.45; py = hFrontMidY; pz = hFrontZ; ori.y = Math.PI / 2;
@@ -847,11 +864,17 @@ function _doRebuildAllDecals() {
       if (zoneId === 'sleeve-left' || zoneId === 'sleeve-right' || subZoneId.includes('sleeve')) {
         depth = boxSize.z * 0.60;
       } else if (IS_HOODIES && zoneId === 'back') {
-        depth = boxSize.z * 0.30;  // covers back torso panel without reaching hood tip
+        // Hoodie back: deep enough to capture the full torso back panel
+        depth = boxSize.z * 0.50;
       } else if (IS_HOODIES && zoneId === 'front') {
-        depth = boxSize.z * 0.40;  // moderate: chest panel only, skip outer drawstring meshes
+        // Hoodie front: enough depth to capture curved chest without punching through to back
+        depth = boxSize.z * 0.35;
+      } else if (IS_JEANS) {
+        // Jacket front/back: large enough to cover pocket flaps, collar, buttons.
+        // Projector is 5% inside the surface; depth extends 55% of total model depth.
+        depth = boxSize.z * 0.55;
       } else {
-        depth = boxSize.z * 0.85; // deep stamp to penetrate puffy front surfaces (jacket)
+        depth = boxSize.z * 0.85;
       }
     } else if (IS_HEADWEAR) depth = Math.max(2.0, boxSize.z * 1.5);
     else depth = Math.min(boxSize.z * 0.70, 0.45); // T-shirt: deeper stamp to cover curved front panel without punch-through
