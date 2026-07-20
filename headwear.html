@@ -686,17 +686,20 @@ footer .footer-admin {
       <div class="shirt-wrapper" id="front-view">
         <canvas id="tshirt-front" class="shirt-img"></canvas>
         <div class="fabric-highlight"></div>
-        <div class="design-canvas-wrap" id="canvas-front" style="display:none"><canvas></canvas></div>
+        <div class="design-canvas-wrap print-wrap" id="canvas-front-print" style="display:none"><canvas></canvas></div>
+        <div class="design-canvas-wrap label-wrap" id="canvas-front-label" style="display:none"><canvas></canvas></div>
       </div>
       <div class="shirt-wrapper" id="side-view" style="display:none">
         <canvas id="tshirt-side" class="shirt-img"></canvas>
         <div class="fabric-highlight"></div>
-        <div class="design-canvas-wrap" id="canvas-side" style="display:none"><canvas></canvas></div>
+        <div class="design-canvas-wrap print-wrap" id="canvas-side-print" style="display:none"><canvas></canvas></div>
+        <div class="design-canvas-wrap label-wrap" id="canvas-side-label" style="display:none"><canvas></canvas></div>
       </div>
       <div class="shirt-wrapper" id="back-view" style="display:none">
         <canvas id="tshirt-back" class="shirt-img"></canvas>
         <div class="fabric-highlight"></div>
-        <div class="design-canvas-wrap" id="canvas-back" style="display:none"><canvas></canvas></div>
+        <div class="design-canvas-wrap print-wrap" id="canvas-back-print" style="display:none"><canvas></canvas></div>
+        <div class="design-canvas-wrap label-wrap" id="canvas-back-label" style="display:none"><canvas></canvas></div>
       </div>
       <div class="shirt-wrapper" id="3d-view" style="display:none; width: 100%; aspect-ratio: 4/5; min-height: 400px;">
         <div id="threeContainer" style="width: 100%; height: 100%; min-height: 400px;"></div>
@@ -1077,8 +1080,36 @@ let embroiderySize  = 'M';
 let scaleMultiplier = 1.0;
 
 
-// sides is populated once the DOM is ready (see DOMContentLoaded)
-let sides = { front: { wrap: null, canvas: null, img: null }, side: { wrap: null, canvas: null, img: null }, back: { wrap: null, canvas: null, img: null } };
+// Per-side drag/resize state (initialized to default percentages/zones)
+const designState = {
+  front: {
+    print: { xPct: 35, yPct: 20, wPct: 30, hPct: 30 },
+    label: { xPct: 35, yPct: 60, wPct: 30, hPct: 15 }
+  },
+  side: {
+    print: { xPct: 35, yPct: 20, wPct: 30, hPct: 30 },
+    label: { xPct: 35, yPct: 60, wPct: 30, hPct: 15 }
+  },
+  back: {
+    print: { xPct: 35, yPct: 20, wPct: 30, hPct: 30 },
+    label: { xPct: 35, yPct: 60, wPct: 30, hPct: 15 }
+  }
+};
+
+let sides = {
+  front: {
+    print: { wrap: null, canvas: null, img: null },
+    label: { wrap: null, canvas: null }
+  },
+  side: {
+    print: { wrap: null, canvas: null, img: null },
+    label: { wrap: null, canvas: null }
+  },
+  back: {
+    print: { wrap: null, canvas: null, img: null },
+    label: { wrap: null, canvas: null }
+  }
+};
 
 // ============================================================
 //  HEADWEAR MOCKUP IMAGES + RECOLORING ENGINE
@@ -1369,6 +1400,14 @@ function setDecorMode(mode) {
   document.querySelectorAll('#decorModeRow .size-btn').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.mode === mode);
   });
+
+  // Re-initialize design state dimensions/positions for the new mode
+  const side = currentView === '3d' ? 'front' : currentView;
+  const zone = getActiveZone();
+  resetDesignStateToZone(side, zone);
+  sync2DTo3D(side, 'print');
+  sync2DTo3D(side, 'label');
+
   const labelSection   = document.getElementById('labelSection');
   const printGallery   = document.querySelector('.print-gallery');
   const printInfo      = document.getElementById('printInfo');
@@ -1545,10 +1584,61 @@ function renderZoneButtons() {
     </button>`).join('');
 }
 
+function resetDesignStateToZone(side, zone) {
+  if (!zone) return;
+  const mult = scaleMultiplier;
+  const zWpx = zone.w * mult;
+  const zHpx = zone.h * mult;
+  
+  if (decorMode === 'both') {
+    // Print is top 60%
+    designState[side].print.wPct = zWpx / 600 * 100;
+    designState[side].print.hPct = zHpx * 0.60 / 600 * 100;
+    designState[side].print.xPct = (zone.cx - zWpx / 2) / 600 * 100;
+    designState[side].print.yPct = (zone.cy - zHpx / 2) / 600 * 100;
+    
+    // Label is bottom 30%, offset by 65% Y
+    designState[side].label.wPct = zWpx / 600 * 100;
+    designState[side].label.hPct = zHpx * 0.30 / 600 * 100;
+    designState[side].label.xPct = (zone.cx - zWpx / 2) / 600 * 100;
+    designState[side].label.yPct = (zone.cy - zHpx / 2 + zHpx * 0.65) / 600 * 100;
+  } else if (decorMode === 'embroidery') {
+    // Print is full zone
+    designState[side].print.wPct = zWpx / 600 * 100;
+    designState[side].print.hPct = zHpx / 600 * 100;
+    designState[side].print.xPct = (zone.cx - zWpx / 2) / 600 * 100;
+    designState[side].print.yPct = (zone.cy - zHpx / 2) / 600 * 100;
+  } else {
+    // Label is full zone
+    designState[side].label.wPct = zWpx / 600 * 100;
+    designState[side].label.hPct = zHpx / 600 * 100;
+    designState[side].label.xPct = (zone.cx - zWpx / 2) / 600 * 100;
+    designState[side].label.yPct = (zone.cy - zHpx / 2) / 600 * 100;
+  }
+}
+
 function setZone(zoneId) {
   activeZoneId  = zoneId;
   printPlacement = zoneId;
   window.printPlacement = zoneId;
+
+  // Determine side from zoneId prefix
+  let side = 'front';
+  if (zoneId.startsWith('back')) side = 'back';
+  else if (zoneId.startsWith('side')) side = 'side';
+
+  const zone = getActiveZone();
+  resetDesignStateToZone(side, zone);
+
+  // Clear 3D normalized coordinates in config so it falls back to defaults for the new preset
+  const config = window.zoneCustomizations[zoneId] || {};
+  delete config.printPosNormX;
+  delete config.printPosNormY;
+  delete config.printScale;
+  delete config.labelPosNormX;
+  delete config.labelPosNormY;
+  delete config.labelScale;
+
   // Highlight selected button
   document.querySelectorAll('#zoneGrid .size-btn').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.zone === zoneId);
@@ -1578,6 +1668,13 @@ function onScaleSliderInput(val) {
     btn.classList.toggle('selected', Math.abs(val - targetVal) < 15);
   });
 
+  // Re-initialize design state dimensions based on new scale
+  const _siSide = currentView === '3d' ? 'front' : currentView;
+  const _siZone = getActiveZone();
+  resetDesignStateToZone(_siSide, _siZone);
+  sync2DTo3D(_siSide, 'print');
+  sync2DTo3D(_siSide, 'label');
+
   scheduleRender();
   _sync3DOverlay();
 }
@@ -1592,7 +1689,7 @@ function setEmbroiderySize(sz) {
   
   const slider = document.getElementById('scaleSlider');
   if (slider) {
-    slider.value = Math.round(scaleMultiplier * 100);
+slider.value = Math.round(scaleMultiplier * 100);
     updateSliderBg(slider);
   }
 
@@ -1612,40 +1709,35 @@ function _sync3DOverlay() {
 
   if (window.setHeadwearDecalScale) window.setHeadwearDecalScale(scaleFrac * 100);
 
-  // Re-apply the current print / label to the newly active zone
-  if (window.applyHeadwearPrint || window.applyHeadwearLabel) {
-    const showPrint = (decorMode === 'embroidery' || decorMode === 'both');
-    const showLabel = (decorMode === 'label'       || decorMode === 'both');
-    const print_ = typeof selectedPrint !== 'undefined' ? selectedPrint : null;
-    if (showPrint && print_ && window.applyHeadwearPrint) {
-      window.applyHeadwearPrint(print_.image_url || null);
-    } else if (showLabel && window.applyHeadwearLabel) {
-      const txt   = document.getElementById('customLabelInput')?.value?.trim() || '';
-      const color = document.getElementById('customLabelColor')?.value || '#ffffff';
-      window.applyHeadwearLabel(txt, color);
-    }
+  // Sync coordinates to window.zoneCustomizations config before applying
+  const side = currentView === '3d' ? 'front' : currentView;
+  sync2DTo3D(side, 'print');
+  sync2DTo3D(side, 'label');
+
+  // Re-apply both print and label independently to the active zone
+  const showPrint = (decorMode === 'embroidery' || decorMode === 'both');
+  const showLabel = (decorMode === 'label'       || decorMode === 'both');
+  const print_ = typeof selectedPrint !== 'undefined' ? selectedPrint : null;
+
+  if (showPrint && print_ && window.applyHeadwearPrint) {
+    window.applyHeadwearPrint(print_.image_url || null);
+  }
+  if (showLabel && window.applyHeadwearLabel) {
+    const txt   = document.getElementById('customLabelInput')?.value?.trim() || '';
+    const color = document.getElementById('customLabelColor')?.value || '#ffffff';
+    window.applyHeadwearLabel(txt, color);
   }
 }
 
 
 // ── CANVAS RENDER — showcase pipeline, adapted for zone-based headwear ─────────
-// Uses the FLOATING OVERLAY canvas (s.wrap / s.canvas) identical to showcase.html.
-// The zone converts to % position over the shirt wrapper, then the full
-// fabric-distortion pipeline (fold displacement + highlight/shadow + edge feathering)
-// is applied via per-pixel processing — exactly as in the working T-shirt renderer.
-
-const EMBROIDERY_BLEND = 0.55;   // fixed blend for embroidery (slightly absorbed look)
 
 function renderDesign(side) {
   const s = sides[side];
-  if (!s || !s.wrap || !s.canvas) return;
+  if (!s) return;
 
-  const hasPrint = !!(s.img);
-  const hasLabel = !!(typeof decorMode !== 'undefined' &&
-    (decorMode === 'label' || decorMode === 'both') &&
-    document.getElementById('customLabelInput')?.value?.trim());
-
-  if (!hasPrint && !hasLabel) { s.wrap.style.display = 'none'; return; }
+  const showPrint = (decorMode === 'embroidery' || decorMode === 'both') && s.print?.img;
+  const showLabel = (decorMode === 'label' || decorMode === 'both') && document.getElementById('customLabelInput')?.value?.trim();
 
   // ── Get wrapper dimensions ────────────────────────────────────────────────
   const wrapId = { front: 'front-view', side: 'side-view', back: 'back-view' };
@@ -1655,63 +1747,67 @@ function renderDesign(side) {
   const wW = rect.width, wH = rect.height;
   if (wW < 10 || wH < 10) { requestAnimationFrame(() => renderDesign(side)); return; }
 
-  // ── Map active zone (600×600 base coords) → % of wrapper ─────────────────
-  const zone = getActiveZone();
-  const mult = scaleMultiplier;
-  // Zone is defined in 600×600 px space; wrapper height is ~600px rendered size.
-  // Convert to % of displayed wrapper.
-  const zWpx = zone.w * mult;
-  const zHpx = zone.h * mult;
-  const leftPct = (zone.cx - zWpx / 2) / 600 * 100;
-  const topPct  = (zone.cy - zHpx / 2) / 600 * 100;
-  const wPct    = zWpx / 600 * 100;
-  const hPct    = zHpx / 600 * 100;
+  // ── Process Print ──
+  if (showPrint && s.print?.wrap && s.print?.canvas) {
+    const ds = designState[side].print;
+    s.print.wrap.style.left    = ds.xPct + '%';
+    s.print.wrap.style.top     = ds.yPct + '%';
+    s.print.wrap.style.width   = ds.wPct + '%';
+    s.print.wrap.style.height  = ds.hPct + '%';
+    s.print.wrap.style.display = '';
 
-  // Position the overlay wrapper
-  s.wrap.style.left    = leftPct + '%';
-  s.wrap.style.top     = topPct  + '%';
-  s.wrap.style.width   = wPct    + '%';
-  s.wrap.style.height  = hPct    + '%';
-  s.wrap.style.display = '';
+    const cW = Math.max(10, Math.round(wW * ds.wPct / 100 * 2));
+    const cH = Math.max(10, Math.round(wH * ds.hPct / 100 * 2));
+    s.print.canvas.width  = cW;
+    s.print.canvas.height = cH;
+    _renderCanvasElement(side, 'print', s.print.img, null, cW, cH, ds.xPct, ds.yPct, ds.wPct, ds.hPct);
+  } else if (s.print?.wrap) {
+    s.print.wrap.style.display = 'none';
+  }
 
-  // ── Size the overlay canvas at 2× for crisp rendering ────────────────────
-  const cW = Math.max(10, Math.round(wW * wPct / 100 * 2));
-  const cH = Math.max(10, Math.round(wH * hPct / 100 * 2));
-  const canvas = s.canvas;
-  canvas.width  = cW;
-  canvas.height = cH;
+  // ── Process Label ──
+  if (showLabel && s.label?.wrap && s.label?.canvas) {
+    const ds = designState[side].label;
+    s.label.wrap.style.left    = ds.xPct + '%';
+    s.label.wrap.style.top     = ds.yPct + '%';
+    s.label.wrap.style.width   = ds.wPct + '%';
+    s.label.wrap.style.height  = ds.hPct + '%';
+    s.label.wrap.style.display = '';
+
+    const cW = Math.max(10, Math.round(wW * ds.wPct / 100 * 2));
+    const cH = Math.max(10, Math.round(wH * ds.hPct / 100 * 2));
+    s.label.canvas.width  = cW;
+    s.label.canvas.height = cH;
+    _renderCanvasElement(side, 'label', null, null, cW, cH, ds.xPct, ds.yPct, ds.wPct, ds.hPct);
+  } else if (s.label?.wrap) {
+    s.label.wrap.style.display = 'none';
+  }
+}
+
+function _renderCanvasElement(side, type, img, txt, cW, cH, leftPct, topPct, wPct, hPct) {
+  const canvas = sides[side][type].canvas;
   const ctx = canvas.getContext('2d', { alpha: true });
   ctx.clearRect(0, 0, cW, cH);
 
-  // ── Build source image into a temp canvas ─────────────────────────────────
-  // For prints: draw the image. For labels: draw the text. For both: stack them.
+  // Build source image into a temp canvas
   const tmpCanvas = document.createElement('canvas');
   tmpCanvas.width  = cW;
   tmpCanvas.height = cH;
   const tmpCtx = tmpCanvas.getContext('2d', { alpha: true });
 
   const padding = 0.05;
-
-  if (hasPrint && hasLabel) {
-    // Print in top 62%, label in bottom 33%
-    const imgAreaH = cH * 0.60;
-    const lblAreaY = cH * 0.65;
-    const lblAreaH = cH * 0.30;
-    _renderImageToCtx(tmpCtx, s.img, 0, 0, cW, imgAreaH, padding);
-    _renderLabelToCtx(tmpCtx, 0, lblAreaY, cW, lblAreaH);
-  } else if (hasPrint) {
-    _renderImageToCtx(tmpCtx, s.img, 0, 0, cW, cH, padding);
+  if (type === 'print') {
+    _renderImageToCtx(tmpCtx, img, 0, 0, cW, cH, padding);
   } else {
-    _renderLabelToCtx(tmpCtx, 0, cH * 0.15, cW, cH * 0.70);
+    _renderLabelToCtx(tmpCtx, 0, 0, cW, cH);
   }
 
   const printData = tmpCtx.getImageData(0, 0, cW, cH);
   const pd = printData.data;
 
-  // ── Fabric-distortion pipeline (ported from showcase.html) ────────────────
+  // Fabric-distortion pipeline
   const fd = fabricData[side];
   if (fd) {
-    // Map overlay canvas pixel coords → fabric image pixel coords
     const fxStart = (leftPct / 100) * fd.w;
     const fyStart = (topPct  / 100) * fd.h;
     const fxScale = (wPct / 100) * fd.w / cW;
@@ -1736,11 +1832,15 @@ function renderDesign(side) {
         const fabricIdx = fy * fd.w + fx;
         if (fd.mask[fabricIdx] === 0) { od[canvasIdx + 3] = 0; continue; }
 
-        // Fold displacement
+        // Fold displacement with boundary check (no clamping smear)
         const dispX = fd.dx[fabricIdx] * DISP_STRENGTH / fxScale;
         const dispY = fd.dy[fabricIdx] * DISP_STRENGTH / fyScale;
-        let srcX = Math.max(0, Math.min(cW - 1, cx - dispX));
-        let srcY = Math.max(0, Math.min(cH - 1, cy - dispY));
+        let srcX = cx - dispX;
+        let srcY = cy - dispY;
+
+        if (srcX < 0 || srcX >= cW || srcY < 0 || srcY >= cH) {
+          od[canvasIdx + 3] = 0; continue;
+        }
 
         // Bilinear sample
         const sx0 = Math.floor(srcX), sy0 = Math.floor(srcY);
@@ -1989,8 +2089,8 @@ let _renderRAF = null;
 // ============================================================
 //  DRAG & RESIZE  — per-side interactive positioning
 // ============================================================
-function initDraggable(side) {
-  const s = sides[side];
+function initDraggable(side, type) {
+  const s = sides[side]?.[type];
   if (!s || !s.wrap) return;
 
   // Clear any existing handles/hints
@@ -2015,7 +2115,7 @@ function initDraggable(side) {
   // Instruction hint
   const hint = document.createElement('div');
   hint.className = 'design-hint-text';
-  hint.innerText = 'Glisser pour placer · Tirer les coins pour redimensionner';
+  hint.innerText = type === 'print' ? 'Broderie: Glisser / Redimensionner' : 'Étiquette: Glisser / Redimensionner';
   s.wrap.appendChild(hint);
 
   let mode = null;   // 'drag' | 'resize'
@@ -2032,10 +2132,10 @@ function initDraggable(side) {
     mode = isResize ? 'resize' : 'drag';
     activeHandle = handleClass;
     startX = pt.clientX; startY = pt.clientY;
-    snapXPct = designState[side].xPct;
-    snapYPct = designState[side].yPct;
-    snapWPct = designState[side].wPct;
-    snapHPct = designState[side].hPct;
+    snapXPct = designState[side][type].xPct;
+    snapYPct = designState[side][type].yPct;
+    snapWPct = designState[side][type].wPct;
+    snapHPct = designState[side][type].hPct;
     if (!isResize) s.wrap.style.cursor = 'grabbing';
     e.preventDefault();
   }
@@ -2046,7 +2146,7 @@ function initDraggable(side) {
     const pr = getParentRect();
     const dx = (pt.clientX - startX) / pr.width  * 100;
     const dy = (pt.clientY - startY) / pr.height * 100;
-    const ds = designState[side];
+    const ds = designState[side][type];
 
     if (mode === 'drag') {
       ds.xPct = Math.max(0, Math.min(100 - ds.wPct, snapXPct + dx));
@@ -2068,15 +2168,19 @@ function initDraggable(side) {
       ds.xPct = Math.max(0, Math.min(100 - ds.wPct, snapXPct - (ds.wPct - snapWPct)/2));
       ds.yPct = Math.max(0, Math.min(100 - ds.hPct, snapYPct - (ds.hPct - snapHPct)/2));
 
-      // Sync slider
-      const slider = document.getElementById('scaleSlider');
-      if (slider) {
-        slider.value = Math.round(ds.wPct);
-        document.getElementById('scaleDisplay').textContent = Math.round(ds.wPct) + '%';
-        updateSliderBg(slider);
+      // Sync slider if this matches active decorMode
+      const isCurrentMode = (type === 'print' && decorMode === 'embroidery') || (type === 'label' && decorMode === 'label');
+      if (isCurrentMode) {
+        const slider = document.getElementById('scaleSlider');
+        if (slider) {
+          slider.value = Math.round(ds.wPct);
+          document.getElementById('scaleDisplay').textContent = Math.round(ds.wPct) + '%';
+          updateSliderBg(slider);
+        }
       }
     }
     renderDesign(side);
+    sync2DTo3D(side, type);
     e.preventDefault();
   }
 
@@ -2104,6 +2208,35 @@ function initDraggable(side) {
   }, { passive: false });
   document.addEventListener('touchmove', e => { if (mode) onMove(e); }, { passive: false });
   document.addEventListener('touchend',  onEnd);
+}
+
+function sync2DTo3D(side, type) {
+  const ds = designState[side]?.[type];
+  if (!ds) return;
+  const z = printPlacement || 'front-center';
+  if (!window.zoneCustomizations[z]) {
+    window.zoneCustomizations[z] = {};
+  }
+  const config = window.zoneCustomizations[z];
+  
+  const cx = ds.xPct + ds.wPct / 2;
+  const cy = ds.yPct + ds.hPct / 2;
+
+  if (type === 'print') {
+    config.printPosNormX = Math.max(0, Math.min(1, cx / 100));
+    config.printPosNormY = Math.max(0, Math.min(1, cy / 100));
+    const zone = getActiveZone();
+    config.printScale = ds.wPct / (zone.w / 600 * 100);
+  } else {
+    config.labelPosNormX = Math.max(0, Math.min(1, cx / 100));
+    config.labelPosNormY = Math.max(0, Math.min(1, cy / 100));
+    const zone = getActiveZone();
+    config.labelScale = ds.wPct / (zone.w / 600 * 100);
+  }
+
+  if (window.setZoneCustomization) {
+    window.setZoneCustomization(z, config);
+  }
 }
 
 function renderAllDesigns() {
@@ -2680,12 +2813,18 @@ function showToast(title, body, borderColor='#22c55e') {
 // ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
   // Wire up the sides overlay canvases now that the DOM is ready
-  sides.front.wrap   = document.getElementById('canvas-front');
-  sides.front.canvas = document.querySelector('#canvas-front canvas');
-  sides.side.wrap    = document.getElementById('canvas-side');
-  sides.side.canvas  = document.querySelector('#canvas-side canvas');
-  sides.back.wrap    = document.getElementById('canvas-back');
-  sides.back.canvas  = document.querySelector('#canvas-back canvas');
+  ['front', 'side', 'back'].forEach(side => {
+    sides[side].print.wrap   = document.getElementById(`canvas-${side}-print`);
+    sides[side].print.canvas = document.querySelector(`#canvas-${side}-print canvas`);
+    sides[side].label.wrap   = document.getElementById(`canvas-${side}-label`);
+    sides[side].label.canvas = document.querySelector(`#canvas-${side}-label canvas`);
+  });
+
+  // Attach drag/resize handlers to each side's design overlay canvas
+  ['front', 'side', 'back'].forEach(side => {
+    initDraggable(side, 'print');
+    initDraggable(side, 'label');
+  });
 
   // Init zone buttons
   renderZoneButtons();
