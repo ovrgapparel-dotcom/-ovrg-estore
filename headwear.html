@@ -1043,6 +1043,7 @@ let productType = 'cap';
 let printPlacement = 'front-center'; window.printPlacement = 'front-center';
 let printScale = 1.0;
 let decorMode = 'embroidery'; // 'embroidery' | 'label' | 'both'
+const EMBROIDERY_BLEND = 0.55;
 
 // ── EMBROIDERY ZONES ──────────────────────────────────────────────────────────
 // Pixel coordinates on the 600×600 fallback canvas, calibrated to where each
@@ -1631,6 +1632,7 @@ function setZone(zoneId) {
   resetDesignStateToZone(side, zone);
 
   // Clear 3D normalized coordinates in config so it falls back to defaults for the new preset
+  window.zoneCustomizations = window.zoneCustomizations || {};
   const config = window.zoneCustomizations[zoneId] || {};
   delete config.printPosNormX;
   delete config.printPosNormY;
@@ -2214,6 +2216,7 @@ function sync2DTo3D(side, type) {
   const ds = designState[side]?.[type];
   if (!ds) return;
   const z = printPlacement || 'front-center';
+  window.zoneCustomizations = window.zoneCustomizations || {};
   if (!window.zoneCustomizations[z]) {
     window.zoneCustomizations[z] = {};
   }
