@@ -2907,6 +2907,8 @@
             </div>
             <div><label>Tailles (séparées par virgule)</label><input type="text" id="adminSizes"
                 placeholder="S, M, L, XL, XXL"></div>
+            <div><label>Couleurs disponibles (séparées par virgule)</label><input type="text" id="adminColors"
+                placeholder="Blanc, Noir, Rouge, Bleu..."></div>
             <div><label>Badge</label><input type="text" id="adminBadge"
                 placeholder="Nouveau, Promo, Édition Limitée..."></div>
             <div>
@@ -3001,128 +3003,6 @@
       <span class="icon-chat">💬</span>
       <span class="icon-close">✕</span>
     </button>
-  </div>
-  <!-- PRODUCT DETAIL OVERLAY -->
-  <div class="overlay" id="productOverlay" onclick="handleOverlayClick(event,'productOverlay')">
-    <div class="modal-box" id="productModalBox">
-      <div class="modal-top">
-        <h3 id="modalCat">Produit</h3>
-        <button class="btn-close" onclick="closeProduct()">&#x2715;</button>
-      </div>
-      <div class="modal-body">
-        <div class="modal-gallery">
-          <div class="main-img" id="mainImgWrap">
-            <div class="main-img-placeholder" id="mainImgPlaceholder">&#x1F455;</div>
-          </div>
-          <div class="thumb-row" id="thumbRow"></div>
-        </div>
-        <div class="modal-info">
-          <div class="modal-cat" id="modalCatLabel"></div>
-          <h2 class="modal-name" id="modalName">&#x2014;</h2>
-          <div class="modal-pricing">
-            <span class="modal-price" id="modalPrice">&#x2014;</span>
-            <span class="modal-old" id="modalOld"></span>
-            <span class="modal-disc" id="modalDisc"></span>
-          </div>
-          <p class="modal-desc" id="modalDesc">&#x2014;</p>
-          <div class="size-section" id="sizeSection">
-            <div class="size-label">Taille</div>
-            <div class="sizes" id="sizeBtns"></div>
-          </div>
-          <div class="qty-section">
-            <span class="qty-label">Quantit&#xe9;</span>
-            <div class="qty-ctrl">
-              <button onclick="changeQty(-1)">&#x2212;</button>
-              <input type="number" id="qtyInput" value="1" min="1" max="99">
-              <button onclick="changeQty(1)">+</button>
-            </div>
-          </div>
-          <div class="modal-actions">
-            <button class="btn-primary" onclick="addToCartFromModal()">&#x1F6CD; Ajouter au panier</button>
-            <button class="btn-paypal" onclick="payWithPayPal()">&#x1F4B3; Payer avec PayPal</button>
-            <button class="btn-wave" onclick="payWithWave()">&#x1F30A; Payer avec Wave</button>
-            <button class="btn-yango" onclick="buyViaYango()">&#x1F697; Commander via Yango</button>
-            <button class="btn-whatsapp" onclick="buyViaWhatsApp()">&#x1F4AC; Commander via WhatsApp</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- CART PANEL -->
-  <div class="cart-panel" id="cartPanel">
-    <div class="cart-header">
-      <h3>Mon Panier</h3>
-      <button class="btn-close" onclick="toggleCart()">&#x2715;</button>
-    </div>
-    <div class="cart-items" id="cartItems">
-      <div class="cart-empty">
-        <div class="empty-icon">&#x1F6CD;</div>
-        <p>Votre panier est vide</p>
-      </div>
-    </div>
-    <div class="cart-footer">
-      <div class="cart-total"><span>Total</span><span class="cart-total-amount" id="cartTotal">0 FCFA</span></div>
-      <button class="btn-checkout" onclick="openCheckout()">Passer la commande &#x2192;</button>
-    </div>
-  </div>
-
-  <!-- CHECKOUT OVERLAY -->
-  <div class="checkout-overlay" id="checkoutOverlay" onclick="handleOverlayClick(event,'checkoutOverlay')">
-    <div class="checkout-box">
-      <div class="checkout-header">
-        <h2>Finaliser la Commande</h2>
-        <p>La boutique OVRG &#x2014; Abidjan, C&#xf4;te d'Ivoire</p>
-      </div>
-      <div class="checkout-body">
-        <form id="checkoutForm" onsubmit="submitOrder(event)">
-          <input type="hidden" name="_subject" id="orderSubject">
-          <input type="hidden" name="_template" value="table">
-          <input type="hidden" name="_autoresponse" id="orderAutoResponse">
-          <input type="hidden" name="_captcha" value="false">
-          <input type="hidden" name="order_details" id="orderDetails">
-          <input type="hidden" name="payment_method" id="checkoutPaymentMethod">
-          <div class="form-grid">
-            <div class="form-group"><label>Pr&#xe9;nom *</label><input type="text" name="first_name"
-                placeholder="Pr&#xe9;nom" required></div>
-            <div class="form-group"><label>Nom *</label><input type="text" name="last_name" placeholder="Nom" required>
-            </div>
-            <div class="form-group"><label>Email *</label><input type="email" name="email"
-                placeholder="email@exemple.com" required></div>
-            <div class="form-group"><label>T&#xe9;l&#xe9;phone *</label><input type="tel" name="phone"
-                placeholder="+225 XX XX XX XX" required></div>
-            <div class="form-group full"><label>Adresse de livraison</label><input type="text" name="address"
-                placeholder="Quartier, commune, Abidjan"></div>
-            <div class="form-group full"><label>Note (optionnel)</label><input type="text" name="note"
-                placeholder="Instructions sp&#xe9;ciales..."></div>
-          </div>
-          <div class="order-summary">
-            <h4>R&#xe9;capitulatif</h4>
-            <div id="checkoutSummaryItems"></div>
-            <div class="summary-row total"><span>Total</span><span id="checkoutTotalDisplay">&#x2014;</span>
-            </div>
-          </div>
-          <div class="payment-section">
-            <div class="payment-header">Mode de paiement</div>
-            <div class="payment-options">
-              <label class="payment-option selected" id="payOptPaypal"><input type="radio" name="payment" value="paypal"
-                  checked onchange="selectPayment('paypal')"><span class="pay-icon">&#x1F4B3;</span><span
-                  class="pay-label">PayPal</span></label>
-              <label class="payment-option" id="payOptWave"><input type="radio" name="payment" value="wave"
-                  onchange="selectPayment('wave')"><span class="pay-icon">&#x1F30A;</span><span
-                  class="pay-label">Wave</span></label>
-              <label class="payment-option" id="payOptYango"><input type="radio" name="payment" value="yango"
-                  onchange="selectPayment('yango')"><span class="pay-icon">&#x1F697;</span><span class="pay-label">Yango
-                  Delivery (payer &#xe0; la livraison)</span></label>
-              <label class="payment-option" id="payOptWhatsapp"><input type="radio" name="payment" value="whatsapp"
-                  onchange="selectPayment('whatsapp')"><span class="pay-icon">&#x1F4AC;</span><span
-                  class="pay-label">WhatsApp</span></label>
-            </div>
-          </div>
-          <button type="submit" class="btn-checkout">Confirmer la commande &#x2192;</button>
-        </form>
-      </div>
-    </div>
   </div>
 
 
@@ -3323,6 +3203,24 @@
       document.getElementById('orderAutoResponse').value = 'Bonjour ' + name + '! Commande re\u00e7ue. Total: ' + fmt(total) + '. Nous vous contacterons sous 24h. Merci!';
       var data = new FormData(f);
       fetch('https://formsubmit.co/ajax/orvg.apparel@gmail.com', { method: 'POST', headers: { 'Accept': 'application/json' }, body: data }).catch(function () { });
+
+      // Save order to Supabase
+      if (sbClient) {
+        var orderPayload = {
+          customer_name: name,
+          customer_email: f.email ? f.email.value : '',
+          customer_phone: f.phone ? f.phone.value : '',
+          total_amount: total,
+          payment_method: selectedPayment,
+          items: JSON.parse(JSON.stringify(cart)),
+          status: 'pending',
+          created_at: new Date().toISOString()
+        };
+        sbClient.from('orders').insert(orderPayload).then(function(res) {
+          if (res.error) console.warn('Order save error:', res.error.message);
+        }).catch(function(err) { console.warn('Order save exception:', err); });
+      }
+
       if (selectedPayment === 'paypal') redirectPayPal(total);
       else if (selectedPayment === 'wave') { window.open('https://pay.wave.com/m/M_ci_1F_--SCMirUC/c/ci/', '_blank'); finishOrder(name); }
       else if (selectedPayment === 'yango') { window.open('https://buy.yango.com/store/caede4e7-d634-4b4f-8a0f-f54e255ed1f7', '_blank'); finishOrder(name); }
@@ -3426,7 +3324,7 @@
         return '<div class="admin-product-item">' +
           '<div class="admin-product-thumb">' + thumb + '</div>' +
           '<div class="admin-product-meta"><h4>' + p.name + badge + '</h4>' +
-          '<p>' + priceInfo + ' \u00b7 ' + (p.cat === 't-shirt' ? 'T-Shirts' : 'Ensembles') + ' \u00b7 ' + ((p.sizes || []).join(', ') || '\u2014') + '</p></div>' +
+          '<p>' + priceInfo + ' \u00b7 ' + (p.cat === 't-shirt' ? 'T-Shirts' : 'Ensembles') + ' \u00b7 ' + ((p.sizes || []).join(', ') || '\u2014') + (p.colors && p.colors.length ? ' \u00b7 \ud83c\udfa8 ' + p.colors.join(', ') : '') + '</p></div>' +
           '<div class="admin-product-actions">' +
           '<button class="btn-edit" onclick="editProduct(' + p.id + ')">\u270f Modifier</button>' +
           '<button class="btn-delete" onclick="deleteProduct(' + p.id + ')">\ud83d\uddd1 Supprimer</button></div></div>';
@@ -3441,6 +3339,7 @@
       document.getElementById('adminOldPrice').value = p.old_price || '';
       document.getElementById('adminDesc').value = p.description || '';
       document.getElementById('adminSizes').value = (p.sizes || []).join(', ');
+      document.getElementById('adminColors').value = (p.colors || []).join(', ');
       document.getElementById('adminBadge').value = p.badge || '';
       adminImgSlots = (p.imgs || []).concat(['', '', '', '', '']).slice(0, 5);
       renderAdminImgSlots();
@@ -3465,11 +3364,12 @@
       var old_price = parseInt(document.getElementById('adminOldPrice').value) || null;
       var description = document.getElementById('adminDesc').value.trim();
       var sizes = document.getElementById('adminSizes').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+      var colors = document.getElementById('adminColors').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
       var badge = document.getElementById('adminBadge').value.trim();
       var imgs = adminImgSlots.filter(Boolean);
       var editId = document.getElementById('editProductId').value;
       if (!name || !price) { showToast('Champs requis', 'Nom et prix sont obligatoires.', '#f59e0b'); return; }
-      var payload = { name: name, cat: cat, price: price, old_price: old_price, description: description, badge: badge, sizes: sizes, imgs: imgs };
+      var payload = { name: name, cat: cat, price: price, old_price: old_price, description: description, badge: badge, sizes: sizes, colors: colors, imgs: imgs };
       try {
         if (editId) {
           var res = await sbClient.from(PRODUCTS_TABLE).update(payload).eq('id', parseInt(editId));
@@ -3491,6 +3391,7 @@
       document.getElementById('adminOldPrice').value = '';
       document.getElementById('adminDesc').value = '';
       document.getElementById('adminSizes').value = 'S, M, L, XL, XXL';
+      document.getElementById('adminColors').value = '';
       document.getElementById('adminBadge').value = '';
       adminImgSlots = ['', '', '', '', ''];
       renderAdminImgSlots();

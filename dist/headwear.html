@@ -651,7 +651,7 @@ footer .footer-admin {
     }
   }
 </script>
-  <script type="module" crossorigin src="/assets/three-viewer-rDwZEZ87.js"></script>
+  <script type="module" crossorigin src="/assets/three-viewer-BnJEKRSL.js"></script>
 </head>
 <body>
 
@@ -1304,14 +1304,8 @@ async function loadPrints() {
       .eq('active', true)
       .order('id', { ascending: true });
     if (error) throw error;
-    
-    // Filter to only embroideries
-    prints = (data || []).filter(p => {
-      if (p.design_type) return p.design_type === 'embroidery';
-      if (p.category && p.category.startsWith('Broderie')) return true;
-      return false;
-    });
-    
+    // Show all active embroideries — no extra filter needed for headwear_embroideries table
+    prints = data || [];
     renderPrintGrid();
   } catch(e) {
     console.error('Load prints error:', e);
@@ -1838,9 +1832,17 @@ function _renderLabelToCtx(tmpCtx, x, y, w, h) {
   const text  = (document.getElementById('customLabelInput')?.value || '').trim().toUpperCase();
   if (!text) return;
   const color = document.getElementById('customLabelColor')?.value || '#ffffff';
-  const sz    = Math.min(h * 0.80, w / Math.max(text.length, 1) * 1.5);
   tmpCtx.save();
-  tmpCtx.font          = `900 ${sz}px "Arial Black", Arial, sans-serif`;
+  // Start with a font size based on available height
+  let sz = h * 0.72;
+  tmpCtx.font = `900 ${sz}px "Arial Black", Arial, sans-serif`;
+  // Shrink until text fits within 92% of available width
+  const maxW = w * 0.92;
+  const measured = tmpCtx.measureText(text).width;
+  if (measured > maxW) {
+    sz = sz * (maxW / measured);
+    tmpCtx.font = `900 ${sz}px "Arial Black", Arial, sans-serif`;
+  }
   tmpCtx.textAlign     = 'center';
   tmpCtx.textBaseline  = 'middle';
   tmpCtx.strokeStyle   = color === '#ffffff' ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.5)';
@@ -2216,13 +2218,8 @@ async function loadAdminPrints() {
   try {
     const { data, error } = await sbClient.from(PRINTS_TABLE).select('*').order('id', { ascending: true });
     if (error) throw error;
-    // Filter to only show broderies/embroideries in the headwear admin panel
-    const embroideries = (data || []).filter(p => {
-      if (p.design_type && p.design_type === 'embroidery') return true;
-      if (p.category && p.category.startsWith('Broderie')) return true;
-      return false;
-    });
-    renderAdminPrintList(embroideries);
+    // Show all items in the headwear_embroideries table — no extra filter
+    renderAdminPrintList(data || []);
   } catch(e) {
     list.innerHTML = `<p style="color:#f87171;text-align:center;padding:2rem">Table non configurée.</p>`;
   }
@@ -2580,31 +2577,42 @@ function calculateTotalPrice() {
 }
 
 function buildOrderItem() {
-  if (!selectedPrint) return null;
+  const labelText = (document.getElementById('customLabelInput')?.value || '').trim();
+  const hasLabel = (decorMode === 'label' || decorMode === 'both') && labelText.length > 0;
+  const hasPrint = decorMode === 'embroidery' || decorMode === 'both';
+
+  // Allow checkout with a print OR with a text label
+  if (!selectedPrint && !hasLabel) return null;
+
   const price = calculateTotalPrice();
+  const printName = selectedPrint ? selectedPrint.name : ('Label: ' + labelText);
+  const printId   = selectedPrint ? selectedPrint.id   : 'label';
+  const imgUrl    = selectedPrint ? (selectedPrint.image_url || '') : '';
+
   return {
-    key: `showcase-headwear-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${printSize}-${selectedTier}`,
-    id: `showcase-${selectedPrint.id}`,
-    name: `${productType === 'cap' ? 'Casquette' : 'Bob'} OVRG (${selectedTier.toUpperCase()}) — ${selectedPrint.name}`,
+    key: `showcase-headwear-${printId}-${selectedColor}-${selectedSize}-${printPlacement}-${printSize}-${selectedTier}`,
+    id: `showcase-${printId}`,
+    name: `${productType === 'cap' ? 'Casquette' : 'Bob'} OVRG (${selectedTier.toUpperCase()}) — ${printName}`,
     price: price,
     qty: 1,
     size: selectedSize,
     color: selectedColor,
-    img: selectedPrint.image_url || '',
+    img: imgUrl,
     type: 'showcase',
     customization: {
       placement: printPlacement,
       placementLabel: printPlacement === 'front' ? 'Devant' : 'Côté',
       scale: printSize === 'small' ? 'Petit' : 'Grand',
       blend: 100,
-      tier: selectedTier
+      tier: selectedTier,
+      label: hasLabel ? labelText : null
     }
   };
 }
 
 function addToCartShowcase() {
   const item = buildOrderItem();
-  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
+  if (!item) { showToast('Design requis', "Sélectionnez une broderie ou entrez un texte de label.", '#f59e0b'); return; }
 
   // Check garment tier stock
   if (lestockConfig) {
@@ -2626,10 +2634,14 @@ function addToCartShowcase() {
 
 function orderViaWhatsApp() {
   const item = buildOrderItem();
-  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
+  if (!item) { showToast('Design requis', "Sélectionnez une broderie ou entrez un texte de label.", '#f59e0b'); return; }
   const c = item.customization;
+  const labelText = (document.getElementById('customLabelInput')?.value || '').trim();
+  const hasLabel = c.label && c.label.length > 0;
+  let designLine = selectedPrint ? `🎨 Broderie: ${selectedPrint.name}` : '';
+  if (hasLabel) designLine += (designLine ? '\n' : '') + `✏️ Label: ${c.label}`;
   const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'cap' ? 'casquette' : 'bob'} (${selectedTier.toUpperCase()}):\n\n`+
-              `🎨 Imprimé: ${selectedPrint.name}\n`+
+              `${designLine}\n`+
               `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}\n`+
               `📏 Taille: ${item.size}\n`+
               `📍 Position: ${c.placementLabel}\n`+

@@ -1215,7 +1215,7 @@ async function savePrint() {
   const editId = document.getElementById('editPrintId').value;
   if (!name) { showToast('Champ requis', 'Veuillez saisir un nom pour la broderie.', '#f59e0b'); return; }
   if (!pendingPrintImage) { showToast('Image requise', 'Veuillez uploader une image pour la broderie.', '#f59e0b'); return; }
-  const payload = { name, category: category || 'Édition Limitée', image_url: pendingPrintImage, price, stock, colors, sizes: ['TU'] };
+  const payload = { name, category: category || 'Édition Limitée', image_url: pendingPrintImage, price, stock, colors, sizes: ['TU'], design_type: 'embroidery' };
   try {
     if (editId) {
       await sbClient.from(PRINTS_TABLE).update(payload).eq('id', parseInt(editId, 10));

@@ -223,9 +223,12 @@ footer{background:var(--dark);padding:2rem 1.5rem;text-align:center;color:#555;f
               <select id="editProduct" onchange="loadProductTierForm()">
                 <option value="tshirt">👕 T-Shirt</option>
                 <option value="cap">🧢 Casquette</option>
+                <option value="bucket">🪣 Bob / Bucket Hat</option>
                 <option value="bobble">🧣 Bonnet</option>
                 <option value="jacket">🧥 Veste en Jean</option>
                 <option value="hoodie">🫡 Hoodie</option>
+                <option value="shorts">🩳 Short</option>
+                <option value="socks">🧦 Chaussettes</option>
               </select>
             </div>
             <div>
@@ -266,9 +269,12 @@ footer{background:var(--dark);padding:2rem 1.5rem;text-align:center;color:#555;f
             <select id="imgProduct" onchange="loadImagePreview()">
               <option value="tshirt">👕 T-Shirt</option>
               <option value="cap">🧢 Casquette</option>
+              <option value="bucket">🪣 Bob / Bucket Hat</option>
               <option value="bobble">🧣 Bonnet</option>
               <option value="jacket">🧥 Veste en Jean</option>
               <option value="hoodie">🫡 Hoodie</option>
+              <option value="shorts">🩳 Short</option>
+              <option value="socks">🧦 Chaussettes</option>
             </select>
           </div>
           <div>
@@ -306,7 +312,7 @@ footer{background:var(--dark);padding:2rem 1.5rem;text-align:center;color:#555;f
 <script>
 let lestockInventory = {};
 let currentUser = null;
-const selectedTiers = {tshirt:'standard',cap:'standard',bobble:'standard',jacket:'standard',hoodie:'standard'};
+const selectedTiers = {tshirt:'standard',cap:'standard',bucket:'standard',bobble:'standard',jacket:'standard',hoodie:'standard',shorts:'standard',socks:'standard'};
 
 async function loadInventory() {
   try {
@@ -338,11 +344,14 @@ function buildDefaultInventory(){
     premium:{price:p,stock:15,description:'Coton supima 220g/m², Made in Portugal'}
   };}
   return{
-    tshirt: {name:'T-Shirt',       icon:'👕',customizer:'showcase.html',          image:null,...tiers(9000,14000,22000)},
-    cap:    {name:'Casquette',      icon:'🧢',customizer:'headwear.html?type=cap', image:null,...tiers(7500,12000,18000)},
-    bobble: {name:'Bonnet',         icon:'🧣',customizer:'headwear.html?type=bobble',image:null,...tiers(6000,10000,16000)},
-    jacket: {name:'Veste en Jean',  icon:'🧥',customizer:'jeans.html',            image:null,...tiers(25000,38000,55000)},
-    hoodie: {name:'Hoodie',         icon:'🫡',customizer:'hoodies.html',           image:null,...tiers(18000,27000,42000)},
+    tshirt:  {name:'T-Shirt',        icon:'👕', customizer:'showcase.html',               image:null,...tiers( 9000, 14000, 22000)},
+    cap:     {name:'Casquette',      icon:'🧢', customizer:'headwear.html?type=cap',       image:null,...tiers( 7500, 12000, 18000)},
+    bucket:  {name:'Bob / Bucket Hat',icon:'🪣', customizer:'headwear.html?type=bucket',   image:null,...tiers( 7500, 12000, 18000)},
+    bobble:  {name:'Bonnet',         icon:'🧣', customizer:'headwear.html?type=bobble',    image:null,...tiers( 6000, 10000, 16000)},
+    jacket:  {name:'Veste en Jean',  icon:'🧥', customizer:'jeans.html',                   image:null,...tiers(25000, 38000, 55000)},
+    hoodie:  {name:'Hoodie',         icon:'🫡', customizer:'hoodies.html',                  image:null,...tiers(18000, 27000, 42000)},
+    shorts:  {name:'Short',          icon:'🩳', customizer:'#',                            image:null,...tiers( 8000, 13000, 20000)},
+    socks:   {name:'Chaussettes',    icon:'🧦', customizer:'#',                            image:null,...tiers( 3500,  6000,  9000)},
   };
 }
 

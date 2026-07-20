@@ -552,7 +552,7 @@ footer .footer-admin {
     }
   }
 </script>
-  <script type="module" crossorigin src="/assets/three-viewer-rDwZEZ87.js"></script>
+  <script type="module" crossorigin src="/assets/three-viewer-BnJEKRSL.js"></script>
 </head>
 <body>
 
@@ -719,6 +719,7 @@ footer .footer-admin {
       <span class="price-main" id="priceMain">18,000 FCFA</span>
       <span class="price-note" id="priceNote">Édition exclusive • livraison à Abidjan</span>
     </div>
+    <div id="priceBreakdown" style="display:none; margin-top:-0.5rem; margin-bottom:1rem; font-size:0.8rem; color:#aaa;"></div>
     <div id="stockNote" style="display:none;font-size:0.8rem;color:#f59e0b;margin:-1rem 0 1rem"></div>
 
     <div class="action-buttons">
@@ -918,14 +919,33 @@ function setActiveZone(zone) {
   // Sync the 3D model view
   if (zone === 'front') {
     switchView('front');
-    printPreset = 'center'; // reset preset for 3d viewer
   } else {
     switchView('back');
-    printPreset = 'back-center';
   }
 
-  // Reload size/color UI from per-zone state
+  // Sync UI with active zone state
   const zConfig = window.zoneCustomizations[zone] || {};
+  
+  if (zConfig.scale != null) {
+    printScale = zConfig.scale;
+  } else {
+    printScale = 0.8; // default scale
+  }
+  document.getElementById('printScale').value = printScale * 100;
+  document.getElementById('printScaleValue').textContent = Math.round(printScale * 100) + '%';
+  
+  if (zConfig.preset) {
+    printPreset = zConfig.preset;
+  } else {
+    printPreset = zone === 'front' ? 'center' : 'back-center';
+  }
+  
+  document.querySelectorAll('.placement-btn').forEach(btn => {
+    const basePreset = printPreset.startsWith('back-') ? printPreset.substring(5) : printPreset;
+    btn.classList.toggle('selected', btn.dataset.preset === basePreset);
+  });
+
+  // Reload size/color UI from per-zone state
   const zPrint  = zConfig.print;
   if (zPrint) {
     const pColors = (Array.isArray(zPrint.colors) && zPrint.colors.length) ? zPrint.colors : globalSettings.global_colors;
@@ -1052,31 +1072,40 @@ function updateZoneUI() {
 
 // Override updatePrice for multi-zone
 function updatePrice() {
-  let total = SHOWCASE_PRICE; // base T-shirt price
+  let total = SHOWCASE_PRICE; // base T-shirt price (updated by selectTier)
+  let printSurcharge = 0;
   
   for (const zoneId in window.zoneCustomizations) {
     const config = window.zoneCustomizations[zoneId];
     if (config.print) {
       if (config.type === 'embroidery') {
-        total += 9000;
+        printSurcharge += 9000;
       } else {
-        // Only charge for print if price is different from 18000? 
-        // Wait, standard T-shirt includes 1 print in the 18000 FCFA. 
-        // If they have multiple zones, maybe charge extra?
-        // Let's just add the print's price, and subtract base if it's the first one?
-        // Actually, user said: jacket and hoodie share the same prints library.
-        // T-shirt price logic: 18000 base.
-        total += (config.print.price != null ? config.print.price : 10000) - 18000; 
-        if (total < SHOWCASE_PRICE) total = SHOWCASE_PRICE; // ensure at least base
+        // Fallback to 16000 if print.price is null
+        printSurcharge += (config.print.price != null ? config.print.price : 16000);
       }
     }
   }
+  
+  total += printSurcharge;
   
   const formattedPrice = fmt(total);
   document.getElementById('priceMain').textContent = formattedPrice;
   const mPrice = document.getElementById('mctaPrice');
   if (mPrice) mPrice.textContent = formattedPrice;
+  
+  // Show breakdown if there are surcharges
+  const breakdown = document.getElementById('priceBreakdown');
+  if (breakdown) {
+    if (printSurcharge > 0) {
+      breakdown.innerHTML = 'T-shirt: ' + fmt(SHOWCASE_PRICE) + ' + Personnalisation: ' + fmt(printSurcharge);
+      breakdown.style.display = 'block';
+    } else {
+      breakdown.style.display = 'none';
+    }
+  }
 }
+
 
 // ── Zone-aware render: update 2D canvas from zoneCustomizations ──
 function _syncZoneImagesAndRender() {
@@ -1693,8 +1722,8 @@ document.getElementById('placementGrid').addEventListener('click', e => {
   printPreset = (activeZoneId === 'back' && !btn.dataset.preset.startsWith('back'))
     ? 'back-' + btn.dataset.preset
     : btn.dataset.preset;
-  document.querySelectorAll('.placement-btn').forEach(b => b.classList.toggle('selected', b===btn));
-  
+  document.querySelectorAll('.placement-btn').forEach(b => b.classList.toggle('selected', b === btn));
+
   const lookupPreset = btn.dataset.preset;
   const cfg = PRESET_CONFIGS[lookupPreset] || PRESET_CONFIGS.center;
   const ds = designState[activeZoneId];
@@ -1992,7 +2021,7 @@ function toggleEmbroidery() {
 // ============================================================
 //  ORDER ACTIONS
 // ============================================================
-const SHOWCASE_PRICE = 18000;
+let SHOWCASE_PRICE = 18000;
 
 const PLACEMENT_LABELS = {
   'top-left':'Haut gauche','top-center':'Haut centre','top-right':'Haut droite',
@@ -2000,60 +2029,78 @@ const PLACEMENT_LABELS = {
   'bottom-left':'Bas gauche','bottom-center':'Bas centre','bottom-right':'Bas droite'
 };
 
-function buildOrderItem() {
-  // Multi-zone: collect all zones that have a print assigned
-  const zoneItems = Object.entries(window.zoneCustomizations || {})
-    .filter(([, cfg]) => cfg && cfg.print)
-    .map(([zoneId, cfg]) => {
-      const p = cfg.print;
-      const basePrice = p.price != null ? p.price : SHOWCASE_PRICE;
-      const totalPrice = basePrice + (cfg.type === 'embroidery' ? EMBROIDERY_SURCHARGE : 0);
-      const size  = cfg.size  || selectedSize  || 'M';
-      const color = cfg.color || selectedColor || '#ffffff';
-      const scale = cfg.scale || printScale;
-      const preset = cfg.preset || (zoneId === 'back' ? 'back-center' : 'center');
-      return {
-        key: `showcase-${p.id}-${zoneId}-${color}-${size}-${preset}-${Math.round(scale*100)}-${selectedTier}`,
-        id: `showcase-${p.id}-${zoneId}`,
-        name: `T-Shirt OVRG (${selectedTier.toUpperCase()}) — ${p.name} (${zoneId === 'back' ? 'Dos' : 'Devant'})${cfg.type === 'embroidery' ? ' (Broderie)' : ''}`,
-        price: totalPrice,
-        qty: 1,
-        size,
-        color,
-        img: p.image_url || '',
-        type: 'showcase',
-        zone: zoneId,
-        customization: {
-          placement: preset,
-          placementLabel: PLACEMENT_LABELS[preset] || preset,
-          scale: Math.round(scale * 100),
-          blend: Math.round(printBlend * 100),
-          embroidery: cfg.type === 'embroidery',
-          tier: selectedTier
-        }
-      };
-    });
+function calculateTotalPrice() {
+  let total = SHOWCASE_PRICE;
+  for (const zoneId in window.zoneCustomizations) {
+    const config = window.zoneCustomizations[zoneId];
+    if (config && config.print) {
+      if (config.type === 'embroidery') {
+        total += 9000;
+      } else {
+        total += (config.print.price != null ? config.print.price : 16000);
+      }
+    }
+  }
+  return total;
+}
 
-  // Fallback to legacy single-print flow if no zones configured
-  if (zoneItems.length === 0) {
-    if (!selectedPrint) return null;
-    const basePrice = selectedPrint.price != null ? selectedPrint.price : SHOWCASE_PRICE;
-    const totalPrice = basePrice + (embroiderySelected ? EMBROIDERY_SURCHARGE : 0);
-    return {
-      key: `showcase-${selectedPrint.id}-${selectedColor}-${selectedSize}-${printPreset}-${Math.round(printScale*100)}-${Math.round(printBlend*100)}-${selectedTier}`,
-      id: `showcase-${selectedPrint.id}`,
-      name: `T-Shirt OVRG (${selectedTier.toUpperCase()}) — ${selectedPrint.name}${embroiderySelected ? ' (Broderie)' : ''}`,
-      price: totalPrice,
-      qty: 1,
-      size: selectedSize,
-      color: selectedColor,
-      img: selectedPrint.image_url || '',
-      type: 'showcase',
-      customization: { placement: printPreset, placementLabel: PLACEMENT_LABELS[printPreset] || printPreset, scale: Math.round(printScale * 100), blend: Math.round(printBlend * 100), embroidery: embroiderySelected, tier: selectedTier }
-    };
+function buildOrderItem() {
+  // Find all active zone customizations
+  let hasCustomization = false;
+  let firstPrint = null;
+  
+  for (const zoneId in window.zoneCustomizations) {
+    const config = window.zoneCustomizations[zoneId];
+    if (config && config.print) {
+      hasCustomization = true;
+      if (!firstPrint) {
+        firstPrint = config.print;
+      }
+    }
   }
 
-  return zoneItems.length === 1 ? zoneItems[0] : zoneItems;
+  // Fallback to legacy single-print flow if no zones configured
+  if (!hasCustomization) {
+    if (!selectedPrint) return null;
+    hasCustomization = true;
+    firstPrint = selectedPrint;
+  }
+
+  const price = calculateTotalPrice();
+  const printId = firstPrint ? firstPrint.id : 'custom';
+  const printName = firstPrint ? firstPrint.name : 'Texte personnalisé';
+  const imgUrl = firstPrint ? (firstPrint.image_url || '') : '';
+
+  // Collect customized zones for description
+  let customizedZones = [];
+  for (const zoneId in window.zoneCustomizations) {
+    const config = window.zoneCustomizations[zoneId];
+    if (config && config.print) {
+      customizedZones.push(zoneId === 'back' ? 'Dos' : 'Devant');
+    }
+  }
+  const zoneLabel = customizedZones.length > 0 ? ` (${customizedZones.join(' + ')})` : '';
+
+  return {
+    key: `showcase-${printId}-${selectedColor}-${selectedSize}-${printPreset}-${selectedTier}`,
+    id: `showcase-${printId}`,
+    name: `T-Shirt OVRG (${selectedTier.toUpperCase()}) — ${printName}${zoneLabel}`,
+    price: price,
+    qty: 1,
+    size: selectedSize,
+    color: selectedColor,
+    img: imgUrl,
+    type: 'showcase',
+    customization: {
+      placement: printPreset,
+      placementLabel: PLACEMENT_LABELS[printPreset] || printPreset,
+      scale: Math.round(printScale * 100),
+      blend: Math.round(printBlend * 100),
+      embroidery: embroiderySelected,
+      tier: selectedTier,
+      zones: window.zoneCustomizations
+    }
+  };
 }
 
 function addToCartShowcase() {

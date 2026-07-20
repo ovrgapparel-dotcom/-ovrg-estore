@@ -1714,12 +1714,18 @@ function switchView(view) {
     selectedPrint = window.selectedPrints[view] || null;
     if (zc && zc.placement) {
       setPrintPlacement(zc.placement, false);
+    } else {
+      // Reset placement to default for this zone when no customisation exists
+      const defaultPlacement = 'center';
+      setPrintPlacement(defaultPlacement, false);
     }
     if (zc && zc.scale) {
       scaleMultiplier = zc.scale;
-      const slider = document.getElementById('scaleSlider');
-      if (slider) { slider.value = Math.round(scaleMultiplier * 100); updateSliderBg(slider); }
+    } else {
+      scaleMultiplier = 1.0; // default scale
     }
+    const slider = document.getElementById('scaleSlider');
+    if (slider) { slider.value = Math.round(scaleMultiplier * 100); updateSliderBg(slider); }
 
     // Update the info panel
     updateZoneUI();
@@ -3024,29 +3030,38 @@ function buildOrderItem() {
   // Use active zone's print if global selectedPrint is not set
   const activePrint = selectedPrint ||
     (window.zoneCustomizations[activeZoneId] && window.zoneCustomizations[activeZoneId].print) || null;
-  if (!activePrint) return null;
+
+  // Also allow label-only checkout
+  const labelText = (document.getElementById('customLabelInput')?.value || '').trim();
+  const hasLabel = labelText.length > 0;
+
+  if (!activePrint && !hasLabel) return null;
 
   const price = calculateTotalPrice();
   const zone = getActiveZone();
   const placementLabel = zone ? zone.label : printPlacement;
   const sizeLabel = embroiderySize === 'S' ? 'Petit' : (embroiderySize === 'L' ? 'Grand' : 'Moyen');
+  const printId = activePrint ? activePrint.id : 'label';
+  const printName = activePrint ? activePrint.name : ('Label: ' + labelText);
+  const imgUrl = activePrint ? (activePrint.image_url || '') : '';
 
   return {
-    key: `outerwear-${activePrint.id}-${selectedColor}-${selectedSize}-${printPlacement}-${embroiderySize}-${selectedTier}`,
-    id: `outerwear-${activePrint.id}`,
-    name: `${productType === 'jacket' ? 'Veste' : 'Hoodie'} OVRG (${selectedTier.toUpperCase()}) — ${activePrint.name}`,
+    key: `outerwear-${printId}-${selectedColor}-${selectedSize}-${printPlacement}-${embroiderySize}-${selectedTier}`,
+    id: `outerwear-${printId}`,
+    name: `${productType === 'jacket' ? 'Veste' : 'Hoodie'} OVRG (${selectedTier.toUpperCase()}) — ${printName}`,
     price: price,
     qty: 1,
     size: selectedSize,
     color: selectedColor,
-    img: activePrint.image_url || '',
+    img: imgUrl,
     type: 'outerwear',
     customization: {
       placement: printPlacement,
       placementLabel: placementLabel,
       scale: sizeLabel,
       blend: 100,
-      tier: selectedTier
+      tier: selectedTier,
+      label: hasLabel ? labelText : null
     }
   };
 }
@@ -3075,10 +3090,14 @@ function addToCartShowcase() {
 
 function orderViaWhatsApp() {
   const item = buildOrderItem();
-  if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
+  if (!item) { showToast('Design requis', "Sélectionnez un imprimé ou ajoutez un label personnalisé.", '#f59e0b'); return; }
   const c = item.customization;
+  // Build a safe design description that works with or without a print
+  let designLine = '';
+  if (selectedPrint) designLine += `🎨 Imprimé: ${selectedPrint.name}\n`;
+  if (c.label) designLine += `✏️ Label: ${c.label}\n`;
   const msg = `Bonjour OVRG! Je voudrais commander une ${productType === 'jacket' ? 'veste' : 'hoodie'}:\n\n`+
-              `🎨 Imprimé: ${selectedPrint.name}\n`+
+              designLine +
               `👕 Couleur: ${COLOR_NAMES[selectedColor] || selectedColor}\n`+
               `📏 Taille: ${item.size}\n`+
               `📍 Position: ${c.placementLabel}\n`+
