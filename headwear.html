@@ -1373,21 +1373,21 @@ function selectPrint(p) {
     window.applyHeadwearPrint(p.image_url || null);
   }
 
-  // Load print image into sides.img for 2D overlays
+  // Load print image into sides.[side].print.img for 2D overlays
   if (p.image_url) {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
     img.src = p.image_url;
     img.onload = () => {
-      sides.front.img = img;
-      sides.side.img = img;
-      sides.back.img = img;
+      sides.front.print.img = img;
+      sides.side.print.img  = img;
+      sides.back.print.img  = img;
       scheduleRender();
     };
   } else {
-    sides.front.img = null;
-    sides.side.img = null;
-    sides.back.img = null;
+    sides.front.print.img = null;
+    sides.side.print.img  = null;
+    sides.back.print.img  = null;
     scheduleRender();
   }
 

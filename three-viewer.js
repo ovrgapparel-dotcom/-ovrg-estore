@@ -640,9 +640,11 @@ function _doRebuildAllDecals() {
         _renderDecalForZoneAndType(zoneId, config, decalType, box, boxSize, cx, cy, cz);
       }
     } else {
-      // Legacy merged canvas — print and label on one decal
+      // Merged canvas — print and/or label on one decal
       const cv = _buildZoneCanvas(config);
       if (!cv) continue;
+      // Actually project the merged canvas as a decal
+      _renderDecalCanvas(zoneId, config, cv, undefined, undefined, undefined, box, boxSize, cx, cy, cz);
     }
   }
 }
@@ -662,6 +664,9 @@ function _renderDecalForZoneAndType(zoneId, config, decalType, box, boxSize, cx,
 function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, scaleOverride, box, boxSize, cx, cy, cz) {
   // Strip _print/_label suffix for zone identity lookups
   const zoneId = effectiveZoneId.replace(/_print$|_label$/, '');
+
+  if (posNormX === undefined) posNormX = config.posNormX;
+  if (posNormY === undefined) posNormY = config.posNormY;
 
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -697,7 +702,7 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     }
   }
 
-  let scale = scaleOverride !== undefined ? scaleOverride : (config.scale !== undefined ? config.scale : 0.42);
+  let scale;
   if (IS_OUTERWEAR) {
     const preset = config.placement || config.preset || 'center';
     let baseScale;
@@ -710,10 +715,13 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     } else {
       baseScale = 0.44;
     }
-    scale = baseScale * scale;
+    const outerScale = scaleOverride !== undefined ? scaleOverride : (config.scale !== undefined ? config.scale : 1.0);
+    scale = baseScale * outerScale;
   } else if (!IS_HEADWEAR) {
     const configScale = scaleOverride !== undefined ? scaleOverride : (config.scale !== undefined ? config.scale : 0.65);
     scale = 0.50 * configScale;
+  } else {
+    scale = scaleOverride !== undefined ? scaleOverride : (config.scale !== undefined ? config.scale : 0.42);
   }
   const planeW = boxSize.x * scale;
 
