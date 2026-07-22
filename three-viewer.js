@@ -811,25 +811,31 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     }
 
     if (isFront) {
-      // Surface of cap crown
-      px = cx + (normX - 0.5) * boxSize.x * 0.55;
-      py = box.min.y + boxSize.y * (0.82 - normY * 0.24);
-      pz = box.min.z + boxSize.z * 0.68 - Math.abs(normX - 0.5) * boxSize.z * 0.22;
-      ori.y = -(normX - 0.5) * (Math.PI / 2.2);
-      ori.x = -(normY - 0.5) * (Math.PI / 6);
+      // Anchor to the OUTER front surface of the cap crown (box.max.z)
+      // Then move inward by a tiny inset so the pos is just inside the mesh
+      const frontSurfZ = box.max.z;
+      const insetZ     = boxSize.z * 0.04;  // 4% inset = ~0.11 units
+      pz = frontSurfZ - insetZ - Math.abs(normX - 0.5) * boxSize.z * 0.18;
+      // Y: upper crown is where embroidery sits (0.72 = top of front panel)
+      py = box.min.y + boxSize.y * (0.78 - normY * 0.16);
+      // X: lateral offset for left/right panels
+      px = cx + (normX - 0.5) * boxSize.x * 0.48;
+      // Tilt the decal to follow the crown curvature
+      ori.y = -(normX - 0.5) * (Math.PI / 2.8);
+      ori.x =  (normY - 0.5) * (Math.PI / 9);
     } else if (isSide) {
       const isLeft = zoneId.includes('left');
-      px = cx + (isLeft ? -1 : 1) * boxSize.x * 0.40;
-      py = box.min.y + boxSize.y * (0.75 - normY * 0.25);
-      pz = box.min.z + boxSize.z * 0.45;
+      px = cx + (isLeft ? -1 : 1) * boxSize.x * 0.42;
+      py = box.min.y + boxSize.y * (0.70 - normY * 0.20);
+      pz = box.min.z + boxSize.z * 0.42;
       ori.y = (isLeft ? 1 : -1) * (Math.PI / 2);
     } else if (isBack) {
       px = cx - (normX - 0.5) * boxSize.x * 0.50;
-      py = box.min.y + boxSize.y * (0.75 - normY * 0.25);
-      pz = box.min.z + boxSize.z * 0.25;
+      py = box.min.y + boxSize.y * (0.70 - normY * 0.20);
+      pz = box.min.z + boxSize.z * 0.04;
       ori.y = Math.PI + (normX - 0.5) * (Math.PI / 3);
     } else if (zoneId === 'brim-front') {
-      py = box.min.y + boxSize.y * 0.22;
+      py = box.min.y + boxSize.y * 0.18;
       pz = box.min.z + boxSize.z * 0.88;
       ori.x = -Math.PI / 6;
     }
@@ -877,7 +883,7 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     } else {
       depth = boxSize.z * 0.85;
     }
-  } else if (IS_HEADWEAR) depth = boxSize.z * 0.18;
+  } else if (IS_HEADWEAR) depth = boxSize.z * 0.08;
   else depth = Math.min(boxSize.z * 0.70, 0.45);
 
   const size = new THREE.Vector3(planeW, planeW, depth);
@@ -911,24 +917,11 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
 // ─── PUBLIC API ──────────────────────────────────────────────────────────────
 
 
-window.applyHeadwearPrint = function (imageUrl) {
+window.applyHeadwearPrint = function (imageObjOrUrl) {
   const z = window.printPlacement || 'front-center';
-  // Merge into zone config (do NOT clear other zones or the label data)
   const existing = window.zoneCustomizations[z] || {};
-  if (imageUrl) {
-    // Load image then store it; rebuild decals after load
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      window.zoneCustomizations[z] = Object.assign({}, existing, { printImg: img, printUrl: imageUrl });
-      _rebuildAllDecals();
-    };
-    img.onerror = () => {
-      console.warn('applyHeadwearPrint: failed to load', imageUrl);
-    };
-    img.src = imageUrl;
-  } else {
-    // Clear print but keep label
+
+  if (!imageObjOrUrl) {
     const updated = Object.assign({}, existing);
     delete updated.printImg;
     delete updated.printUrl;
@@ -937,7 +930,35 @@ window.applyHeadwearPrint = function (imageUrl) {
     delete updated.printScale;
     window.zoneCustomizations[z] = updated;
     _rebuildAllDecals();
+    return;
   }
+
+  if (typeof imageObjOrUrl === 'object' && (imageObjOrUrl instanceof HTMLImageElement || imageObjOrUrl instanceof HTMLCanvasElement)) {
+    window.zoneCustomizations[z] = Object.assign({}, existing, { printImg: imageObjOrUrl, printUrl: imageObjOrUrl.src || '' });
+    _rebuildAllDecals();
+    return;
+  }
+
+  const imageUrl = imageObjOrUrl;
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    window.zoneCustomizations[z] = Object.assign({}, existing, { printImg: img, printUrl: imageUrl });
+    _rebuildAllDecals();
+  };
+  img.onerror = () => {
+    // Retry without crossOrigin if CORS header is missing
+    const fallbackImg = new Image();
+    fallbackImg.onload = () => {
+      window.zoneCustomizations[z] = Object.assign({}, existing, { printImg: fallbackImg, printUrl: imageUrl });
+      _rebuildAllDecals();
+    };
+    fallbackImg.onerror = () => {
+      console.warn('applyHeadwearPrint: failed to load', imageUrl);
+    };
+    fallbackImg.src = imageUrl;
+  };
+  img.src = imageUrl;
 };
 
 window.applyHeadwearLabel = function (text, color) {
