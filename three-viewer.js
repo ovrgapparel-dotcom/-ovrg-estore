@@ -594,6 +594,8 @@ function _rebuildAllDecals() {
     _doRebuildAllDecals();
   });
 }
+// Expose for calibration panel
+window._rebuildAllDecalsPublic = _rebuildAllDecals;
 
 function _doRebuildAllDecals() {
   // Clear existing decals
@@ -806,50 +808,88 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     }
 
   } else if (IS_HEADWEAR) {
-    const isFront = zoneId.startsWith('front');
-    const isBack  = zoneId.startsWith('back');
-    const isSide  = zoneId.startsWith('side') || zoneId.startsWith('sleeve');
+    // ── RAYCASTING-BASED PLACEMENT ─────────────────────────────────────────────
+    // Each zone maps to a 2D NDC screen point. The raycaster finds the exact 3D
+    // surface point and face normal on the cap mesh automatically — no bounding-box
+    // math, no manual calibration needed.
+    //
+    // NDC coordinates: x in [-1,+1] (left→right), y in [-1,+1] (bottom→top)
+    const ZONE_NDC = {
+      'front':        { x:  0.00, y:  0.10 },
+      'front-center': { x:  0.00, y:  0.10 },
+      'front-high':   { x:  0.00, y:  0.36 },
+      'front-low':    { x:  0.00, y: -0.12 },
+      'front-left':   { x: -0.24, y:  0.10 },
+      'front-right':  { x:  0.24, y:  0.10 },
+      'back-center':  { x:  0.00, y:  0.10 },
+      'back':         { x:  0.00, y:  0.10 },
+      'side-left':    { x: -0.50, y:  0.10 },
+      'side-right':   { x:  0.50, y:  0.10 },
+    };
 
-    let normX = posNormX;
-    let normY = posNormY;
+    // Allow live override via window.HEADWEAR_NDC_OVERRIDES (set by calibration panel)
+    const ndcOverrides = window.HEADWEAR_NDC_OVERRIDES || {};
+    const baseNDC = ndcOverrides[zoneId] || ZONE_NDC[zoneId] || { x: 0.00, y: 0.10 };
 
-    if (normX === undefined) {
-      if (zoneId === 'front-left') normX = 0.30;
-      else if (zoneId === 'front-right') normX = 0.70;
-      else normX = 0.50;
-    }
-    if (normY === undefined) {
-      if (zoneId === 'front-high') normY = 0.25;
-      else if (zoneId === 'front-low') normY = 0.75;
-      else normY = 0.50;
+    // For back zones, temporarily rotate camera point to back
+    const isBack = zoneId.startsWith('back');
+
+    // Apply per-element drag offset from normX/normY (user drags in 2D canvas)
+    const normX = posNormX !== undefined ? posNormX : (zoneId === 'front-left' ? 0.30 : zoneId === 'front-right' ? 0.70 : 0.50);
+    const normY = posNormY !== undefined ? posNormY : (zoneId === 'front-high' ? 0.25 : zoneId === 'front-low' ? 0.75 : 0.50);
+    const ndcX = baseNDC.x + (normX - 0.5) * 1.10;
+    const ndcY = baseNDC.y + (normY - 0.5) * -0.70;
+
+    // Select the main cap mesh (largest by bounding volume) as the raycast target
+    const mainMesh = targetDecalMeshes.reduce((prev, curr) => {
+      const prevBox = new THREE.Box3().setFromObject(prev);
+      const currBox = new THREE.Box3().setFromObject(curr);
+      const pS = prevBox.getSize(new THREE.Vector3());
+      const cS = currBox.getSize(new THREE.Vector3());
+      return (cS.x + cS.y + cS.z) > (pS.x + pS.y + pS.z) ? curr : prev;
+    }, targetDecalMeshes[0] || null);
+
+    if (mainMesh && camera) {
+      const raycaster = new THREE.Raycaster();
+
+      if (!isBack) {
+        // Front/side zones: cast from current camera position
+        raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
+      } else {
+        // Back zone: cast from opposite side (mirror X, flip Z-direction)
+        const backCamera = camera.clone();
+        backCamera.position.set(-camera.position.x, camera.position.y, -camera.position.z);
+        backCamera.lookAt(0, 0, 0);
+        backCamera.updateMatrixWorld(true);
+        raycaster.setFromCamera(new THREE.Vector2(-ndcX, ndcY), backCamera);
+      }
+
+      const hits = raycaster.intersectObject(mainMesh, false);
+      if (hits.length > 0) {
+        const hit = hits[0];
+        // Use exact surface intersection point as decal position
+        px = hit.point.x;
+        py = hit.point.y;
+        pz = hit.point.z;
+        // Derive decal orientation from face normal in world space
+        const worldNormal = hit.face.normal.clone()
+          .transformDirection(hit.object.matrixWorld)
+          .normalize();
+        const up = new THREE.Vector3(0, 1, 0);
+        const q  = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), worldNormal);
+        ori.setFromQuaternion(q);
+        // For back zones, flip 180° so decal faces outward
+        if (isBack) ori.y += Math.PI;
+      } else {
+        // Fallback: use bounding-box midpoint if no ray hit
+        px = cx; py = cy; pz = isBack ? box.min.z + boxSize.z * 0.04 : box.min.z + boxSize.z * 0.69;
+        if (isBack) ori.y = Math.PI;
+      }
+    } else {
+      // No mesh loaded yet
+      px = cx; py = cy; pz = cz;
     }
 
-    if (isFront) {
-      // Contour-tracking front crown placement with expanded X horizontal span:
-      // X range: 62% of cap width (from left panel to right panel)
-      px = cx + (normX - 0.5) * boxSize.x * 0.62;
-      // Y range: maps 2D canvas normY directly to physical cap forehead (high crown to brim)
-      py = box.min.y + boxSize.y * (1.03 - normY * 1.20);
-      // Z depth tracks cap profile curvature along Y height
-      pz = box.min.z + boxSize.z * (0.67 + (normY - 0.25) * 0.40) - Math.abs(normX - 0.5) * boxSize.z * 0.15;
-      ori.y = -(normX - 0.5) * (Math.PI / 2.3);
-      ori.x =  (normY - 0.35) * (Math.PI / 8);
-    } else if (isSide) {
-      const isLeft = zoneId.includes('left');
-      px = cx + (isLeft ? -1 : 1) * boxSize.x * 0.44;
-      py = box.min.y + boxSize.y * (0.80 - normY * 0.30);
-      pz = box.min.z + boxSize.z * 0.42;
-      ori.y = (isLeft ? 1 : -1) * (Math.PI / 2);
-    } else if (isBack) {
-      px = cx - (normX - 0.5) * boxSize.x * 0.55;
-      py = box.min.y + boxSize.y * (0.80 - normY * 0.30);
-      pz = box.min.z + boxSize.z * 0.04;
-      ori.y = Math.PI + (normX - 0.5) * (Math.PI / 3);
-    } else if (zoneId === 'brim-front') {
-      py = box.min.y + boxSize.y * 0.18;
-      pz = box.min.z + boxSize.z * 0.88;
-      ori.x = -Math.PI / 6;
-    }
   } else {
     // T-shirt
     let tx = cx;
@@ -901,17 +941,15 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
   const planeH = planeW / aspect;
   const size = new THREE.Vector3(planeW, planeH, depth);
 
-  let meshesToTarget = targetDecalMeshes;
-  if (IS_HEADWEAR && targetDecalMeshes.length > 0) {
-    const mainMesh = targetDecalMeshes.reduce((prev, curr) => {
-      const prevBox = new THREE.Box3().setFromObject(prev);
-      const currBox = new THREE.Box3().setFromObject(curr);
-      const prevSize = prevBox.getSize(new THREE.Vector3());
-      const currSize = currBox.getSize(new THREE.Vector3());
-      return (currSize.x + currSize.y + currSize.z) > (prevSize.x + prevSize.y + prevSize.z) ? curr : prev;
-    }, targetDecalMeshes[0]);
-    if (mainMesh) meshesToTarget = [mainMesh];
-  }
+  // For headwear the raycasting block above already picked mainMesh;
+  // for other garments use full targetDecalMeshes list.
+  const meshesToTarget = IS_HEADWEAR
+    ? (targetDecalMeshes.length > 0 ? [targetDecalMeshes.reduce((prev, curr) => {
+        const pS = new THREE.Box3().setFromObject(prev).getSize(new THREE.Vector3());
+        const cS = new THREE.Box3().setFromObject(curr).getSize(new THREE.Vector3());
+        return (cS.x + cS.y + cS.z) > (pS.x + pS.y + pS.z) ? curr : prev;
+      }, targetDecalMeshes[0])] : [])
+    : targetDecalMeshes;
 
   meshesToTarget.forEach(mesh => {
     try {

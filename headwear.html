@@ -3296,5 +3296,131 @@ function pgHandleLeave() {
 </div>
 
 </body>
+
+<!-- ── DECAL CALIBRATION PANEL ─────────────────────────────────────────────────
+     Toggle with Shift+D. Adjusts NDC offsets for each zone in real-time without
+     any build cycle. Press "Export Constants" to copy final values to console.
+───────────────────────────────────────────────────────────────────────────── -->
+<div id="decalCalibPanel" style="
+  display:none;position:fixed;bottom:12px;left:12px;width:340px;
+  background:rgba(10,10,10,0.92);border:1px solid #ff6b35;border-radius:10px;
+  padding:14px 16px;font-family:monospace;font-size:11px;color:#fff;
+  z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,0.7);user-select:none;
+">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <strong style="color:#ff6b35;font-size:12px;">🎯 NDC Calibration Panel</strong>
+    <button onclick="document.getElementById('decalCalibPanel').style.display='none'"
+      style="background:none;border:none;color:#aaa;cursor:pointer;font-size:16px;">✕</button>
+  </div>
+  <div style="color:#aaa;margin-bottom:8px;font-size:10px;">Shift+D to toggle · Drag sliders → decal updates live</div>
+  <div id="calibSliders"></div>
+  <div style="margin-top:10px;display:flex;gap:8px;">
+    <button id="calibExportBtn" style="
+      background:#ff6b35;border:none;color:#fff;padding:5px 10px;border-radius:5px;
+      cursor:pointer;font-size:10px;font-weight:700;flex:1;">
+      Export Constants →console
+    </button>
+    <button id="calibResetBtn" style="
+      background:#333;border:1px solid #555;color:#fff;padding:5px 10px;border-radius:5px;
+      cursor:pointer;font-size:10px;">
+      Reset
+    </button>
+  </div>
+</div>
+
+<script>
+(function() {
+  const ZONES = [
+    { id:'front-center', label:'Devant Milieu' },
+    { id:'front-high',   label:'Devant Haut'   },
+    { id:'front-low',    label:'Devant Bas'     },
+    { id:'front-left',   label:'Devant Gauche'  },
+    { id:'front-right',  label:'Devant Droite'  },
+    { id:'back-center',  label:'Dos Centre'     },
+  ];
+  const DEFAULTS = {
+    'front-center': { x: 0.00, y: 0.10 },
+    'front-high':   { x: 0.00, y: 0.36 },
+    'front-low':    { x: 0.00, y:-0.12 },
+    'front-left':   { x:-0.24, y: 0.10 },
+    'front-right':  { x: 0.24, y: 0.10 },
+    'back-center':  { x: 0.00, y: 0.10 },
+  };
+  window.HEADWEAR_NDC_OVERRIDES = {};
+
+  function buildPanel() {
+    const container = document.getElementById('calibSliders');
+    if (!container) return;
+    container.innerHTML = '';
+    ZONES.forEach(z => {
+      const def = DEFAULTS[z.id] || { x: 0, y: 0 };
+      const row = document.createElement('div');
+      row.style.cssText = 'margin-bottom:8px;border-bottom:1px solid #222;padding-bottom:6px;';
+      row.innerHTML = `
+        <div style="color:#ff6b35;margin-bottom:3px;font-size:10px;">${z.label} (${z.id})</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+          <span style="color:#aaa;width:18px;">X</span>
+          <input type="range" id="calib_${z.id}_x" min="-0.80" max="0.80" step="0.01"
+            value="${def.x}" style="flex:1;accent-color:#ff6b35;">
+          <span id="calib_${z.id}_x_val" style="width:38px;text-align:right;">${def.x.toFixed(2)}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="color:#aaa;width:18px;">Y</span>
+          <input type="range" id="calib_${z.id}_y" min="-0.60" max="0.80" step="0.01"
+            value="${def.y}" style="flex:1;accent-color:#ff6b35;">
+          <span id="calib_${z.id}_y_val" style="width:38px;text-align:right;">${def.y.toFixed(2)}</span>
+        </div>
+      `;
+      container.appendChild(row);
+      ['x','y'].forEach(axis => {
+        const slider = row.querySelector(`#calib_${z.id}_${axis}`);
+        const valSpan = row.querySelector(`#calib_${z.id}_${axis}_val`);
+        slider.addEventListener('input', () => {
+          const v = parseFloat(slider.value);
+          valSpan.textContent = v.toFixed(2);
+          if (!window.HEADWEAR_NDC_OVERRIDES[z.id]) window.HEADWEAR_NDC_OVERRIDES[z.id] = { ...def };
+          window.HEADWEAR_NDC_OVERRIDES[z.id][axis] = v;
+          // Trigger rebuild if print is already applied
+          if (window._rebuildAllDecalsPublic) window._rebuildAllDecalsPublic();
+        });
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', buildPanel);
+
+  // Shift+D toggle
+  document.addEventListener('keydown', (e) => {
+    if (e.shiftKey && e.key === 'D') {
+      const panel = document.getElementById('decalCalibPanel');
+      if (panel) panel.style.display = panel.style.display === 'none' ? '' : 'none';
+    }
+  });
+
+  // Export button
+  document.addEventListener('DOMContentLoaded', () => {
+    const exportBtn = document.getElementById('calibExportBtn');
+    if (exportBtn) exportBtn.addEventListener('click', () => {
+      const out = {};
+      ZONES.forEach(z => {
+        const def = DEFAULTS[z.id] || { x: 0, y: 0 };
+        const x = parseFloat(document.getElementById(`calib_${z.id}_x`)?.value ?? def.x);
+        const y = parseFloat(document.getElementById(`calib_${z.id}_y`)?.value ?? def.y);
+        out[z.id] = { x, y };
+      });
+      console.log('%cHEADWEAR NDC CONSTANTS — paste into ZONE_NDC in three-viewer.js:', 'color:#ff6b35;font-weight:bold');
+      console.log(JSON.stringify(out, null, 2));
+      alert('NDC constants printed to browser console (F12 → Console)');
+    });
+    const resetBtn = document.getElementById('calibResetBtn');
+    if (resetBtn) resetBtn.addEventListener('click', () => {
+      window.HEADWEAR_NDC_OVERRIDES = {};
+      buildPanel();
+      if (window._rebuildAllDecalsPublic) window._rebuildAllDecalsPublic();
+    });
+  });
+})();
+</script>
+
 </html>
 
