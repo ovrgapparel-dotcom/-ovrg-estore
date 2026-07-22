@@ -686,7 +686,7 @@ footer .footer-admin {
     }
   }
 </script>
-  <script type="module" crossorigin src="/assets/three-viewer-BhJCAUEq.js"></script>
+  <script type="module" crossorigin src="/assets/three-viewer-DT6GWwMv.js"></script>
 </head>
 <body>
 
@@ -1686,6 +1686,51 @@ function setZone(zoneId) {
   document.querySelectorAll('#zoneGrid .size-btn').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.zone === zoneId);
   });
+  scheduleRender();
+  _sync3DOverlay();
+}
+
+function setPrintPlacement(preset) {
+  document.querySelectorAll('#placementGrid .placement-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.preset === preset);
+  });
+
+  const zone = getActiveZone();
+  if (!zone) return;
+  const side = currentView === '3d' ? 'front' : currentView;
+  const mult = scaleMultiplier;
+  const zWpx = zone.w * mult;
+  const zHpx = zone.h * mult;
+
+  let xPct = (zone.cx - zWpx / 2) / 600 * 100;
+  let yPct = (zone.cy - zHpx / 2) / 600 * 100;
+
+  if (preset.includes('left')) {
+    xPct = (zone.cx - zWpx) / 600 * 100;
+  } else if (preset.includes('right')) {
+    xPct = zone.cx / 600 * 100;
+  }
+
+  if (preset.includes('top')) {
+    yPct = (zone.cy - zHpx) / 600 * 100;
+  } else if (preset.includes('bottom')) {
+    yPct = zone.cy / 600 * 100;
+  }
+
+  xPct = Math.max(0, Math.min(100 - (zWpx / 600 * 100), xPct));
+  yPct = Math.max(0, Math.min(100 - (zHpx / 600 * 100), yPct));
+
+  if (decorMode === 'embroidery' || decorMode === 'both') {
+    designState[side].print.xPct = xPct;
+    designState[side].print.yPct = yPct;
+    sync2DTo3D(side, 'print');
+  }
+  if (decorMode === 'label' || decorMode === 'both') {
+    designState[side].label.xPct = xPct;
+    designState[side].label.yPct = yPct;
+    sync2DTo3D(side, 'label');
+  }
+
   scheduleRender();
   _sync3DOverlay();
 }

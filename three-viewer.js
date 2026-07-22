@@ -627,24 +627,12 @@ function _doRebuildAllDecals() {
     
     if (!hasPrint && !hasLabel) continue;
 
-    // Determine whether to split into independent decals or merge into one
-    const needsSplit = hasPrint && hasLabel &&
-      (config.printPosNormX !== undefined || config.labelPosNormX !== undefined ||
-       config.printPosNormY !== undefined || config.labelPosNormY !== undefined ||
-       config.printScale !== undefined    || config.labelScale !== undefined);
+    const types = [];
+    if (hasPrint) types.push('print');
+    if (hasLabel) types.push('label');
 
-    if (needsSplit) {
-      // Project print and label as two independent decals with separate positioning
-      const types = hasPrint && hasLabel ? ['print', 'label'] : hasPrint ? ['print'] : ['label'];
-      for (const decalType of types) {
-        _renderDecalForZoneAndType(zoneId, config, decalType, box, boxSize, cx, cy, cz);
-      }
-    } else {
-      // Merged canvas — print and/or label on one decal
-      const cv = _buildZoneCanvas(config);
-      if (!cv) continue;
-      // Actually project the merged canvas as a decal
-      _renderDecalCanvas(zoneId, config, cv, undefined, undefined, undefined, box, boxSize, cx, cy, cz);
+    for (const decalType of types) {
+      _renderDecalForZoneAndType(zoneId, config, decalType, box, boxSize, cx, cy, cz);
     }
   }
 }
@@ -654,9 +642,9 @@ function _renderDecalForZoneAndType(zoneId, config, decalType, box, boxSize, cx,
   const cv = _buildZoneCanvasForType(config, decalType);
   if (!cv) return;
   // Choose position overrides based on type
-  const posNormX = decalType === 'print' ? config.printPosNormX : config.labelPosNormX;
-  const posNormY = decalType === 'print' ? config.printPosNormY : config.labelPosNormY;
-  const scale    = decalType === 'print' ? config.printScale    : config.labelScale;
+  const posNormX = decalType === 'print' ? (config.printPosNormX !== undefined ? config.printPosNormX : config.posNormX) : (config.labelPosNormX !== undefined ? config.labelPosNormX : config.posNormX);
+  const posNormY = decalType === 'print' ? (config.printPosNormY !== undefined ? config.printPosNormY : config.posNormY) : (config.labelPosNormY !== undefined ? config.labelPosNormY : config.posNormY);
+  const scale    = decalType === 'print' ? (config.printScale !== undefined ? config.printScale : config.scale) : (config.labelScale !== undefined ? config.labelScale : config.scale);
   _renderDecalCanvas(zoneId + '_' + decalType, config, cv, posNormX, posNormY, scale, box, boxSize, cx, cy, cz);
 }
 
@@ -804,54 +792,46 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     }
 
   } else if (IS_HEADWEAR) {
-    const hwInset = boxSize.z * 0.30;
     const isFront = zoneId.startsWith('front');
     const isBack  = zoneId.startsWith('back');
     const isSide  = zoneId.startsWith('side') || zoneId.startsWith('sleeve');
 
+    let normX = posNormX;
+    let normY = posNormY;
+
+    if (normX === undefined) {
+      if (zoneId === 'front-left') normX = 0.30;
+      else if (zoneId === 'front-right') normX = 0.70;
+      else normX = 0.50;
+    }
+    if (normY === undefined) {
+      if (zoneId === 'front-high') normY = 0.25;
+      else if (zoneId === 'front-low') normY = 0.75;
+      else normY = 0.50;
+    }
+
     if (isFront) {
-      pz = cz - hwInset;
-      py = box.min.y + boxSize.y * 0.62;
-      if (posNormX !== undefined) {
-        px = cx + boxSize.x * (posNormX - 0.5) * 0.40;
-        ori.y = -(posNormX - 0.5) * (Math.PI / 3.5);
-        pz = cz - hwInset - Math.abs(posNormX - 0.5) * boxSize.z * 0.15;
-      } else {
-        if (zoneId === 'front-high') { py = box.min.y + boxSize.y * 0.75; ori.x = -Math.PI / 18; }
-        else if (zoneId === 'front-low') { py = box.min.y + boxSize.y * 0.50; ori.x = Math.PI / 24; }
-        else if (zoneId === 'front-left') { px = cx - boxSize.x * 0.16; ori.y = Math.PI / 6; }
-        else if (zoneId === 'front-right') { px = cx + boxSize.x * 0.16; ori.y = -Math.PI / 6; }
-      }
-      if (posNormY !== undefined) {
-        py = box.min.y + boxSize.y * (0.45 + (1 - posNormY) * 0.30);
-        ori.x = -(posNormY - 0.5) * (Math.PI / 8);
-      }
+      // Surface of cap crown
+      px = cx + (normX - 0.5) * boxSize.x * 0.55;
+      py = box.min.y + boxSize.y * (0.82 - normY * 0.24);
+      pz = box.min.z + boxSize.z * 0.68 - Math.abs(normX - 0.5) * boxSize.z * 0.22;
+      ori.y = -(normX - 0.5) * (Math.PI / 2.2);
+      ori.x = -(normY - 0.5) * (Math.PI / 6);
     } else if (isSide) {
-      px = cx - boxSize.x * 0.40;
-      py = box.min.y + boxSize.y * 0.52;
-      pz = cz - boxSize.z * 0.50;
-      ori.y = Math.PI / 2;
-      if (posNormX !== undefined) {
-        pz = cz - boxSize.z * posNormX;
-        ori.y = Math.PI / 4 + posNormX * (Math.PI / 2);
-        px = cx - boxSize.x * 0.44 * Math.sin(ori.y);
-      }
-      if (posNormY !== undefined) py = box.min.y + boxSize.y * (0.35 + (1 - posNormY) * 0.35);
+      const isLeft = zoneId.includes('left');
+      px = cx + (isLeft ? -1 : 1) * boxSize.x * 0.40;
+      py = box.min.y + boxSize.y * (0.75 - normY * 0.25);
+      pz = box.min.z + boxSize.z * 0.45;
+      ori.y = (isLeft ? 1 : -1) * (Math.PI / 2);
     } else if (isBack) {
-      pz = box.min.z + boxSize.z * 0.30;
-      py = box.min.y + boxSize.y * 0.52;
-      ori.y = Math.PI;
-      if (posNormX !== undefined) {
-        px = cx - boxSize.x * (posNormX - 0.5) * 0.40;
-        ori.y = Math.PI + (posNormX - 0.5) * (Math.PI / 3.5);
-        pz = box.min.z + boxSize.z * 0.30 + Math.abs(posNormX - 0.5) * boxSize.z * 0.15;
-      }
-      if (posNormY !== undefined) {
-        py = box.min.y + boxSize.y * (0.35 + (1 - posNormY) * 0.35);
-        ori.x = (posNormY - 0.5) * (Math.PI / 8);
-      }
+      px = cx - (normX - 0.5) * boxSize.x * 0.50;
+      py = box.min.y + boxSize.y * (0.75 - normY * 0.25);
+      pz = box.min.z + boxSize.z * 0.25;
+      ori.y = Math.PI + (normX - 0.5) * (Math.PI / 3);
     } else if (zoneId === 'brim-front') {
-      py = box.min.y + boxSize.y * 0.18; pz = cz - boxSize.z * 0.10; ori.x = -Math.PI / 6;
+      py = box.min.y + boxSize.y * 0.22;
+      pz = box.min.z + boxSize.z * 0.88;
+      ori.x = -Math.PI / 6;
     }
   } else {
     // T-shirt
