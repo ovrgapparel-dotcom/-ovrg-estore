@@ -815,21 +815,21 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     //
     // NDC coordinates: x in [-1,+1] (left→right), y in [-1,+1] (bottom→top)
     const ZONE_NDC = {
-      'front':        { x:  0.00, y: -0.05 },
-      'front-center': { x:  0.00, y: -0.05 },
-      'front-high':   { x:  0.00, y:  0.08 },
-      'front-low':    { x:  0.00, y: -0.18 },
-      'front-left':   { x: -0.20, y: -0.05 },
-      'front-right':  { x:  0.20, y: -0.05 },
-      'back-center':  { x:  0.00, y: -0.05 },
-      'back':         { x:  0.00, y: -0.05 },
-      'side-left':    { x:  0.00, y: -0.05 },
-      'side-right':   { x:  0.00, y: -0.05 },
+      'front':        { x:  0.00, y: -0.15 },
+      'front-center': { x:  0.00, y: -0.15 },
+      'front-high':   { x:  0.00, y: -0.04 },
+      'front-low':    { x:  0.00, y: -0.26 },
+      'front-left':   { x: -0.18, y: -0.15 },
+      'front-right':  { x:  0.18, y: -0.15 },
+      'back-center':  { x:  0.00, y: -0.15 },
+      'back':         { x:  0.00, y: -0.15 },
+      'side-left':    { x:  0.00, y: -0.15 },
+      'side-right':   { x:  0.00, y: -0.15 },
     };
 
     // Allow live override via window.HEADWEAR_NDC_OVERRIDES (set by calibration panel)
     const ndcOverrides = window.HEADWEAR_NDC_OVERRIDES || {};
-    const baseNDC = ndcOverrides[zoneId] || ZONE_NDC[zoneId] || { x: 0.00, y: -0.05 };
+    const baseNDC = ndcOverrides[zoneId] || ZONE_NDC[zoneId] || { x: 0.00, y: -0.15 };
 
     // For back zones, temporarily rotate camera point to back
     const isBack = zoneId.startsWith('back');
