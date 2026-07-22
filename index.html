@@ -3198,9 +3198,11 @@
       e.preventDefault();
       var f = e.target;
       var name = f.first_name.value + ' ' + f.last_name.value;
+      var email = f.email ? f.email.value : '';
+      var phone = f.phone ? f.phone.value : '';
       var total = cart.reduce(function (s, c) { return s + c.price * c.qty; }, 0);
-      document.getElementById('orderSubject').value = 'Commande OVRG \u2014 ' + name;
-      document.getElementById('orderAutoResponse').value = 'Bonjour ' + name + '! Commande re\u00e7ue. Total: ' + fmt(total) + '. Nous vous contacterons sous 24h. Merci!';
+      document.getElementById('orderSubject').value = 'Commande OVRG — ' + name;
+      document.getElementById('orderAutoResponse').value = 'Bonjour ' + name + '! Commande reçue. Total: ' + fmt(total) + '. Nous vous contacterons sous 24h. Merci!';
       var data = new FormData(f);
       fetch('https://formsubmit.co/ajax/orvg.apparel@gmail.com', { method: 'POST', headers: { 'Accept': 'application/json' }, body: data }).catch(function () { });
 
@@ -3208,8 +3210,8 @@
       if (sbClient) {
         var orderPayload = {
           customer_name: name,
-          customer_email: f.email ? f.email.value : '',
-          customer_phone: f.phone ? f.phone.value : '',
+          customer_email: email,
+          customer_phone: phone,
           total_amount: total,
           payment_method: selectedPayment,
           items: JSON.parse(JSON.stringify(cart)),
@@ -3221,11 +3223,36 @@
         }).catch(function(err) { console.warn('Order save exception:', err); });
       }
 
+      // Generate branded invoice PDF for the order items
+      if (window.OVRGInvoice && cart.length > 0) {
+        cart.forEach(function(item) {
+          var orderData = Object.assign({}, item, {
+            customerName: name,
+            customerEmail: email,
+            customerPhone: phone,
+            price: item.price * item.qty
+          });
+          var pdfResult = window.OVRGInvoice.generateInvoicePDF(orderData, item.img || null);
+          if (pdfResult) {
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(pdfResult.blob);
+            a.download = pdfResult.ref + '.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function() { URL.revokeObjectURL(a.href); }, 8000);
+
+            var pdfBase64 = pdfResult.dataUrl.split(',')[1] || '';
+            window.OVRGInvoice.sendInvoiceEmail(orderData, pdfBase64);
+          }
+        });
+      }
+
       if (selectedPayment === 'paypal') redirectPayPal(total);
       else if (selectedPayment === 'wave') { window.open('https://pay.wave.com/m/M_ci_1F_--SCMirUC/c/ci/', '_blank'); finishOrder(name); }
       else if (selectedPayment === 'yango') { window.open('https://buy.yango.com/store/caede4e7-d634-4b4f-8a0f-f54e255ed1f7', '_blank'); finishOrder(name); }
       else if (selectedPayment === 'whatsapp') {
-        var items = cart.map(function (c) { return '\u2022 ' + c.name + (c.size ? ' (' + c.size + ')' : '') + ' \u00d7' + c.qty + ': ' + fmt(c.price * c.qty); }).join('\n');
+        var items = cart.map(function (c) { return '• ' + c.name + (c.size ? ' (' + c.size + ')' : '') + ' ×' + c.qty + ': ' + fmt(c.price * c.qty); }).join('\n');
         window.open('https://wa.me/2250799108108?text=' + encodeURIComponent('Bonjour OVRG! Commande:\n\nClient: ' + name + '\n\n' + items + '\n\nTotal: ' + fmt(total)), '_blank');
         finishOrder(name);
       }
@@ -3560,7 +3587,10 @@
         <span class="mn-label">Menu</span>
       </button>
     </div>
-  </nav>
+  <!-- Invoice System -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="/invoice.js"></script>
 
 </body>
 

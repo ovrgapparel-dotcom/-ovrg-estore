@@ -8,6 +8,9 @@
 <meta name="theme-color" content="#FF6B35">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<!-- Invoice dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 
 <!-- ╔══════════════════════════════════════════════════════════════╗
@@ -2161,16 +2164,38 @@ function orderViaWhatsApp() {
               `Merci de me contacter pour la livraison!`;
 
   window.open(`https://wa.me/2250799108108?text=${encodeURIComponent(msg)}`, '_blank');
+
+  // Also generate invoice
+  const captureEl = document.getElementById('front-view') || null;
+  if (window.OVRGInvoice) {
+    window.OVRGInvoice.showInvoiceModal(
+      Object.assign({}, item),
+      captureEl,
+      typeof sbClient !== 'undefined' ? sbClient : null
+    );
+  }
 }
 
 function goToCheckout() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé dans la bibliothèque.", '#f59e0b'); return; }
   addToCartShowcase();
+  // Show invoice modal before navigating — capture the currently visible shirt view
+  const captureEl = document.getElementById('front-view') || document.getElementById('back-view') || null;
+  if (window.OVRGInvoice) {
+    window.OVRGInvoice.showInvoiceModal(
+      Object.assign({}, item),
+      captureEl,
+      typeof sbClient !== 'undefined' ? sbClient : null,
+      function() {
+        // Navigate to cart after invoice is generated (or immediately if user skips)
+      }
+    );
+  }
   // Small delay so localStorage write completes before navigation
   setTimeout(() => {
     window.location.href = 'index.html?cart=1';
-  }, 150);
+  }, 800);
 }
 
 // ============================================================
@@ -2915,6 +2940,8 @@ window.switchProduct = typeof switchProduct !== "undefined" ? switchProduct : un
     <button class="mobile-cta-btn" onclick="addToCartShowcase()">🛒 Panier</button>
   </div>
 </div>
+
+<script src="/invoice.js"></script>
 
 </body>
 </html>
