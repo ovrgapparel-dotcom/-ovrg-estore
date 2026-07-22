@@ -641,9 +641,16 @@ function _renderDecalForZoneAndType(zoneId, config, decalType, box, boxSize, cx,
   const cv = _buildZoneCanvasForType(config, decalType);
   if (!cv) return;
   // Choose position overrides based on type
-  const posNormX = decalType === 'print' ? (config.printPosNormX !== undefined ? config.printPosNormX : config.posNormX) : (config.labelPosNormX !== undefined ? config.labelPosNormX : config.posNormX);
-  const posNormY = decalType === 'print' ? (config.printPosNormY !== undefined ? config.printPosNormY : config.posNormY) : (config.labelPosNormY !== undefined ? config.labelPosNormY : config.posNormY);
+  let posNormX = decalType === 'print' ? (config.printPosNormX !== undefined ? config.printPosNormX : config.posNormX) : (config.labelPosNormX !== undefined ? config.labelPosNormX : config.posNormX);
+  let posNormY = decalType === 'print' ? (config.printPosNormY !== undefined ? config.printPosNormY : config.posNormY) : (config.labelPosNormY !== undefined ? config.labelPosNormY : config.posNormY);
   const scale    = decalType === 'print' ? (config.printScale !== undefined ? config.printScale : config.scale) : (config.labelScale !== undefined ? config.labelScale : config.scale);
+  
+  // When both print and label are present on the same zone, default label Y below print if unassigned
+  if (decalType === 'label' && config.printImg && config.labelPosNormY === undefined) {
+    const baseP = config.printPosNormY !== undefined ? config.printPosNormY : 0.35;
+    posNormY = baseP + 0.35;
+  }
+
   _renderDecalCanvas(zoneId + '_' + decalType, config, cv, posNormX, posNormY, scale, box, boxSize, cx, cy, cz);
 }
 
@@ -810,20 +817,23 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     }
 
     if (isFront) {
-      px = cx + (normX - 0.5) * boxSize.x * 0.45;
-      py = box.min.y + boxSize.y * (0.69 - normY * 0.14);
-      pz = box.min.z + boxSize.z * 0.69 - Math.abs(normX - 0.5) * boxSize.z * 0.15;
-      ori.y = -(normX - 0.5) * (Math.PI / 2.5);
-      ori.x =  (normY - 0.5) * (Math.PI / 10);
+      // Expanded front crown movement zone:
+      // X range: 58% of cap width (from left panel to right panel)
+      px = cx + (normX - 0.5) * boxSize.x * 0.58;
+      // Y range: 32% of cap height (from high crown down to visor)
+      py = box.min.y + boxSize.y * (0.84 - normY * 0.32);
+      pz = box.min.z + boxSize.z * 0.69 - Math.abs(normX - 0.5) * boxSize.z * 0.18;
+      ori.y = -(normX - 0.5) * (Math.PI / 2.3);
+      ori.x =  (normY - 0.5) * (Math.PI / 8);
     } else if (isSide) {
       const isLeft = zoneId.includes('left');
-      px = cx + (isLeft ? -1 : 1) * boxSize.x * 0.42;
-      py = box.min.y + boxSize.y * (0.70 - normY * 0.20);
+      px = cx + (isLeft ? -1 : 1) * boxSize.x * 0.44;
+      py = box.min.y + boxSize.y * (0.80 - normY * 0.30);
       pz = box.min.z + boxSize.z * 0.42;
       ori.y = (isLeft ? 1 : -1) * (Math.PI / 2);
     } else if (isBack) {
-      px = cx - (normX - 0.5) * boxSize.x * 0.50;
-      py = box.min.y + boxSize.y * (0.70 - normY * 0.20);
+      px = cx - (normX - 0.5) * boxSize.x * 0.55;
+      py = box.min.y + boxSize.y * (0.80 - normY * 0.30);
       pz = box.min.z + boxSize.z * 0.04;
       ori.y = Math.PI + (normX - 0.5) * (Math.PI / 3);
     } else if (zoneId === 'brim-front') {
