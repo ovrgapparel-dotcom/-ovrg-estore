@@ -1659,9 +1659,22 @@ function resetDesignStateToZone(side, zone) {
 }
 
 function setZone(zoneId) {
+  const oldZone = printPlacement;
   activeZoneId  = zoneId;
   printPlacement = zoneId;
   window.printPlacement = zoneId;
+
+  // Migrate customization data from old zone key to new zone key and clean up old keys
+  window.zoneCustomizations = window.zoneCustomizations || {};
+  if (oldZone && oldZone !== zoneId && window.zoneCustomizations[oldZone]) {
+    window.zoneCustomizations[zoneId] = window.zoneCustomizations[oldZone];
+    delete window.zoneCustomizations[oldZone];
+  }
+
+  // Remove any other inactive zone keys to prevent multi-zone decal stacking
+  for (const k of Object.keys(window.zoneCustomizations)) {
+    if (k !== zoneId) delete window.zoneCustomizations[k];
+  }
 
   // Determine side from zoneId prefix
   let side = 'front';
@@ -1672,7 +1685,6 @@ function setZone(zoneId) {
   resetDesignStateToZone(side, zone);
 
   // Clear 3D normalized coordinates in config so it falls back to defaults for the new preset
-  window.zoneCustomizations = window.zoneCustomizations || {};
   const config = window.zoneCustomizations[zoneId] || {};
   delete config.printPosNormX;
   delete config.printPosNormY;

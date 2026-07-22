@@ -909,8 +909,18 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
 // ─── PUBLIC API ──────────────────────────────────────────────────────────────
 
 
+function _cleanupInactiveZones(activeZone) {
+  if (!IS_HEADWEAR || !window.zoneCustomizations) return;
+  for (const k of Object.keys(window.zoneCustomizations)) {
+    if (k !== activeZone) {
+      delete window.zoneCustomizations[k];
+    }
+  }
+}
+
 window.applyHeadwearPrint = function (imageObjOrUrl) {
   const z = window.printPlacement || 'front-center';
+  _cleanupInactiveZones(z);
   const existing = window.zoneCustomizations[z] || {};
 
   if (!imageObjOrUrl) {
@@ -955,6 +965,7 @@ window.applyHeadwearPrint = function (imageObjOrUrl) {
 
 window.applyHeadwearLabel = function (text, color) {
   const z = window.printPlacement || 'front-center';
+  _cleanupInactiveZones(z);
   // Merge into zone config (do NOT clear the print data)
   const existing = window.zoneCustomizations[z] || {};
   window.zoneCustomizations[z] = Object.assign({}, existing, {
@@ -968,6 +979,7 @@ window.setHeadwearDecalScale = function (sliderPct) {
   // sliderPct: 40 = smallest, 100 = default, 160 = largest
   const scale = 0.15 + ((sliderPct - 40) / 120) * 0.50;
   const z = window.printPlacement || 'front-center';
+  _cleanupInactiveZones(z);
   const existing = window.zoneCustomizations[z] || {};
   window.zoneCustomizations[z] = Object.assign({}, existing, { scale });
   _rebuildAllDecals();
