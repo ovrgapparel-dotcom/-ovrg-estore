@@ -852,19 +852,34 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     if (mainMesh && camera) {
       const raycaster = new THREE.Raycaster();
 
-      if (!isBack) {
-        // Front/side zones: cast from current camera position
-        raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
-      } else {
-        // Back zone: cast from opposite side (mirror X, flip Z-direction)
-        const backCamera = camera.clone();
-        backCamera.position.set(-camera.position.x, camera.position.y, -camera.position.z);
-        backCamera.lookAt(0, 0, 0);
-        backCamera.updateMatrixWorld(true);
-        raycaster.setFromCamera(new THREE.Vector2(-ndcX, ndcY), backCamera);
-      }
+      // ── CANONICAL CAMERAS ──────────────────────────────────────────────────────
+      // We always cast from a fixed direction so placement doesn't depend on
+      // where the user has orbited to. The canonical cameras sit at a fixed
+      // position looking at the origin, matching the initial load orientation.
+      const isSide = zoneId.startsWith('side');
 
-      const hits = raycaster.intersectObject(mainMesh, false);
+      // Build a synthetic PerspectiveCamera that looks from the correct direction
+      const synCam = new THREE.PerspectiveCamera(45, camera.aspect, 0.01, 100);
+      if (isBack) {
+        // Cast from behind the cap → finds the back face
+        synCam.position.set(0, 0.1, -3.5);
+      } else if (isSide && zoneId.includes('left')) {
+        // Cap left panel (from viewer's right)
+        synCam.position.set(3.5, 0.1, 0);
+      } else if (isSide && zoneId.includes('right')) {
+        synCam.position.set(-3.5, 0.1, 0);
+      } else {
+        // All front zones: cast straight from front
+        synCam.position.set(0, 0.1, 3.5);
+      }
+      synCam.lookAt(0, 0, 0);
+      synCam.updateMatrixWorld(true);
+      synCam.updateProjectionMatrix();
+
+      raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), synCam);
+
+      // Use recursive:true to catch any nested geometry groups
+      const hits = raycaster.intersectObject(mainMesh, true);
       if (hits.length > 0) {
         const hit = hits[0];
         // Use exact surface intersection point as decal position
