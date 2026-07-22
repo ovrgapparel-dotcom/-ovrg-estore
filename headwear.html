@@ -1686,12 +1686,16 @@ function setZone(zoneId) {
 
   // Clear 3D normalized coordinates in config so it falls back to defaults for the new preset
   const config = window.zoneCustomizations[zoneId] || {};
+  delete config.printOffsetNormX;
+  delete config.printOffsetNormY;
+  delete config.printScale;
+  delete config.labelOffsetNormX;
+  delete config.labelOffsetNormY;
+  delete config.labelScale;
   delete config.printPosNormX;
   delete config.printPosNormY;
-  delete config.printScale;
   delete config.labelPosNormX;
   delete config.labelPosNormY;
-  delete config.labelScale;
 
   // Highlight selected button
   document.querySelectorAll('#zoneGrid .size-btn').forEach(btn => {
@@ -2327,20 +2331,36 @@ function sync2DTo3D(side, type) {
     window.zoneCustomizations[z] = {};
   }
   const config = window.zoneCustomizations[z];
+  const zone = getActiveZone();
+  if (!zone) return;
   
   const cx = ds.xPct + ds.wPct / 2;
   const cy = ds.yPct + ds.hPct / 2;
 
+  const zoneCxPct = (zone.cx / 600) * 100;
+  let defaultCyPct = (zone.cy / 600) * 100;
+  if (decorMode === 'both') {
+    if (type === 'print') {
+      defaultCyPct = ((zone.cy - zone.h * 0.20) / 600) * 100;
+    } else {
+      defaultCyPct = ((zone.cy + zone.h * 0.30) / 600) * 100;
+    }
+  }
+
+  const zoneWPct = (zone.w / 600) * 100;
+  const zoneHPct = (zone.h / 600) * 100;
+
+  const dxNorm = zoneWPct > 0 ? (cx - zoneCxPct) / zoneWPct : 0;
+  const dyNorm = zoneHPct > 0 ? (cy - defaultCyPct) / zoneHPct : 0;
+
   if (type === 'print') {
-    config.printPosNormX = Math.max(0, Math.min(1, cx / 100));
-    config.printPosNormY = Math.max(0, Math.min(1, cy / 100));
-    const zone = getActiveZone();
-    config.printScale = ds.wPct / (zone.w / 600 * 100);
+    config.printOffsetNormX = dxNorm;
+    config.printOffsetNormY = dyNorm;
+    config.printScale = ds.wPct / zoneWPct;
   } else {
-    config.labelPosNormX = Math.max(0, Math.min(1, cx / 100));
-    config.labelPosNormY = Math.max(0, Math.min(1, cy / 100));
-    const zone = getActiveZone();
-    config.labelScale = ds.wPct / (zone.w / 600 * 100);
+    config.labelOffsetNormX = dxNorm;
+    config.labelOffsetNormY = dyNorm;
+    config.labelScale = ds.wPct / zoneWPct;
   }
 
   if (window._rebuildAllDecalsPublic) {

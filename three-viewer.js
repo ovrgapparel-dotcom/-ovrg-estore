@@ -651,13 +651,12 @@ function _renderDecalForZoneAndType(zoneId, config, decalType, box, boxSize, cx,
   const cv = _buildZoneCanvasForType(config, decalType);
   if (!cv) return;
   // Each type has completely independent position state.
-  // NEVER derive label position from print position — that causes stacked movement.
   let posNormX = decalType === 'print'
-    ? (config.printPosNormX !== undefined ? config.printPosNormX : undefined)
-    : (config.labelPosNormX !== undefined ? config.labelPosNormX : undefined);
+    ? (config.printOffsetNormX !== undefined ? config.printOffsetNormX : config.printPosNormX)
+    : (config.labelOffsetNormX !== undefined ? config.labelOffsetNormX : config.labelPosNormX);
   let posNormY = decalType === 'print'
-    ? (config.printPosNormY !== undefined ? config.printPosNormY : undefined)
-    : (config.labelPosNormY !== undefined ? config.labelPosNormY : undefined);
+    ? (config.printOffsetNormY !== undefined ? config.printOffsetNormY : config.printPosNormY)
+    : (config.labelOffsetNormY !== undefined ? config.labelOffsetNormY : config.labelPosNormY);
   const scale = decalType === 'print'
     ? (config.printScale !== undefined ? config.printScale : config.scale)
     : (config.labelScale !== undefined ? config.labelScale : config.scale);
@@ -851,12 +850,12 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     // For back zones, temporarily rotate camera point to back
     const isBack = zoneId.startsWith('back');
 
-    // Drag offsets apply ONLY when user has explicitly dragged element (posNormX/Y defined).
-    // Defaults to 0.5 (center of zone) so baseNDC is used directly for default zone placement.
-    const normX = posNormX !== undefined ? posNormX : 0.5;
-    const normY = posNormY !== undefined ? posNormY : 0.5;
-    const ndcX = baseNDC.x + (normX - 0.5) * 0.8;
-    const ndcY = baseNDC.y + (normY - 0.5) * -0.6;
+    // Drag offsets apply relative to default zone position (0 = default center).
+    // posNormX/Y are relative offsets from 2D zone center.
+    const dx = posNormX !== undefined ? posNormX : 0;
+    const dy = posNormY !== undefined ? posNormY : 0;
+    const ndcX = baseNDC.x + dx * 0.35;
+    const ndcY = baseNDC.y - dy * 0.35;
 
     // Select the main cap mesh (largest by bounding volume) as the raycast target
     const mainMesh = targetDecalMeshes.reduce((prev, curr) => {
@@ -1021,6 +1020,8 @@ window.applyHeadwearPrint = function (imageObjOrUrl) {
     const updated = Object.assign({}, existing);
     delete updated.printImg;
     delete updated.printUrl;
+    delete updated.printOffsetNormX;
+    delete updated.printOffsetNormY;
     delete updated.printPosNormX;
     delete updated.printPosNormY;
     delete updated.printScale;
