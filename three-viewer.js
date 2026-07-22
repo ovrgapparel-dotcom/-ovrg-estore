@@ -817,14 +817,15 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     }
 
     if (isFront) {
-      // Calibrated front crown placement:
+      // Contour-tracking front crown placement:
       // X range: 45% of cap width (from left panel to right panel)
       px = cx + (normX - 0.5) * boxSize.x * 0.45;
-      // Y range: 18% of cap height (anchored to physical forehead area)
-      py = box.min.y + boxSize.y * (0.73 - normY * 0.18);
-      pz = box.min.z + boxSize.z * 0.69 - Math.abs(normX - 0.5) * boxSize.z * 0.15;
+      // Y range: maps 2D canvas normY directly to physical cap forehead (high crown to brim)
+      py = box.min.y + boxSize.y * (1.03 - normY * 1.20);
+      // Z depth tracks cap profile curvature along Y height
+      pz = box.min.z + boxSize.z * (0.67 + (normY - 0.25) * 0.40) - Math.abs(normX - 0.5) * boxSize.z * 0.15;
       ori.y = -(normX - 0.5) * (Math.PI / 2.5);
-      ori.x =  (normY - 0.5) * (Math.PI / 10);
+      ori.x =  (normY - 0.35) * (Math.PI / 8);
     } else if (isSide) {
       const isLeft = zoneId.includes('left');
       px = cx + (isLeft ? -1 : 1) * boxSize.x * 0.44;
