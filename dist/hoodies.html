@@ -645,12 +645,64 @@ footer .footer-admin {
 .mobile-cta-btn.wa {
   background: #25D366;
 }
+@media (max-width: 900px) {
+  .showcase-main {
+    grid-template-columns: 1fr !important;
+    margin: -1rem auto 2rem !important;
+    padding: 0 0.75rem !important;
+    gap: 1.5rem !important;
+  }
+  .mockup-card {
+    position: static !important;
+    top: auto !important;
+    padding: 1rem !important;
+  }
+  .controls-card {
+    padding: 1.25rem !important;
+  }
+  .color-swatch {
+    width: 42px !important;
+    height: 42px !important;
+  }
+}
 @media (max-width: 768px) {
   .mobile-cta-bar {
-    display: flex;
+    display: flex !important;
   }
   body {
-    padding-bottom: 60px !important;
+    padding-bottom: 75px !important;
+  }
+}
+@media (max-width: 600px) {
+  .view-tabs {
+    flex-wrap: wrap !important;
+    gap: 0.35rem !important;
+    justify-content: center !important;
+  }
+  .view-btn {
+    padding: 0.35rem 0.65rem !important;
+    font-size: 0.75rem !important;
+  }
+  .zone-btn {
+    padding: 0.35rem 0.65rem !important;
+    font-size: 0.78rem !important;
+  }
+  .gallery-tab {
+    font-size: 0.85rem !important;
+  }
+  .shirt-wrapper canvas.shirt-img {
+    width: 100% !important;
+    max-width: 280px !important;
+    height: auto !important;
+  }
+  .mockup-stage {
+    min-height: 350px !important;
+  }
+  .shirt-wrapper#3d-view {
+    min-height: 350px !important;
+  }
+  #threeContainer {
+    min-height: 350px !important;
   }
 }
 </style>
