@@ -711,7 +711,7 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     const configScale = scaleOverride !== undefined ? scaleOverride : (config.scale !== undefined ? config.scale : 0.65);
     scale = 0.50 * configScale;
   } else {
-    const baseHwScale = 0.28;
+    const baseHwScale = 0.22;
     const configScale = scaleOverride !== undefined ? scaleOverride : (config.scale !== undefined ? config.scale : 1.0);
     scale = baseHwScale * configScale;
   }
@@ -877,11 +877,24 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     } else {
       depth = boxSize.z * 0.85;
     }
-  } else if (IS_HEADWEAR) depth = boxSize.z * 0.28;
+  } else if (IS_HEADWEAR) depth = boxSize.z * 0.18;
   else depth = Math.min(boxSize.z * 0.70, 0.45);
 
   const size = new THREE.Vector3(planeW, planeW, depth);
-  targetDecalMeshes.forEach(mesh => {
+
+  let meshesToTarget = targetDecalMeshes;
+  if (IS_HEADWEAR && targetDecalMeshes.length > 0) {
+    const mainMesh = targetDecalMeshes.reduce((prev, curr) => {
+      const prevBox = new THREE.Box3().setFromObject(prev);
+      const currBox = new THREE.Box3().setFromObject(curr);
+      const prevSize = prevBox.getSize(new THREE.Vector3());
+      const currSize = currBox.getSize(new THREE.Vector3());
+      return (currSize.x + currSize.y + currSize.z) > (prevSize.x + prevSize.y + prevSize.z) ? curr : prev;
+    }, targetDecalMeshes[0]);
+    if (mainMesh) meshesToTarget = [mainMesh];
+  }
+
+  meshesToTarget.forEach(mesh => {
     try {
       const dg = new DecalGeometry(mesh, pos, ori, size);
       const dm = new THREE.Mesh(dg, mat);
