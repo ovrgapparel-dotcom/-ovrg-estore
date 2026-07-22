@@ -604,10 +604,22 @@ function _doRebuildAllDecals() {
 
   if (!currentModelGroup) return;
   currentModelGroup.updateMatrixWorld(true);
-  const box     = new THREE.Box3().setFromObject(currentModelGroup);
+
+  let targetMesh = targetDecalMeshes[0];
+  if (IS_HEADWEAR && targetDecalMeshes.length > 0) {
+    targetMesh = targetDecalMeshes.reduce((prev, curr) => {
+      const prevBox = new THREE.Box3().setFromObject(prev);
+      const currBox = new THREE.Box3().setFromObject(curr);
+      const prevSize = prevBox.getSize(new THREE.Vector3());
+      const currSize = currBox.getSize(new THREE.Vector3());
+      return (currSize.x + currSize.y + currSize.z) > (prevSize.x + prevSize.y + prevSize.z) ? curr : prev;
+    }, targetDecalMeshes[0]);
+  }
+
+  const boxMesh = (IS_HEADWEAR && targetMesh) ? targetMesh : currentModelGroup;
+  const box     = new THREE.Box3().setFromObject(boxMesh);
   const boxSize = box.getSize(new THREE.Vector3());
   const cx      = (box.min.x + box.max.x) / 2;
-  // cy at 45% from bottom = true mid-torso reference for outerwear/headwear
   const cy      = box.min.y + boxSize.y * 0.45;
   const cz      = box.max.z;
 
@@ -811,18 +823,14 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     }
 
     if (isFront) {
-      // Anchor to the OUTER front surface of the cap crown (box.max.z)
-      // Then move inward by a tiny inset so the pos is just inside the mesh
+      // Anchor directly to outer front surface of main cap mesh
       const frontSurfZ = box.max.z;
-      const insetZ     = boxSize.z * 0.04;  // 4% inset = ~0.11 units
-      pz = frontSurfZ - insetZ - Math.abs(normX - 0.5) * boxSize.z * 0.18;
-      // Y: upper crown is where embroidery sits (0.72 = top of front panel)
-      py = box.min.y + boxSize.y * (0.78 - normY * 0.16);
-      // X: lateral offset for left/right panels
-      px = cx + (normX - 0.5) * boxSize.x * 0.48;
-      // Tilt the decal to follow the crown curvature
-      ori.y = -(normX - 0.5) * (Math.PI / 2.8);
-      ori.x =  (normY - 0.5) * (Math.PI / 9);
+      const insetZ     = boxSize.z * 0.03;
+      pz = frontSurfZ - insetZ - Math.abs(normX - 0.5) * boxSize.z * 0.15;
+      py = box.min.y + boxSize.y * (0.76 - normY * 0.16);
+      px = cx + (normX - 0.5) * boxSize.x * 0.45;
+      ori.y = -(normX - 0.5) * (Math.PI / 2.5);
+      ori.x =  (normY - 0.5) * (Math.PI / 10);
     } else if (isSide) {
       const isLeft = zoneId.includes('left');
       px = cx + (isLeft ? -1 : 1) * boxSize.x * 0.42;
