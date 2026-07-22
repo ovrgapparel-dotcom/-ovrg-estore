@@ -3508,6 +3508,17 @@
         try { await sbClient.auth.signOut(); } catch (_) { }
         currentUser = null; updateAdminUI();
       }
+      if (window.location.search.indexOf('cart=1') !== -1 || window.location.search.indexOf('cart=true') !== -1) {
+        setTimeout(function() {
+          renderCart();
+          if (cart && cart.length > 0) {
+            openCheckout();
+          } else {
+            toggleCart();
+          }
+        }, 350);
+      }
+
       document.addEventListener('click', function (e) {
         var panel = document.getElementById('cartPanel');
         if (panel && panel.classList.contains('open') && !panel.contains(e.target) && !e.target.closest('.cart-btn')) panel.classList.remove('open');

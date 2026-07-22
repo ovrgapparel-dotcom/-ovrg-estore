@@ -2045,46 +2045,38 @@ function calculateTotalPrice() {
 }
 
 function buildOrderItem() {
-  // Find all active zone customizations
-  let hasCustomization = false;
+  let customizedZones = [];
   let firstPrint = null;
+  let printImages = [];
   
   for (const zoneId in window.zoneCustomizations) {
     const config = window.zoneCustomizations[zoneId];
     if (config && config.print) {
-      hasCustomization = true;
-      if (!firstPrint) {
-        firstPrint = config.print;
-      }
+      if (!firstPrint) firstPrint = config.print;
+      customizedZones.push(`${zoneId === 'back' ? 'Dos' : 'Devant'}: ${config.print.name}`);
+      if (config.print.image_url) printImages.push(config.print.image_url);
     }
   }
 
-  // Fallback to legacy single-print flow if no zones configured
-  if (!hasCustomization) {
+  // Fallback to legacy single-print selection if no zone customizations
+  if (customizedZones.length === 0) {
     if (!selectedPrint) return null;
-    hasCustomization = true;
     firstPrint = selectedPrint;
+    customizedZones.push(selectedPrint.name);
+    if (selectedPrint.image_url) printImages.push(selectedPrint.image_url);
   }
 
   const price = calculateTotalPrice();
   const printId = firstPrint ? firstPrint.id : 'custom';
   const printName = firstPrint ? firstPrint.name : 'Texte personnalisé';
-  const imgUrl = firstPrint ? (firstPrint.image_url || '') : '';
+  const imgUrl = printImages.length > 0 ? printImages[0] : (SHIRT_IMAGES.front || '');
 
-  // Collect customized zones for description
-  let customizedZones = [];
-  for (const zoneId in window.zoneCustomizations) {
-    const config = window.zoneCustomizations[zoneId];
-    if (config && config.print) {
-      customizedZones.push(zoneId === 'back' ? 'Dos' : 'Devant');
-    }
-  }
-  const zoneLabel = customizedZones.length > 0 ? ` (${customizedZones.join(' + ')})` : '';
+  const zoneSummary = customizedZones.length > 0 ? ` (${customizedZones.join(', ')})` : '';
 
   return {
     key: `showcase-${printId}-${selectedColor}-${selectedSize}-${printPreset}-${selectedTier}`,
     id: `showcase-${printId}`,
-    name: `T-Shirt OVRG (${selectedTier.toUpperCase()}) — ${printName}${zoneLabel}`,
+    name: `T-Shirt OVRG Showcase (${selectedTier.toUpperCase()}) — ${printName}${zoneSummary}`,
     price: price,
     qty: 1,
     size: selectedSize,
@@ -2098,7 +2090,7 @@ function buildOrderItem() {
       blend: Math.round(printBlend * 100),
       embroidery: embroiderySelected,
       tier: selectedTier,
-      zones: window.zoneCustomizations
+      zones: JSON.parse(JSON.stringify(window.zoneCustomizations || {}))
     }
   };
 }
@@ -2106,8 +2098,22 @@ function buildOrderItem() {
 function addToCartShowcase() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé dans la bibliothèque.", '#f59e0b'); return; }
-  const stock = selectedPrint.stock != null ? selectedPrint.stock : null;
-  if (stock !== null && stock <= 0) { showToast('Rupture de stock', "Cet imprimé n'est plus disponible.", '#ef4444'); return; }
+  
+  // Safely check print stock for selectedPrint and zone customizations
+  let outOfStockName = null;
+  if (selectedPrint && selectedPrint.stock != null && selectedPrint.stock <= 0) {
+    outOfStockName = selectedPrint.name;
+  }
+  for (const zoneId in window.zoneCustomizations) {
+    const cfg = window.zoneCustomizations[zoneId];
+    if (cfg && cfg.print && cfg.print.stock != null && cfg.print.stock <= 0) {
+      outOfStockName = cfg.print.name;
+    }
+  }
+  if (outOfStockName) {
+    showToast('Rupture de stock', `L'imprimé "${outOfStockName}" n'est plus disponible.`, '#ef4444');
+    return;
+  }
 
   // Check garment tier stock
   if (lestockConfig) {
@@ -2126,7 +2132,7 @@ function addToCartShowcase() {
   else cart.push(item);
   localStorage.setItem('ovrg_cart', JSON.stringify(cart));
 
-  showToast('Ajouté au panier! 🛍', `${item.name} (${item.size}) ajouté. Retournez à la boutique pour finaliser.`);
+  showToast('Ajouté au panier! 🛍', `${item.name} (${item.size}) ajouté. Accédez au panier pour finaliser.`);
 }
 
 function orderViaWhatsApp() {
@@ -2134,15 +2140,26 @@ function orderViaWhatsApp() {
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé dans la bibliothèque.", '#f59e0b'); return; }
   const colorNames = {'#ffffff':'Blanc','#1a1a1a':'Noir','#e63946':'Rouge','#457b9d':'Bleu','#2a9d8f':'Vert','#f4a261':'Orange'};
   const colorName = colorNames[selectedColor] || selectedColor;
-  const c = item.customization;
-  const msg = `Bonjour OVRG! Je voudrais commander un t-shirt personnalisé:\n\n`+
-              `🎨 Imprimé: ${item.name.replace('T-Shirt OVRG — ','')}\n`+
-              `👕 Couleur: ${colorName}\n`+
-              `📏 Taille: ${item.size}\n`+
-              `📍 Position du print: ${c.placementLabel}\n`+
-              `🔍 Taille du print: ${c.scale}%\n`+
-              `🧵 Effet tissu: ${c.blend}%\n`+
-              `💰 Prix: ${fmt(item.price)}`;
+
+  let printsList = [];
+  for (const zoneId in window.zoneCustomizations) {
+    const config = window.zoneCustomizations[zoneId];
+    if (config && config.print) {
+      const zoneTitle = zoneId === 'back' ? 'Dos' : 'Devant';
+      const typeTitle = config.type === 'embroidery' ? 'Broderie' : 'Imprimé';
+      printsList.push(`• ${zoneTitle} (${typeTitle}): ${config.print.name}`);
+    }
+  }
+  const printsDetail = printsList.length > 0 ? printsList.join('\n') : `• ${item.name}`;
+
+  const msg = `Bonjour OVRG! Je souhaite commander un T-Shirt Showcase:\n\n` +
+              `👕 Produit: T-Shirt OVRG (${selectedTier.toUpperCase()})\n` +
+              `🎨 Design(s):\n${printsDetail}\n` +
+              `🎨 Couleur: ${colorName}\n` +
+              `📏 Taille: ${item.size}\n` +
+              `💰 Prix Total: ${fmt(item.price)}\n\n` +
+              `Merci de me contacter pour la livraison!`;
+
   window.open(`https://wa.me/2250799108108?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
