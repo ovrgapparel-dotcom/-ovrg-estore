@@ -569,9 +569,17 @@ function _buildZoneCanvasForType(config, type) {
   if (type === 'print') {
     if (!config.printImg) return null;
     _drawImageFit(ctx, config.printImg, PAD, PAD, S - PAD * 2, S - PAD * 2);
+    const imgW = config.printImg.naturalWidth || config.printImg.width || S;
+    const imgH = config.printImg.naturalHeight || config.printImg.height || S;
+    cv.aspectRatio = Math.max(0.4, Math.min(3.0, imgW / imgH));
   } else if (type === 'label') {
     if (!(config.labelText && config.labelText.trim())) return null;
     _drawLabelText(ctx, config.labelText, config.labelColor || '#ffffff', S / 2, S / 2, S * 0.90, S * 0.42);
+    ctx.font = `bold 120px "Bebas Neue", sans-serif`;
+    const metrics = ctx.measureText(config.labelText.toUpperCase());
+    const txtW = metrics.width || (config.labelText.length * 70);
+    const txtH = 130;
+    cv.aspectRatio = Math.max(1.5, Math.min(4.5, txtW / txtH));
   } else {
     return null;
   }
@@ -817,14 +825,14 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     }
 
     if (isFront) {
-      // Contour-tracking front crown placement:
-      // X range: 45% of cap width (from left panel to right panel)
-      px = cx + (normX - 0.5) * boxSize.x * 0.45;
+      // Contour-tracking front crown placement with expanded X horizontal span:
+      // X range: 62% of cap width (from left panel to right panel)
+      px = cx + (normX - 0.5) * boxSize.x * 0.62;
       // Y range: maps 2D canvas normY directly to physical cap forehead (high crown to brim)
       py = box.min.y + boxSize.y * (1.03 - normY * 1.20);
       // Z depth tracks cap profile curvature along Y height
       pz = box.min.z + boxSize.z * (0.67 + (normY - 0.25) * 0.40) - Math.abs(normX - 0.5) * boxSize.z * 0.15;
-      ori.y = -(normX - 0.5) * (Math.PI / 2.5);
+      ori.y = -(normX - 0.5) * (Math.PI / 2.3);
       ori.x =  (normY - 0.35) * (Math.PI / 8);
     } else if (isSide) {
       const isLeft = zoneId.includes('left');
@@ -889,7 +897,9 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
   } else if (IS_HEADWEAR) depth = boxSize.z * 0.25;
   else depth = Math.min(boxSize.z * 0.70, 0.45);
 
-  const size = new THREE.Vector3(planeW, planeW, depth);
+  const aspect = cv.aspectRatio || 1.0;
+  const planeH = planeW / aspect;
+  const size = new THREE.Vector3(planeW, planeH, depth);
 
   let meshesToTarget = targetDecalMeshes;
   if (IS_HEADWEAR && targetDecalMeshes.length > 0) {
