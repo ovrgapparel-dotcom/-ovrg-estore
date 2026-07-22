@@ -815,21 +815,21 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     //
     // NDC coordinates: x in [-1,+1] (left→right), y in [-1,+1] (bottom→top)
     const ZONE_NDC = {
-      'front':        { x:  0.00, y:  0.10 },
-      'front-center': { x:  0.00, y:  0.10 },
-      'front-high':   { x:  0.00, y:  0.36 },
-      'front-low':    { x:  0.00, y: -0.12 },
-      'front-left':   { x: -0.24, y:  0.10 },
-      'front-right':  { x:  0.24, y:  0.10 },
-      'back-center':  { x:  0.00, y:  0.10 },
-      'back':         { x:  0.00, y:  0.10 },
-      'side-left':    { x: -0.50, y:  0.10 },
-      'side-right':   { x:  0.50, y:  0.10 },
+      'front':        { x:  0.00, y: -0.08 },
+      'front-center': { x:  0.00, y: -0.08 },
+      'front-high':   { x:  0.00, y:  0.12 },
+      'front-low':    { x:  0.00, y: -0.22 },
+      'front-left':   { x: -0.20, y: -0.08 },
+      'front-right':  { x:  0.20, y: -0.08 },
+      'back-center':  { x:  0.00, y: -0.08 },
+      'back':         { x:  0.00, y: -0.08 },
+      'side-left':    { x:  0.00, y: -0.08 },
+      'side-right':   { x:  0.00, y: -0.08 },
     };
 
     // Allow live override via window.HEADWEAR_NDC_OVERRIDES (set by calibration panel)
     const ndcOverrides = window.HEADWEAR_NDC_OVERRIDES || {};
-    const baseNDC = ndcOverrides[zoneId] || ZONE_NDC[zoneId] || { x: 0.00, y: 0.10 };
+    const baseNDC = ndcOverrides[zoneId] || ZONE_NDC[zoneId] || { x: 0.00, y: -0.08 };
 
     // For back zones, temporarily rotate camera point to back
     const isBack = zoneId.startsWith('back');
@@ -855,24 +855,26 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
       // ── CANONICAL CAMERAS ──────────────────────────────────────────────────────
       // We always cast from a fixed direction so placement doesn't depend on
       // where the user has orbited to. The canonical cameras sit at a fixed
-      // position looking at the origin, matching the initial load orientation.
+      // position looking at controls.target, matching initial load orientation.
       const isSide = zoneId.startsWith('side');
+      const targetY = controls ? controls.target.y : 0.05;
 
       // Build a synthetic PerspectiveCamera that looks from the correct direction
       const synCam = new THREE.PerspectiveCamera(45, camera.aspect, 0.01, 100);
       if (isBack) {
         // Cast from behind the cap → finds the back face
-        synCam.position.set(0, 0.1, -3.5);
+        synCam.position.set(0, targetY, -3.5);
       } else if (isSide && zoneId.includes('left')) {
-        // Cap left panel (from viewer's right)
-        synCam.position.set(3.5, 0.1, 0);
+        // Cap left panel
+        synCam.position.set(3.5, targetY, 0);
       } else if (isSide && zoneId.includes('right')) {
-        synCam.position.set(-3.5, 0.1, 0);
+        // Cap right panel
+        synCam.position.set(-3.5, targetY, 0);
       } else {
         // All front zones: cast straight from front
-        synCam.position.set(0, 0.1, 3.5);
+        synCam.position.set(0, targetY, 3.5);
       }
-      synCam.lookAt(0, 0, 0);
+      synCam.lookAt(0, targetY, 0);
       synCam.updateMatrixWorld(true);
       synCam.updateProjectionMatrix();
 
