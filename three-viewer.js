@@ -650,16 +650,17 @@ function _doRebuildAllDecals() {
 function _renderDecalForZoneAndType(zoneId, config, decalType, box, boxSize, cx, cy, cz) {
   const cv = _buildZoneCanvasForType(config, decalType);
   if (!cv) return;
-  // Choose position overrides based on type
-  let posNormX = decalType === 'print' ? (config.printPosNormX !== undefined ? config.printPosNormX : config.posNormX) : (config.labelPosNormX !== undefined ? config.labelPosNormX : config.posNormX);
-  let posNormY = decalType === 'print' ? (config.printPosNormY !== undefined ? config.printPosNormY : config.posNormY) : (config.labelPosNormY !== undefined ? config.labelPosNormY : config.posNormY);
-  const scale    = decalType === 'print' ? (config.printScale !== undefined ? config.printScale : config.scale) : (config.labelScale !== undefined ? config.labelScale : config.scale);
-  
-  // When both print and label are present on the same zone, default label Y below print if unassigned
-  if (decalType === 'label' && config.printImg && config.labelPosNormY === undefined) {
-    const baseP = config.printPosNormY !== undefined ? config.printPosNormY : 0.35;
-    posNormY = baseP + 0.35;
-  }
+  // Each type has completely independent position state.
+  // NEVER derive label position from print position — that causes stacked movement.
+  let posNormX = decalType === 'print'
+    ? (config.printPosNormX !== undefined ? config.printPosNormX : undefined)
+    : (config.labelPosNormX !== undefined ? config.labelPosNormX : undefined);
+  let posNormY = decalType === 'print'
+    ? (config.printPosNormY !== undefined ? config.printPosNormY : undefined)
+    : (config.labelPosNormY !== undefined ? config.labelPosNormY : undefined);
+  const scale = decalType === 'print'
+    ? (config.printScale !== undefined ? config.printScale : config.scale)
+    : (config.labelScale !== undefined ? config.labelScale : config.scale);
 
   _renderDecalCanvas(zoneId + '_' + decalType, config, cv, posNormX, posNormY, scale, box, boxSize, cx, cy, cz);
 }
@@ -810,26 +811,42 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
   } else if (IS_HEADWEAR) {
     // ── RAYCASTING-BASED PLACEMENT ─────────────────────────────────────────────
     // Each zone maps to a 2D NDC screen point. The raycaster finds the exact 3D
-    // surface point and face normal on the cap mesh automatically — no bounding-box
-    // math, no manual calibration needed.
+    // surface point and face normal on the cap mesh automatically.
     //
     // NDC coordinates: x in [-1,+1] (left→right), y in [-1,+1] (bottom→top)
+    // ZONE_NDC = print positions (upper forehead area)
     const ZONE_NDC = {
-      'front':        { x:  0.00, y: -0.15 },
-      'front-center': { x:  0.00, y: -0.15 },
-      'front-high':   { x:  0.00, y: -0.04 },
-      'front-low':    { x:  0.00, y: -0.26 },
-      'front-left':   { x: -0.18, y: -0.15 },
-      'front-right':  { x:  0.18, y: -0.15 },
-      'back-center':  { x:  0.00, y: -0.15 },
-      'back':         { x:  0.00, y: -0.15 },
-      'side-left':    { x:  0.00, y: -0.15 },
-      'side-right':   { x:  0.00, y: -0.15 },
+      'front':        { x:  0.00, y: -0.12 },
+      'front-center': { x:  0.00, y: -0.12 },
+      'front-high':   { x:  0.00, y:  0.00 },
+      'front-low':    { x:  0.00, y: -0.22 },
+      'front-left':   { x: -0.18, y: -0.12 },
+      'front-right':  { x:  0.18, y: -0.12 },
+      'back-center':  { x:  0.00, y: -0.12 },
+      'back':         { x:  0.00, y: -0.12 },
+      'side-left':    { x:  0.00, y: -0.12 },
+      'side-right':   { x:  0.00, y: -0.12 },
+    };
+    // LABEL_NDC = label positions (lower forehead, near brim seam)
+    // These are COMPLETELY independent from ZONE_NDC so labels never follow prints.
+    const LABEL_NDC = {
+      'front':        { x:  0.00, y: -0.33 },
+      'front-center': { x:  0.00, y: -0.33 },
+      'front-high':   { x:  0.00, y: -0.22 },
+      'front-low':    { x:  0.00, y: -0.38 },
+      'front-left':   { x: -0.18, y: -0.33 },
+      'front-right':  { x:  0.18, y: -0.33 },
+      'back-center':  { x:  0.00, y: -0.33 },
+      'back':         { x:  0.00, y: -0.33 },
+      'side-left':    { x:  0.00, y: -0.33 },
+      'side-right':   { x:  0.00, y: -0.33 },
     };
 
+    const isLabelDecal = effectiveZoneId.endsWith('_label');
     // Allow live override via window.HEADWEAR_NDC_OVERRIDES (set by calibration panel)
     const ndcOverrides = window.HEADWEAR_NDC_OVERRIDES || {};
-    const baseNDC = ndcOverrides[zoneId] || ZONE_NDC[zoneId] || { x: 0.00, y: -0.15 };
+    const ndcTable = isLabelDecal ? LABEL_NDC : ZONE_NDC;
+    const baseNDC = ndcOverrides[zoneId] || ndcTable[zoneId] || { x: 0.00, y: isLabelDecal ? -0.33 : -0.12 };
 
     // For back zones, temporarily rotate camera point to back
     const isBack = zoneId.startsWith('back');
