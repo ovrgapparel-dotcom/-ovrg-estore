@@ -817,14 +817,14 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     }
 
     if (isFront) {
-      // Expanded front crown movement zone:
-      // X range: 58% of cap width (from left panel to right panel)
-      px = cx + (normX - 0.5) * boxSize.x * 0.58;
-      // Y range: 32% of cap height (from high crown down to visor)
-      py = box.min.y + boxSize.y * (0.84 - normY * 0.32);
-      pz = box.min.z + boxSize.z * 0.69 - Math.abs(normX - 0.5) * boxSize.z * 0.18;
-      ori.y = -(normX - 0.5) * (Math.PI / 2.3);
-      ori.x =  (normY - 0.5) * (Math.PI / 8);
+      // Calibrated front crown placement:
+      // X range: 45% of cap width (from left panel to right panel)
+      px = cx + (normX - 0.5) * boxSize.x * 0.45;
+      // Y range: 18% of cap height (anchored to physical forehead area)
+      py = box.min.y + boxSize.y * (0.73 - normY * 0.18);
+      pz = box.min.z + boxSize.z * 0.69 - Math.abs(normX - 0.5) * boxSize.z * 0.15;
+      ori.y = -(normX - 0.5) * (Math.PI / 2.5);
+      ori.x =  (normY - 0.5) * (Math.PI / 10);
     } else if (isSide) {
       const isLeft = zoneId.includes('left');
       px = cx + (isLeft ? -1 : 1) * boxSize.x * 0.44;
