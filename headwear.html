@@ -641,12 +641,47 @@ footer .footer-admin {
 .mobile-cta-btn.wa {
   background: #25D366;
 }
+@media (max-width: 900px) {
+  .showcase-main {
+    margin: -1rem auto 2rem !important;
+    padding: 0 0.75rem !important;
+    gap: 1.5rem !important;
+  }
+  .mockup-card {
+    position: static !important;
+    top: auto !important;
+    padding: 1rem !important;
+  }
+  .controls-card {
+    padding: 1.25rem !important;
+  }
+  .color-swatch {
+    width: 42px !important;
+    height: 42px !important;
+  }
+}
 @media (max-width: 768px) {
   .mobile-cta-bar {
-    display: flex;
+    display: flex !important;
   }
   body {
-    padding-bottom: 60px !important;
+    padding-bottom: 70px !important;
+  }
+}
+@media (max-width: 600px) {
+  .shirt-wrapper canvas.shirt-img {
+    width: 100% !important;
+    max-width: 280px !important;
+    height: auto !important;
+  }
+  .mockup-stage {
+    min-height: 350px !important;
+  }
+  .shirt-wrapper#3d-view {
+    min-height: 350px !important;
+  }
+  #threeContainer {
+    min-height: 350px !important;
   }
 }
 </style>
@@ -1574,7 +1609,12 @@ function renderZoneButtons() {
   if (!grid) return;
   let zones = EMBROIDERY_ZONES[productType] || EMBROIDERY_ZONES.cap;
   if (currentView && currentView !== '3d') {
-    zones = zones.filter(z => z.id.startsWith(currentView));
+    zones = zones.filter(z => {
+      if (currentView === 'front') return z.id.includes('front');
+      if (currentView === 'side') return z.id.includes('side') || z.id.includes('left') || z.id.includes('right');
+      if (currentView === 'back') return z.id.includes('back');
+      return true;
+    });
   }
   grid.innerHTML = zones.map(z => `
     <button class="size-btn${z.id === activeZoneId ? ' selected' : ''}"
@@ -1691,13 +1731,20 @@ function setEmbroiderySize(sz) {
   
   const slider = document.getElementById('scaleSlider');
   if (slider) {
-slider.value = Math.round(scaleMultiplier * 100);
+    slider.value = Math.round(scaleMultiplier * 100);
     updateSliderBg(slider);
   }
 
   document.querySelectorAll('[data-scale]').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.scale === sz);
   });
+
+  const _siSide = currentView === '3d' ? 'front' : currentView;
+  const _siZone = getActiveZone();
+  resetDesignStateToZone(_siSide, _siZone);
+  sync2DTo3D(_siSide, 'print');
+  sync2DTo3D(_siSide, 'label');
+
   scheduleRender();
   _sync3DOverlay();
 }
@@ -1957,6 +2004,8 @@ function _renderLabelToCtx(tmpCtx, x, y, w, h) {
 
 
 function paintFallbackCanvas(side) {
+  shirtSource[side] = null;
+  fabricData[side]  = null;
   const ids = { front: 'tshirt-front', side: 'tshirt-side', back: 'tshirt-back' };
   const canvas = document.getElementById(ids[side] || 'tshirt-front');
   if (!canvas) return;
@@ -2723,9 +2772,11 @@ function buildOrderItem() {
   const printName = selectedPrint ? selectedPrint.name : ('Label: ' + labelText);
   const printId   = selectedPrint ? selectedPrint.id   : 'label';
   const imgUrl    = selectedPrint ? (selectedPrint.image_url || '') : '';
+  const sizeLabel = typeof embroiderySize !== 'undefined' ? embroiderySize : 'M';
+  const zone = getActiveZone();
 
   return {
-    key: `showcase-headwear-${printId}-${selectedColor}-${selectedSize}-${printPlacement}-${printSize}-${selectedTier}`,
+    key: `showcase-headwear-${printId}-${selectedColor}-${selectedSize}-${printPlacement}-${sizeLabel}-${selectedTier}`,
     id: `showcase-${printId}`,
     name: `${productType === 'cap' ? 'Casquette' : 'Bob'} OVRG (${selectedTier.toUpperCase()}) — ${printName}`,
     price: price,
@@ -2736,8 +2787,8 @@ function buildOrderItem() {
     type: 'showcase',
     customization: {
       placement: printPlacement,
-      placementLabel: printPlacement === 'front' ? 'Devant' : 'Côté',
-      scale: printSize === 'small' ? 'Petit' : 'Grand',
+      placementLabel: zone ? zone.label : printPlacement,
+      scale: sizeLabel,
       blend: 100,
       tier: selectedTier,
       label: hasLabel ? labelText : null
