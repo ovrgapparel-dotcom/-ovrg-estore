@@ -815,30 +815,31 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     //
     // NDC coordinates: x in [-1,+1] (left→right), y in [-1,+1] (bottom→top)
     const ZONE_NDC = {
-      'front':        { x:  0.00, y: -0.08 },
-      'front-center': { x:  0.00, y: -0.08 },
-      'front-high':   { x:  0.00, y:  0.12 },
-      'front-low':    { x:  0.00, y: -0.22 },
-      'front-left':   { x: -0.20, y: -0.08 },
-      'front-right':  { x:  0.20, y: -0.08 },
-      'back-center':  { x:  0.00, y: -0.08 },
-      'back':         { x:  0.00, y: -0.08 },
-      'side-left':    { x:  0.00, y: -0.08 },
-      'side-right':   { x:  0.00, y: -0.08 },
+      'front':        { x:  0.00, y: -0.05 },
+      'front-center': { x:  0.00, y: -0.05 },
+      'front-high':   { x:  0.00, y:  0.08 },
+      'front-low':    { x:  0.00, y: -0.18 },
+      'front-left':   { x: -0.20, y: -0.05 },
+      'front-right':  { x:  0.20, y: -0.05 },
+      'back-center':  { x:  0.00, y: -0.05 },
+      'back':         { x:  0.00, y: -0.05 },
+      'side-left':    { x:  0.00, y: -0.05 },
+      'side-right':   { x:  0.00, y: -0.05 },
     };
 
     // Allow live override via window.HEADWEAR_NDC_OVERRIDES (set by calibration panel)
     const ndcOverrides = window.HEADWEAR_NDC_OVERRIDES || {};
-    const baseNDC = ndcOverrides[zoneId] || ZONE_NDC[zoneId] || { x: 0.00, y: -0.08 };
+    const baseNDC = ndcOverrides[zoneId] || ZONE_NDC[zoneId] || { x: 0.00, y: -0.05 };
 
     // For back zones, temporarily rotate camera point to back
     const isBack = zoneId.startsWith('back');
 
-    // Apply per-element drag offset from normX/normY (user drags in 2D canvas)
-    const normX = posNormX !== undefined ? posNormX : (zoneId === 'front-left' ? 0.30 : zoneId === 'front-right' ? 0.70 : 0.50);
-    const normY = posNormY !== undefined ? posNormY : (zoneId === 'front-high' ? 0.25 : zoneId === 'front-low' ? 0.75 : 0.50);
-    const ndcX = baseNDC.x + (normX - 0.5) * 1.10;
-    const ndcY = baseNDC.y + (normY - 0.5) * -0.70;
+    // Drag offsets apply ONLY when user has explicitly dragged element (posNormX/Y defined).
+    // Defaults to 0.5 (center of zone) so baseNDC is used directly for default zone placement.
+    const normX = posNormX !== undefined ? posNormX : 0.5;
+    const normY = posNormY !== undefined ? posNormY : 0.5;
+    const ndcX = baseNDC.x + (normX - 0.5) * 0.8;
+    const ndcY = baseNDC.y + (normY - 0.5) * -0.6;
 
     // Select the main cap mesh (largest by bounding volume) as the raycast target
     const mainMesh = targetDecalMeshes.reduce((prev, curr) => {
