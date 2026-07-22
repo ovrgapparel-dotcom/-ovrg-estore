@@ -604,20 +604,7 @@ function _doRebuildAllDecals() {
 
   if (!currentModelGroup) return;
   currentModelGroup.updateMatrixWorld(true);
-
-  let targetMesh = targetDecalMeshes[0];
-  if (IS_HEADWEAR && targetDecalMeshes.length > 0) {
-    targetMesh = targetDecalMeshes.reduce((prev, curr) => {
-      const prevBox = new THREE.Box3().setFromObject(prev);
-      const currBox = new THREE.Box3().setFromObject(curr);
-      const prevSize = prevBox.getSize(new THREE.Vector3());
-      const currSize = currBox.getSize(new THREE.Vector3());
-      return (currSize.x + currSize.y + currSize.z) > (prevSize.x + prevSize.y + prevSize.z) ? curr : prev;
-    }, targetDecalMeshes[0]);
-  }
-
-  const boxMesh = (IS_HEADWEAR && targetMesh) ? targetMesh : currentModelGroup;
-  const box     = new THREE.Box3().setFromObject(boxMesh);
+  const box     = new THREE.Box3().setFromObject(currentModelGroup);
   const boxSize = box.getSize(new THREE.Vector3());
   const cx      = (box.min.x + box.max.x) / 2;
   const cy      = box.min.y + boxSize.y * 0.45;
@@ -823,12 +810,9 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     }
 
     if (isFront) {
-      // Anchor directly to outer front surface of main cap mesh
-      const frontSurfZ = box.max.z;
-      const insetZ     = boxSize.z * 0.03;
-      pz = frontSurfZ - insetZ - Math.abs(normX - 0.5) * boxSize.z * 0.15;
-      py = box.min.y + boxSize.y * (0.76 - normY * 0.16);
       px = cx + (normX - 0.5) * boxSize.x * 0.45;
+      py = box.min.y + boxSize.y * (0.69 - normY * 0.14);
+      pz = box.min.z + boxSize.z * 0.69 - Math.abs(normX - 0.5) * boxSize.z * 0.15;
       ori.y = -(normX - 0.5) * (Math.PI / 2.5);
       ori.x =  (normY - 0.5) * (Math.PI / 10);
     } else if (isSide) {
@@ -891,7 +875,7 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     } else {
       depth = boxSize.z * 0.85;
     }
-  } else if (IS_HEADWEAR) depth = boxSize.z * 0.08;
+  } else if (IS_HEADWEAR) depth = boxSize.z * 0.25;
   else depth = Math.min(boxSize.z * 0.70, 0.45);
 
   const size = new THREE.Vector3(planeW, planeW, depth);
