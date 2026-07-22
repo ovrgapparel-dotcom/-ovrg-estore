@@ -2343,8 +2343,8 @@ function sync2DTo3D(side, type) {
     config.labelScale = ds.wPct / (zone.w / 600 * 100);
   }
 
-  if (window.setZoneCustomization) {
-    window.setZoneCustomization(z, config);
+  if (window._rebuildAllDecalsPublic) {
+    window._rebuildAllDecalsPublic();
   }
 }
 
