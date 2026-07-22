@@ -2138,6 +2138,53 @@ function addToCartShowcase() {
   showToast('Ajouté au panier! 🛍', `${item.name} (${item.size}) ajouté. Accédez au panier pour finaliser.`);
 }
 
+function captureGarmentSnapshot(side) {
+  side = side || currentView || 'front';
+  if (side === '3d') side = 'front';
+
+  const baseCanvas = document.getElementById(side === 'front' ? 'tshirt-front' : 'tshirt-back');
+  const printWrap = document.getElementById(side === 'front' ? 'canvas-front' : 'canvas-back');
+  const printCanvas = printWrap ? printWrap.querySelector('canvas') : null;
+
+  if (!baseCanvas || !baseCanvas.width) return null;
+
+  const comp = document.createElement('canvas');
+  comp.width = baseCanvas.width;
+  comp.height = baseCanvas.height;
+  const ctx = comp.getContext('2d');
+
+  // 1. Draw base shirt canvas
+  ctx.drawImage(baseCanvas, 0, 0);
+
+  // 2. Draw print overlay canvas
+  if (printCanvas && printWrap && printWrap.style.display !== 'none' && printCanvas.width) {
+    const parentRect = baseCanvas.getBoundingClientRect();
+    const wrapRect = printWrap.getBoundingClientRect();
+
+    if (parentRect.width > 0 && parentRect.height > 0) {
+      const scaleX = baseCanvas.width / parentRect.width;
+      const scaleY = baseCanvas.height / parentRect.height;
+
+      const x = (wrapRect.left - parentRect.left) * scaleX;
+      const y = (wrapRect.top - parentRect.top) * scaleY;
+      const w = wrapRect.width * scaleX;
+      const h = wrapRect.height * scaleY;
+
+      try {
+        ctx.drawImage(printCanvas, x, y, w, h);
+      } catch (e) {
+        console.warn('Overlay composite error:', e);
+      }
+    }
+  }
+
+  try {
+    return comp.toDataURL('image/jpeg', 0.9);
+  } catch (e) {
+    return baseCanvas.toDataURL('image/jpeg', 0.85);
+  }
+}
+
 function orderViaWhatsApp() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé dans la bibliothèque.", '#f59e0b'); return; }
@@ -2166,11 +2213,11 @@ function orderViaWhatsApp() {
   window.open(`https://wa.me/2250799108108?text=${encodeURIComponent(msg)}`, '_blank');
 
   // Also generate invoice
-  const captureEl = document.getElementById('front-view') || null;
+  const snapshot = captureGarmentSnapshot(currentView);
   if (window.OVRGInvoice) {
     window.OVRGInvoice.showInvoiceModal(
       Object.assign({}, item),
-      captureEl,
+      snapshot,
       typeof sbClient !== 'undefined' ? sbClient : null
     );
   }
@@ -2180,22 +2227,23 @@ function goToCheckout() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé dans la bibliothèque.", '#f59e0b'); return; }
   addToCartShowcase();
-  // Show invoice modal before navigating — capture the currently visible shirt view
-  const captureEl = document.getElementById('front-view') || document.getElementById('back-view') || null;
+
+  // Capture composite garment snapshot (base shirt + print overlay)
+  const snapshot = captureGarmentSnapshot(currentView);
+
+  // Show invoice modal — only navigate to cart when modal is closed/dismissed
   if (window.OVRGInvoice) {
     window.OVRGInvoice.showInvoiceModal(
       Object.assign({}, item),
-      captureEl,
+      snapshot,
       typeof sbClient !== 'undefined' ? sbClient : null,
-      function() {
-        // Navigate to cart after invoice is generated (or immediately if user skips)
+      function onDone() {
+        window.location.href = 'index.html?cart=1';
       }
     );
-  }
-  // Small delay so localStorage write completes before navigation
-  setTimeout(() => {
+  } else {
     window.location.href = 'index.html?cart=1';
-  }, 800);
+  }
 }
 
 // ============================================================

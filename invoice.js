@@ -58,10 +58,22 @@
   };
 
   /* ── Canvas capture ─────────────────────────────── */
-  async function captureApparel(containerEl) {
+  async function captureApparel(target) {
+    if (!target) return null;
+    if (typeof target === 'string') {
+      if (target.startsWith('data:image') || target.startsWith('http') || target.startsWith('/')) {
+        return target;
+      }
+    }
+    if (typeof target === 'function') {
+      try { return target(); } catch (e) { console.warn(e); }
+    }
+    if (typeof target === 'function' || (typeof HTMLCanvasElement !== 'undefined' && target instanceof HTMLCanvasElement)) {
+      try { return target.toDataURL('image/jpeg', 0.88); } catch (e) { console.warn(e); }
+    }
     try {
-      if (typeof html2canvas !== 'undefined' && containerEl) {
-        const c = await html2canvas(containerEl, {
+      if (typeof html2canvas !== 'undefined' && target instanceof HTMLElement) {
+        const c = await html2canvas(target, {
           backgroundColor: '#1a1a1a',
           scale: 1.5,
           useCORS: true,
@@ -445,7 +457,10 @@
 
     function closeModal() {
       overlay.classList.remove('open');
-      setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 350);
+      setTimeout(() => {
+        if (overlay.parentNode) overlay.remove();
+        if (typeof onDone === 'function') onDone();
+      }, 350);
     }
     document.getElementById('ovrgInvClose').onclick = closeModal;
     document.getElementById('ovrgInvSkip').onclick  = closeModal;
