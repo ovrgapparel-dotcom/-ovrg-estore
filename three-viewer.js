@@ -673,9 +673,11 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
   tex.needsUpdate = true;
 
   const blend = config.blend !== undefined ? config.blend : 0.55;
+  const isLabelDecal = effectiveZoneId.endsWith('_label');
+  const polyOffset = isLabelDecal ? -9 : -6;
   const mat = new THREE.MeshStandardMaterial({
     map: tex, transparent: true, depthTest: true, depthWrite: false,
-    polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6,
+    polygonOffset: true, polygonOffsetFactor: polyOffset, polygonOffsetUnits: polyOffset,
     roughness: 0.85, opacity: 1.0 - blend * 0.3,
   });
   hwMaterials[effectiveZoneId] = mat;
@@ -721,7 +723,9 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     const configScale = scaleOverride !== undefined ? scaleOverride : (config.scale !== undefined ? config.scale : 0.65);
     scale = 0.50 * configScale;
   } else {
-    scale = scaleOverride !== undefined ? scaleOverride : (config.scale !== undefined ? config.scale : 0.42);
+    const baseHwScale = 0.28;
+    const configScale = scaleOverride !== undefined ? scaleOverride : (config.scale !== undefined ? config.scale : 1.0);
+    scale = baseHwScale * configScale;
   }
   const planeW = boxSize.x * scale;
 
@@ -893,7 +897,7 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     } else {
       depth = boxSize.z * 0.85;
     }
-  } else if (IS_HEADWEAR) depth = boxSize.z * 0.55;
+  } else if (IS_HEADWEAR) depth = boxSize.z * 0.28;
   else depth = Math.min(boxSize.z * 0.70, 0.45);
 
   const size = new THREE.Vector3(planeW, planeW, depth);
