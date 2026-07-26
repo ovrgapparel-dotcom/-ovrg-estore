@@ -1906,6 +1906,8 @@ function setProductType(type) {
   if (sideBtn)  sideBtn.textContent  = isBottom ? (type === 'shorts' ? 'Cuisse G' : 'Jambe G') : 'Côté';
   if (rightBtn) rightBtn.textContent = isBottom ? (type === 'shorts' ? 'Cuisse D' : 'Jambe D') : 'Côté droit';
 
+  updatePlacementTooltips(type);
+
   if (globalSettings.global_colors) {
     renderColorOptions(globalSettings.global_colors);
   } else {
@@ -1933,16 +1935,24 @@ function getZoneIdForSideAndPreset(side, preset) {
     if (preset === 'top-left') return 'front-left';
     if (preset === 'top-center') return 'front-center-high';
     if (preset === 'top-right') return 'front-right';
-    if (preset === 'center') return 'front-center-mid';
+    if (preset === 'mid-left') return 'front-center-mid';
+    if (preset === 'center') return 'front';
+    if (preset === 'mid-right') return 'front-center-low';
+    if (preset === 'bottom-left') return 'front-center-mid';
     if (preset === 'bottom-center') return 'front-center-low';
+    if (preset === 'bottom-right') return 'front-center-low';
     return 'front';
   }
   if (side === 'back') {
     if (preset === 'top-left') return 'back-left';
     if (preset === 'top-center') return 'back-center-high';
     if (preset === 'top-right') return 'back-right';
+    if (preset === 'mid-left') return 'back-left';
     if (preset === 'center') return 'back-center';
+    if (preset === 'mid-right') return 'back-right';
+    if (preset === 'bottom-left') return 'back-center-low';
     if (preset === 'bottom-center') return 'back-center-low';
+    if (preset === 'bottom-right') return 'back-center-low';
     return 'back-center';
   }
   if (side === 'sleeve-left') return 'sleeve-left';
@@ -2013,8 +2023,22 @@ function setPrintPlacement(preset, render = true) {
       const zHpx = zone.h * scaleMultiplier;
       ds.wPct = zWpx / 600 * 100;
       ds.hPct = zHpx / 600 * 100;
-      ds.xPct = (zone.cx - zWpx / 2) / 600 * 100;
-      ds.yPct = (zone.cy - zHpx / 2) / 600 * 100;
+
+      // Compute precise placement coordinates for 9-grid presets
+      let cx = zone.cx;
+      let cy = zone.cy;
+      if (activeZoneId === 'front' || activeZoneId === 'back') {
+        const isFront = activeZoneId === 'front';
+        if (preset === 'bottom-left')  { cx = 210; cy = productType === 'baggy' ? 440 : 340; }
+        if (preset === 'bottom-right') { cx = 390; cy = productType === 'baggy' ? 440 : 340; }
+        if (preset === 'mid-left')     { cx = 210; cy = productType === 'baggy' ? 320 : 250; }
+        if (preset === 'mid-right')    { cx = 390; cy = productType === 'baggy' ? 320 : 250; }
+        if (preset === 'center')       { cx = 300; cy = productType === 'baggy' ? 270 : 220; }
+        if (preset === 'bottom-center'){ cx = 300; cy = productType === 'baggy' ? 480 : 340; }
+      }
+
+      ds.xPct = (cx - zWpx / 2) / 600 * 100;
+      ds.yPct = (cy - zHpx / 2) / 600 * 100;
     }
 
     if (window.setZoneCustomization) {
