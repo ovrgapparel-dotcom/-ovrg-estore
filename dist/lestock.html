@@ -131,6 +131,56 @@ footer{background:var(--dark);padding:2rem 1.5rem;text-align:center;color:#555;f
 .footer-admin{display:inline-block;background:none;border:none;cursor:pointer;color:#1a1a1a;font-size:0.6rem;margin-left:0.5rem;opacity:0.15;transition:opacity 0.3s;padding:2px 4px;border-radius:3px}
 .footer-admin:hover{opacity:0.5}
 @media(max-width:768px){.hero h1{font-size:3rem}.stock-grid{grid-template-columns:1fr}nav{display:none}}
+
+/* ── TIER DETAIL MODAL ─────────────────────────────── */
+.td-overlay{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
+.td-overlay.open{opacity:1;pointer-events:auto}
+.td-modal{background:#141414;border-radius:24px 24px 0 0;width:100%;max-width:620px;max-height:92vh;overflow-y:auto;transform:translateY(40px);transition:transform 0.35s cubic-bezier(0.22,1,0.36,1);padding-bottom:2rem;border-top:1px solid #222}
+.td-overlay.open .td-modal{transform:translateY(0)}
+.td-drag-handle{width:40px;height:4px;background:#333;border-radius:4px;margin:1rem auto 0.5rem}
+.td-header{padding:1.2rem 1.8rem 0.8rem;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;border-bottom:1px solid #1c1c1c}
+.td-title-block h2{font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:0.2rem}
+.td-title-block p{font-size:0.8rem;color:#666;text-transform:uppercase;letter-spacing:0.08em}
+.td-close{background:#222;border:none;color:#888;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1rem;flex-shrink:0;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
+.td-close:hover{background:#333;color:#fff}
+.td-tier-badge-lg{display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.9rem;border-radius:30px;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:1rem 1.8rem 0}
+.td-tier-badge-lg.standard{background:rgba(136,136,136,0.12);color:#aaa;border:1px solid rgba(136,136,136,0.2)}
+.td-tier-badge-lg.highend{background:rgba(59,130,246,0.1);color:#60a5fa;border:1px solid rgba(59,130,246,0.2)}
+.td-tier-badge-lg.premium{background:rgba(234,179,8,0.08);color:#fbbf24;border:1px solid rgba(234,179,8,0.2)}
+.td-price-hero{padding:0.5rem 1.8rem 0.5rem;font-size:2rem;font-weight:900;color:var(--primary);font-family:'Inter',sans-serif}
+.td-price-hero span{font-size:1rem;font-weight:500;color:#666;margin-left:0.3rem}
+.td-image-box{width:calc(100% - 3.6rem);margin:0.5rem 1.8rem 1rem;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#0d0d0d;border:1px solid #222;display:flex;align-items:center;justify-content:center;position:relative}
+.td-image-box img{width:100%;height:100%;object-fit:cover;transition:transform 0.4s ease}
+.td-image-box:hover img{transform:scale(1.03)}
+.td-image-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.4rem;color:#2a2a2a}
+.td-image-placeholder span{font-size:3.5rem}
+.td-image-placeholder p{font-size:0.75rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#444}
+.td-body{padding:0 1.8rem}
+.td-section{margin-bottom:1.6rem}
+.td-section-title{font-size:0.7rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#555;margin-bottom:0.9rem;display:flex;align-items:center;gap:0.5rem}
+.td-section-title::after{content:'';flex:1;height:1px;background:#1e1e1e}
+.td-spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem}
+.td-spec{background:#0f0f0f;border:1px solid #1c1c1c;border-radius:10px;padding:0.75rem 1rem}
+.td-spec-label{font-size:0.7rem;color:#555;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.2rem}
+.td-spec-value{font-size:0.9rem;font-weight:700;color:#ddd}
+.td-feature-list{display:flex;flex-direction:column;gap:0.5rem}
+.td-feature{display:flex;align-items:center;gap:0.7rem;font-size:0.88rem;color:#bbb}
+.td-feature::before{content:'✓';color:var(--primary);font-weight:800;flex-shrink:0}
+.td-stock-bar{margin:0.8rem 0}
+.td-stock-track{height:6px;background:#1c1c1c;border-radius:6px;overflow:hidden;margin-bottom:0.4rem}
+.td-stock-fill{height:100%;border-radius:6px;transition:width 0.6s ease}
+.td-stock-fill.in-stock{background:linear-gradient(90deg,#22c55e,#16a34a)}
+.td-stock-fill.low-stock{background:linear-gradient(90deg,#f59e0b,#d97706)}
+.td-stock-fill.out-of-stock{background:#ef4444}
+.td-stock-label{font-size:0.8rem;font-weight:600}
+.td-stock-label.in-stock{color:#22c55e}
+.td-stock-label.low-stock{color:#f59e0b}
+.td-stock-label.out-of-stock{color:#ef4444}
+.td-cta{padding:1rem 1.8rem 0}
+.td-cta a{display:flex;align-items:center;justify-content:center;gap:0.6rem;background:var(--primary);color:#fff;text-decoration:none;padding:1rem;border-radius:14px;font-weight:800;font-size:1rem;transition:background 0.2s,transform 0.15s;letter-spacing:0.02em}
+.td-cta a:hover{background:var(--primary-dark);transform:scale(1.01)}
+.td-cta-note{text-align:center;font-size:0.75rem;color:#555;margin-top:0.6rem}
+@media(min-width:620px){.td-modal{border-radius:20px;margin:auto;max-height:88vh}.td-overlay{align-items:center}}
 </style>
 </head>
 <body>
@@ -174,7 +224,45 @@ footer{background:var(--dark);padding:2rem 1.5rem;text-align:center;color:#555;f
 
 <div class="toast-container" id="toastContainer"></div>
 
-<!-- ADMIN LOGIN -->
+<!-- TIER DETAIL MODAL -->
+<div class="td-overlay" id="tdOverlay" onclick="if(event.target===this)closeTierModal()">
+  <div class="td-modal" id="tdModal">
+    <div class="td-drag-handle"></div>
+    <div class="td-header">
+      <div class="td-title-block">
+        <h2 id="tdProductName">—</h2>
+        <p id="tdProductSub">—</p>
+      </div>
+      <button class="td-close" onclick="closeTierModal()">✕</button>
+    </div>
+    <div id="tdBadge" class="td-tier-badge-lg standard">Standard</div>
+    <div class="td-price-hero" id="tdPrice">— <span>FCFA</span></div>
+    <div class="td-image-box" id="tdImageBox"></div>
+    <div class="td-body">
+      <div class="td-section">
+        <div class="td-section-title">🧵 Composition & fabrication</div>
+        <div class="td-spec-grid" id="tdSpecGrid"></div>
+      </div>
+      <div class="td-section">
+        <div class="td-section-title">⭐ Points forts</div>
+        <div class="td-feature-list" id="tdFeatureList"></div>
+      </div>
+      <div class="td-section">
+        <div class="td-section-title">📦 Disponibilité</div>
+        <div class="td-stock-bar">
+          <div class="td-stock-track"><div class="td-stock-fill" id="tdStockFill" style="width:0%"></div></div>
+          <div class="td-stock-label" id="tdStockLabel">—</div>
+        </div>
+        <p id="tdDesc" style="font-size:0.85rem;color:#666;line-height:1.6;margin-top:0.4rem"></p>
+      </div>
+    </div>
+    <div class="td-cta">
+      <a href="#" id="tdCtaLink">✨ Personnaliser ce vêtement →</a>
+      <p class="td-cta-note">Vous serez redirigé vers le configurateur avec cette qualité pré-sélectionnée</p>
+    </div>
+  </div>
+</div>
+
 <div class="admin-overlay" id="loginOverlay">
   <div class="admin-box" style="max-width:420px">
     <div class="login-box">
@@ -369,7 +457,10 @@ function tierRowHTML(key,prod,tierKey,label,badgeCls,sel){
   return `<div class="tier-row ${selected}" onclick="selectProductTier('${key}','${tierKey}')">
     <div class="tier-row-hdr">
       <span class="tier-label">${label} <span class="tier-badge ${badgeCls}">${label}</span></span>
-      <span class="tier-price">${price} FCFA</span>
+      <div style="display:flex;align-items:center;gap:0.6rem">
+        <span class="tier-price">${price} FCFA</span>
+        <button onclick="event.stopPropagation();openTierModal('${key}','${tierKey}')" style="background:rgba(255,255,255,0.06);border:1px solid #2a2a2a;color:#888;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:0.75rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s" onmouseenter="this.style.background='rgba(255,107,53,0.15)';this.style.color='#FF6B35';this.style.borderColor='rgba(255,107,53,0.3)'" onmouseleave="this.style.background='rgba(255,255,255,0.06)';this.style.color='#888';this.style.borderColor='#2a2a2a'" title="Voir les détails">ℹ</button>
+      </div>
     </div>
     <p class="tier-desc">${t.description||''}</p>
     <div class="tier-meta"><span>Stock:</span><span class="tier-stock ${si.cls}">${si.txt}</span></div>
@@ -407,6 +498,150 @@ function renderInventory(){
 }
 
 function selectProductTier(productKey,tier){selectedTiers[productKey]=tier;renderInventory();}
+
+/* ── TIER DETAIL MODAL ── */
+const TIER_SPECS = {
+  standard: {
+    label: 'Standard',
+    specs: [
+      { label: 'Composition', value: '65% Polyester / 35% Coton' },
+      { label: 'Grammage',    value: '160 g/m²' },
+      { label: 'Coupe',       value: 'Regular fit' },
+      { label: 'Origine',     value: 'Asie du Sud-Est' },
+      { label: 'Marque',      value: 'OVRG Basics' },
+      { label: 'Traitement',  value: 'Anti-rétrécissement' },
+    ],
+    features: [
+      'Idéal pour les petits budgets et essais',
+      'Séchage rapide grâce au mélange polyester',
+      'Résistant aux lavages fréquents',
+      'Disponible en large quantité',
+      'Compatible broderie & impression DTF',
+    ],
+  },
+  highend: {
+    label: 'High-End',
+    specs: [
+      { label: 'Composition', value: '100% Coton peigné' },
+      { label: 'Grammage',    value: '180 g/m²' },
+      { label: 'Coupe',       value: 'Semi-fitted' },
+      { label: 'Origine',     value: 'Turquie / Bangladesh' },
+      { label: 'Marque',      value: 'OVRG Select' },
+      { label: 'Traitement',  value: 'Pre-shrunk · Pré-lavé' },
+    ],
+    features: [
+      'Coton 100% peigné — toucher plus doux',
+      'Maintien de forme après lavage',
+      'Rendu des couleurs supérieur',
+      'Idéal pour collections capsule',
+      'Compatible broderie, DTG & DTF haute définition',
+    ],
+  },
+  premium: {
+    label: 'Premium',
+    specs: [
+      { label: 'Composition', value: '100% Coton Supima®' },
+      { label: 'Grammage',    value: '220 g/m²' },
+      { label: 'Coupe',       value: 'Oversized / tailored' },
+      { label: 'Origine',     value: 'Portugal · GOTS certifié' },
+      { label: 'Marque',      value: 'OVRG Signature' },
+      { label: 'Traitement',  value: 'Stone-washed · Anti-bouloche' },
+    ],
+    features: [
+      'Coton Supima® — fibre extra-longue la plus douce',
+      'Grammage lourd — tombé luxueux',
+      'Certification GOTS (biologique & éthique)',
+      'Idéal pour pièces de créateur & édition limitée',
+      'Rendu broderie & DTG magazine-ready',
+    ],
+  },
+};
+
+const PRODUCT_EXTRA = {
+  tshirt:  { brand: 'OVRG Apparel',    fits: 'XS → 3XL',  wash: '30°C retourné' },
+  cap:     { brand: 'OVRG Headwear',   fits: 'Taille unique (réglable)', wash: 'Lavage à la main' },
+  bucket:  { brand: 'OVRG Headwear',   fits: 'S/M — L/XL', wash: 'Lavage à la main' },
+  bobble:  { brand: 'OVRG Headwear',   fits: 'Taille unique', wash: '30°C délicat' },
+  jacket:  { brand: 'OVRG Denim',      fits: 'XS → XXL',   wash: '30°C à l\'envers' },
+  hoodie:  { brand: 'OVRG Streetwear', fits: 'XS → 3XL',   wash: '30°C retourné' },
+  shorts:  { brand: 'OVRG Bottoms',    fits: 'XS → XXL',   wash: '30°C normal' },
+  socks:   { brand: 'OVRG Essentials', fits: 'S (36-40) / L (41-46)', wash: '30°C normal' },
+};
+
+function openTierModal(productKey, tierKey) {
+  const prod = lestockInventory[productKey];
+  if (!prod) return;
+  const tier = prod[tierKey];
+  if (!tier) return;
+  const specs = TIER_SPECS[tierKey] || TIER_SPECS.standard;
+  const extra = PRODUCT_EXTRA[productKey] || {};
+  const si = stockInfo(tier.stock);
+  const price = new Intl.NumberFormat('fr-FR').format(tier.price);
+  const custUrl = prod.customizer + (prod.customizer.includes('?') ? '&' : '?') + 'tier=' + tierKey;
+
+  // Header
+  document.getElementById('tdProductName').textContent = prod.name || productKey;
+  document.getElementById('tdProductSub').textContent = prod.icon + ' — Gamme ' + specs.label;
+
+  // Badge
+  const badge = document.getElementById('tdBadge');
+  badge.textContent = specs.label;
+  badge.className = 'td-tier-badge-lg ' + tierKey;
+
+  // Price
+  document.getElementById('tdPrice').innerHTML = price + ' <span>FCFA / pièce</span>';
+
+  // Image / Picture space
+  const imgBox = document.getElementById('tdImageBox');
+  if (prod.image) {
+    imgBox.innerHTML = `<img src="${prod.image}" alt="${prod.name}">`;
+  } else {
+    imgBox.innerHTML = `<div class="td-image-placeholder"><span>${prod.icon || '👕'}</span><p>${prod.name || productKey} — ${specs.label}</p></div>`;
+  }
+
+  // Specs grid — merge tier specs + product-specific extras
+  const allSpecs = [
+    ...specs.specs,
+    { label: 'Tailles disponibles', value: extra.fits || '—' },
+    { label: 'Entretien',           value: extra.wash || '—' },
+  ];
+  document.getElementById('tdSpecGrid').innerHTML = allSpecs.map(s =>
+    `<div class="td-spec"><div class="td-spec-label">${s.label}</div><div class="td-spec-value">${s.value}</div></div>`
+  ).join('');
+
+  // Features
+  document.getElementById('tdFeatureList').innerHTML = specs.features.map(f =>
+    `<div class="td-feature">${f}</div>`
+  ).join('');
+
+  // Stock bar
+  const fill = document.getElementById('tdStockFill');
+  const label = document.getElementById('tdStockLabel');
+  const maxCapacity = 100;
+  const pct = Math.min(100, Math.round((tier.stock / maxCapacity) * 100));
+  fill.style.width = pct + '%';
+  fill.className = 'td-stock-fill ' + si.cls;
+  label.textContent = si.txt;
+  label.className = 'td-stock-label ' + si.cls;
+
+  // Description
+  document.getElementById('tdDesc').textContent = tier.description || '';
+
+  // CTA
+  document.getElementById('tdCtaLink').href = custUrl;
+
+  // Open
+  document.getElementById('tdOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTierModal() {
+  document.getElementById('tdOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTierModal(); });
+
 
 /* AUTH */
 function handleAdminClick(){if(currentUser)openAdmin();else openLogin();}
