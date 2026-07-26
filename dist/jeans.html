@@ -83,6 +83,98 @@
 
 * { margin:0; padding:0; box-sizing:border-box; }
 
+/* ── PLACEMENT ZONE INFO MODAL ── */
+.zone-info-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--primary); color: #fff; font-size: 0.7rem; font-weight: 800;
+  border: none; cursor: pointer; flex-shrink: 0; margin-left: 6px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 6px rgba(255,107,53,0.35);
+  vertical-align: middle;
+}
+.zone-info-btn:hover { transform: scale(1.15); box-shadow: 0 4px 12px rgba(255,107,53,0.5); }
+
+#zoneInfoModal {
+  display: none; position: fixed; inset: 0; z-index: 99999;
+  background: rgba(0,0,0,0.72); backdrop-filter: blur(6px);
+  animation: fadeIn 0.2s ease;
+  overflow-y: auto;
+  padding: 1rem;
+}
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+#zoneInfoModal .modal-box {
+  background: #fff; border-radius: 20px; max-width: 720px; margin: 2rem auto;
+  overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,0.45);
+  animation: slideUp 0.25s cubic-bezier(0.34,1.3,0.64,1);
+}
+@keyframes slideUp { from { transform: translateY(24px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+.modal-header {
+  background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
+  padding: 1.4rem 1.8rem; display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h3 {
+  color: #fff; font-size: 1.1rem; font-weight: 800; letter-spacing: 0.04em;
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.modal-header h3 span.badge {
+  background: var(--primary); color: #fff; font-size: 0.68rem; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.modal-close-btn {
+  background: rgba(255,255,255,0.1); border: none; color: #fff; cursor: pointer;
+  width: 34px; height: 34px; border-radius: 50%; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.modal-close-btn:hover { background: rgba(255,107,53,0.6); }
+.modal-body { padding: 1.6rem 1.8rem; }
+.modal-intro {
+  color: #555; font-size: 0.88rem; margin-bottom: 1.4rem;
+  background: #f8f7f4; border-radius: 10px; padding: 0.8rem 1rem;
+  border-left: 3px solid var(--primary);
+}
+.zone-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+.zone-card {
+  border: 1.5px solid #eee; border-radius: 12px; overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  cursor: default;
+}
+.zone-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255,107,53,0.15);
+  border-color: var(--primary);
+}
+.zone-card-img {
+  background: linear-gradient(160deg, #1a1a2e 0%, #16213e 100%);
+  display: flex; align-items: center; justify-content: center;
+  height: 120px; position: relative; overflow: hidden;
+}
+.zone-card-img svg { max-height: 105px; max-width: 130px; }
+.zone-highlight {
+  fill: rgba(255,107,53,0.55); stroke: #FF6B35; stroke-width: 2;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 0.55 }
+  50% { opacity: 0.85 }
+}
+.zone-card-info {
+  padding: 0.7rem 0.8rem; background: #fff;
+}
+.zone-card-label {
+  font-weight: 800; font-size: 0.85rem; color: var(--dark); line-height: 1.2; margin-bottom: 2px;
+}
+.zone-card-size {
+  font-size: 0.73rem; color: var(--primary); font-weight: 700; letter-spacing: 0.04em;
+}
+.zone-card-desc {
+  font-size: 0.72rem; color: #888; margin-top: 2px; line-height: 1.3;
+}
+
 body {
   font-family: 'DM Sans', sans-serif;
   background: var(--light);
@@ -850,17 +942,20 @@ footer .footer-admin {
     <div id="printCustomize" style="display:none">
 
       <div class="ctrl-section">
-        <label class="ctrl-label">Position sur le produit</label>
+        <label class="ctrl-label" style="display:flex;align-items:center;gap:0.4rem">
+          <span>Position sur le produit</span>
+          <button class="zone-info-btn" onclick="openZoneInfoModal()" title="Guide des zones d'impression">ℹ</button>
+        </label>
         <div class="placement-grid" id="placementGrid">
-          <button class="placement-btn" data-preset="top-left" title="Poitrine Gauche" onclick="setPrintPlacement('top-left')">↖</button>
-          <button class="placement-btn" data-preset="top-center" title="Haut centre" onclick="setPrintPlacement('top-center')">⬆</button>
-          <button class="placement-btn" data-preset="top-right" title="Poitrine Droite" onclick="setPrintPlacement('top-right')">↗</button>
-          <button class="placement-btn" data-preset="mid-left" title="Milieu gauche" onclick="setPrintPlacement('mid-left')">⬅</button>
+          <button class="placement-btn" data-preset="top-left" title="Poche Gauche" onclick="setPrintPlacement('top-left')">↖</button>
+          <button class="placement-btn" data-preset="top-center" title="Ceinture Avant" onclick="setPrintPlacement('top-center')">⬆</button>
+          <button class="placement-btn" data-preset="top-right" title="Poche Droite" onclick="setPrintPlacement('top-right')">↗</button>
+          <button class="placement-btn" data-preset="mid-left" title="Cuisse / Jambe G." onclick="setPrintPlacement('mid-left')">⬅</button>
           <button class="placement-btn selected" data-preset="center" title="Centre" onclick="setPrintPlacement('center')">⬤</button>
-          <button class="placement-btn" data-preset="mid-right" title="Milieu droite" onclick="setPrintPlacement('mid-right')">➡</button>
-          <button class="placement-btn" data-preset="bottom-left" title="Bas gauche" onclick="setPrintPlacement('bottom-left')">↙</button>
-          <button class="placement-btn" data-preset="bottom-center" title="Bas centre" onclick="setPrintPlacement('bottom-center')">⬇</button>
-          <button class="placement-btn" data-preset="bottom-right" title="Bas droite" onclick="setPrintPlacement('bottom-right')">↘</button>
+          <button class="placement-btn" data-preset="mid-right" title="Cuisse / Jambe D." onclick="setPrintPlacement('mid-right')">➡</button>
+          <button class="placement-btn" data-preset="bottom-left" title="Bas Jambe G." onclick="setPrintPlacement('bottom-left')">↙</button>
+          <button class="placement-btn" data-preset="bottom-center" title="Bas Ourlet" onclick="setPrintPlacement('bottom-center')">⬇</button>
+          <button class="placement-btn" data-preset="bottom-right" title="Bas Jambe D." onclick="setPrintPlacement('bottom-right')">↘</button>
         </div>
       </div>
 
@@ -3787,6 +3882,199 @@ function pgHandleLeave() {
     <button class="mobile-cta-btn" onclick="addToCartShowcase()">🛒 Panier</button>
   </div>
 </div>
+
+
+<!-- ─── PLACEMENT ZONE INFO MODAL ─────────────────────────────────────────── -->
+<div id="zoneInfoModal" onclick="if(event.target===this)closeZoneInfoModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>
+        📐 Zones d'impression
+        <span class="badge" id="zoneModalBadge">Baggy Jean</span>
+      </h3>
+      <button class="modal-close-btn" onclick="closeZoneInfoModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-intro">
+        Chaque zone ci-dessous correspond à une position de broderie ou d'impression sur le vêtement.
+        Cliquez sur un bouton de la grille 9 positions pour sélectionner la zone souhaitée.
+      </p>
+      <div class="zone-grid" id="zoneInfoGrid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── ZONE INFO MODAL DATA ─────────────────────────────────────────────────────
+// SVG silhouettes: baggy/jeans = full-length trousers, shorts = short pants
+// Each zone card shows the garment with the printable area highlighted in orange
+
+const _PANTS_SVG = (highlight) => `
+<svg viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
+  <!-- waistband -->
+  <rect x="18" y="8" width="64" height="10" rx="2" fill="#2a3a5c" stroke="#3a4f7a" stroke-width="0.8"/>
+  <!-- left leg body -->
+  <path d="M18 18 L40 18 L38 120 L10 120 Z" fill="#2a3a5c" stroke="#3a4f7a" stroke-width="0.8"/>
+  <!-- right leg body -->
+  <path d="M60 18 L82 18 L90 120 L62 120 Z" fill="#2a3a5c" stroke="#3a4f7a" stroke-width="0.8"/>
+  <!-- crotch -->
+  <path d="M40 18 L60 18 L52 54 L48 54 Z" fill="#243050" stroke="#3a4f7a" stroke-width="0.8"/>
+  ${highlight}
+</svg>`;
+
+const _SHORTS_SVG = (highlight) => `
+<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- waistband -->
+  <rect x="15" y="5" width="70" height="10" rx="2" fill="#2a3a5c" stroke="#3a4f7a" stroke-width="0.8"/>
+  <!-- left leg -->
+  <path d="M15 15 L42 15 L38 70 L10 70 Z" fill="#2a3a5c" stroke="#3a4f7a" stroke-width="0.8"/>
+  <!-- right leg -->
+  <path d="M58 15 L85 15 L90 70 L62 70 Z" fill="#2a3a5c" stroke="#3a4f7a" stroke-width="0.8"/>
+  <!-- crotch -->
+  <path d="M42 15 L58 15 L53 38 L47 38 Z" fill="#243050" stroke="#3a4f7a" stroke-width="0.8"/>
+  ${highlight}
+</svg>`;
+
+const _JACKET_SVG = (highlight) => `
+<svg viewBox="0 0 120 130" xmlns="http://www.w3.org/2000/svg">
+  <!-- body -->
+  <rect x="30" y="30" width="60" height="80" rx="3" fill="#2a3a5c" stroke="#3a4f7a" stroke-width="0.8"/>
+  <!-- collar -->
+  <path d="M50 30 L60 45 L70 30 Z" fill="#1e2d48"/>
+  <!-- left sleeve -->
+  <rect x="8" y="30" width="22" height="65" rx="3" fill="#2a3a5c" stroke="#3a4f7a" stroke-width="0.8"/>
+  <!-- right sleeve -->
+  <rect x="90" y="30" width="22" height="65" rx="3" fill="#2a3a5c" stroke="#3a4f7a" stroke-width="0.8"/>
+  ${highlight}
+</svg>`;
+
+// Zone definitions per product type
+const ZONE_GUIDE_DATA = {
+  shorts: {
+    label: 'Short',
+    intro: 'Zones d\'impression disponibles pour le Short — de la ceinture aux ourlets de jambe.',
+    zones: [
+      { label: 'Ceinture Avant',    size: '24×8cm', desc: 'Haut de la ceinture, face avant',
+        svg: _SHORTS_SVG('<rect class="zone-highlight" x="22" y="5" width="56" height="10" rx="2"/>') },
+      { label: 'Poche Gauche',      size: '16×14cm', desc: 'Poche avant gauche',
+        svg: _SHORTS_SVG('<rect class="zone-highlight" x="10" y="18" width="28" height="20" rx="3"/>') },
+      { label: 'Poche Droite',      size: '16×14cm', desc: 'Poche avant droite',
+        svg: _SHORTS_SVG('<rect class="zone-highlight" x="62" y="18" width="28" height="20" rx="3"/>') },
+      { label: 'Cuisse G. Full',    size: '21×27cm', desc: 'Cuisse gauche complète',
+        svg: _SHORTS_SVG('<path class="zone-highlight" d="M11 18 L38 18 L34 68 L8 68 Z"/>') },
+      { label: 'Centre',            size: '40×36cm', desc: 'Devant complet centré',
+        svg: _SHORTS_SVG('<rect class="zone-highlight" x="16" y="14" width="68" height="52" rx="3"/>') },
+      { label: 'Cuisse D. Full',    size: '21×27cm', desc: 'Cuisse droite complète',
+        svg: _SHORTS_SVG('<path class="zone-highlight" d="M62 18 L89 18 L94 68 L66 68 Z"/>') },
+      { label: 'Bas Ourlet G.',     size: '28×10cm', desc: 'Bord bas de jambe gauche',
+        svg: _SHORTS_SVG('<rect class="zone-highlight" x="11" y="58" width="28" height="12" rx="2"/>') },
+      { label: 'Bas Ourlet',        size: '28×10cm', desc: 'Ourlet bas, largeur totale',
+        svg: _SHORTS_SVG('<rect class="zone-highlight" x="11" y="58" width="78" height="12" rx="2"/>') },
+      { label: 'Poche Arrière G.',  size: '16×14cm', desc: 'Dos — poche arrière gauche',
+        svg: _SHORTS_SVG('<rect class="zone-highlight" x="13" y="20" width="26" height="18" rx="3"/>') },
+    ]
+  },
+  baggy: {
+    label: 'Baggy Jean',
+    intro: 'Zones d\'impression disponibles pour le Baggy — de la ceinture jusqu\'au bas des jambes.',
+    zones: [
+      { label: 'Ceinture Avant',    size: '26×8cm', desc: 'Bandeau de ceinture avant',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="18" y="8" width="64" height="10" rx="2"/>') },
+      { label: 'Poche Gauche',      size: '17×14cm', desc: 'Poche avant gauche',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="10" y="22" width="24" height="22" rx="3"/>') },
+      { label: 'Poche Droite',      size: '17×14cm', desc: 'Poche avant droite',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="66" y="22" width="24" height="22" rx="3"/>') },
+      { label: 'Jambe G. Full',     size: '23×44cm', desc: 'Jambe gauche complète',
+        svg: _PANTS_SVG('<path class="zone-highlight" d="M10 22 L38 22 L36 118 L8 118 Z"/>') },
+      { label: 'Devant Complet',    size: '42×48cm', desc: 'Toute la face avant',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="10" y="18" width="80" height="102" rx="3"/>') },
+      { label: 'Jambe D. Full',     size: '23×44cm', desc: 'Jambe droite complète',
+        svg: _PANTS_SVG('<path class="zone-highlight" d="M62 22 L90 22 L92 118 L64 118 Z"/>') },
+      { label: 'Bas Jambe G.',      size: '30×12cm', desc: 'Ourlet bas — jambe gauche',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="9" y="106" width="28" height="14" rx="2"/>') },
+      { label: 'Bas des Jambes',    size: '30×12cm', desc: 'Ourlet bas des deux jambes',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="9" y="106" width="82" height="14" rx="2"/>') },
+      { label: 'Jacron (Dos)',       size: '8×4cm',   desc: 'Patch cuir ceinture arrière',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="56" y="8" width="18" height="10" rx="1"/>') },
+    ]
+  },
+  jacket: {
+    label: 'Veste en Jean',
+    intro: 'Zones d\'impression disponibles pour la Veste — poitrine, dos, manches.',
+    zones: [
+      { label: 'Poitrine Gauche',   size: '12×12cm', desc: 'Côté gauche — hauteur poitrine',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="32" y="38" width="24" height="24" rx="3"/>') },
+      { label: 'Haut Centre',       size: '30×12cm', desc: 'Centre avant — haut du buste',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="32" y="32" width="56" height="18" rx="3"/>') },
+      { label: 'Poitrine Droite',   size: '12×12cm', desc: 'Côté droit — hauteur poitrine',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="64" y="38" width="24" height="24" rx="3"/>') },
+      { label: 'Dos Complet',       size: '36×42cm', desc: 'Toute la surface du dos',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="30" y="30" width="60" height="80" rx="3"/>') },
+      { label: 'Manche Gauche',     size: '10×20cm', desc: 'Extérieur manche gauche',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="9" y="34" width="20" height="52" rx="3"/>') },
+      { label: 'Manche Droite',     size: '10×20cm', desc: 'Extérieur manche droite',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="91" y="34" width="20" height="52" rx="3"/>') },
+    ]
+  },
+  hoodie: {
+    label: 'Hoodie',
+    intro: 'Zones d\'impression disponibles pour le Hoodie — avant, dos, manches.',
+    zones: [
+      { label: 'Poitrine Gauche',   size: '12×12cm', desc: 'Côté gauche — poitrine',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="32" y="40" width="24" height="22" rx="3"/>') },
+      { label: 'Centre Avant',      size: '28×18cm', desc: 'Devant centré',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="33" y="38" width="54" height="30" rx="3"/>') },
+      { label: 'Bas Avant',         size: '28×10cm', desc: 'Bas avant — avant ourlet',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="32" y="90" width="56" height="18" rx="3"/>') },
+      { label: 'Dos Complet',       size: '36×40cm', desc: 'Toute la surface du dos',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="30" y="30" width="60" height="80" rx="3"/>') },
+      { label: 'Manche Gauche',     size: '10×20cm', desc: 'Extérieur manche gauche',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="9" y="34" width="20" height="52" rx="3"/>') },
+      { label: 'Manche Droite',     size: '10×20cm', desc: 'Extérieur manche droite',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="91" y="34" width="20" height="52" rx="3"/>') },
+    ]
+  }
+};
+
+function openZoneInfoModal() {
+  const type = (typeof productType !== 'undefined' && ZONE_GUIDE_DATA[productType])
+    ? productType : 'baggy';
+  const data = ZONE_GUIDE_DATA[type];
+
+  // Update badge label
+  document.getElementById('zoneModalBadge').textContent = data.label;
+
+  // Update intro
+  document.querySelector('#zoneInfoModal .modal-intro').textContent = data.intro;
+
+  // Build zone cards
+  const grid = document.getElementById('zoneInfoGrid');
+  grid.innerHTML = data.zones.map(z => `
+    <div class="zone-card">
+      <div class="zone-card-img">${z.svg}</div>
+      <div class="zone-card-info">
+        <div class="zone-card-label">${z.label}</div>
+        <div class="zone-card-size">⬜ ${z.size}</div>
+        <div class="zone-card-desc">${z.desc}</div>
+      </div>
+    </div>
+  `).join('');
+
+  const modal = document.getElementById('zoneInfoModal');
+  modal.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeZoneInfoModal() {
+  document.getElementById('zoneInfoModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Close on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeZoneInfoModal();
+});
+</script>
 
 </body>
 </html>
