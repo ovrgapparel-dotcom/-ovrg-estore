@@ -742,38 +742,72 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
 
   // ── Position logic ──────────────────────────────────────────────────────────
   if (IS_JEANS) {
+    const isBack = zoneId.startsWith('back');
+    const isSideLeft = zoneId === 'sleeve-left' || zoneId === 'side-left';
+    const isSideRight = zoneId === 'sleeve-right' || zoneId === 'side-right';
+
+    let ndcX = 0, ndcY = 0;
     const preset = config.placement || config.preset || 'center';
-    const jFrontZ = box.max.z - boxSize.z * 0.05;
-    const jBackZ  = box.min.z + boxSize.z * 0.05;
-    const dx = boxSize.x * 0.12;
-    const jFrontTopY = box.min.y + boxSize.y * 0.73;
-    const jFrontMidY = box.min.y + boxSize.y * 0.63;
-    const jFrontBotY = box.min.y + boxSize.y * 0.53;
-    const jBackTopY  = box.min.y + boxSize.y * 0.73;
-    const jBackMidY  = box.min.y + boxSize.y * 0.58;
-    const jBackBotY  = box.min.y + boxSize.y * 0.43;
-    if (zoneId === 'front') {
-      pz = jFrontZ;
-      if (preset.startsWith('top')) py = jFrontTopY;
-      else if (preset.startsWith('mid') || preset === 'center') py = jFrontMidY;
-      else if (preset.startsWith('bottom')) py = jFrontBotY;
-      if (preset.endsWith('left')) { px = cx - dx; ori.y = -Math.PI / 12; }
-      else if (preset.endsWith('right')) { px = cx + dx; ori.y = Math.PI / 12; }
-      if (posNormX !== undefined) px = cx + (0.5 - posNormX) * boxSize.x * 0.7;
-      if (posNormY !== undefined) py = box.min.y + boxSize.y * (0.53 + (1 - posNormY) * 0.20);
-    } else if (zoneId === 'back') {
-      pz = jBackZ; ori.y = Math.PI;
-      if (preset.startsWith('top')) py = jBackTopY;
-      else if (preset.startsWith('mid') || preset === 'center') py = jBackMidY;
-      else if (preset.startsWith('bottom')) py = jBackBotY;
-      if (preset.endsWith('left')) { px = cx + dx; ori.y = Math.PI * 11/12; }
-      else if (preset.endsWith('right')) { px = cx - dx; ori.y = -Math.PI * 11/12; }
-      if (posNormX !== undefined) px = cx + (0.5 - posNormX) * boxSize.x * 0.7;
-      if (posNormY !== undefined) py = box.min.y + boxSize.y * (0.43 + (1 - posNormY) * 0.30);
-    } else if (zoneId === 'sleeve-left') {
-      px = cx - boxSize.x * 0.45; py = jFrontMidY; pz = jFrontZ; ori.y = Math.PI / 2;
-    } else if (zoneId === 'sleeve-right') {
-      px = cx + boxSize.x * 0.45; py = jFrontMidY; pz = jFrontZ; ori.y = -Math.PI / 2;
+
+    if (posNormX !== undefined && posNormY !== undefined) {
+      ndcX = (posNormX - 0.5) * 0.75;
+      ndcY = 0.45 - posNormY * 0.85;
+      if (isBack) ndcX = -ndcX;
+    } else {
+      const JEANS_NDC = {
+        'top-left':      { x: -0.20, y:  0.35 },
+        'top-center':    { x:  0.00, y:  0.45 },
+        'top-right':     { x:  0.20, y:  0.35 },
+        'mid-left':      { x: -0.22, y:  0.05 },
+        'center':        { x:  0.00, y:  0.10 },
+        'mid-right':     { x:  0.22, y:  0.05 },
+        'bottom-left':   { x: -0.24, y: -0.32 },
+        'bottom-center': { x:  0.00, y: -0.35 },
+        'bottom-right':  { x:  0.24, y: -0.32 },
+      };
+      const baseNDC = JEANS_NDC[preset] || JEANS_NDC['center'];
+      ndcX = baseNDC.x;
+      ndcY = baseNDC.y;
+    }
+
+    const synCam = new THREE.PerspectiveCamera(45, camera ? camera.aspect : 1, 0.01, 100);
+    const targetY = controls ? controls.target.y : 0.05;
+
+    if (isBack) {
+      synCam.position.set(0, targetY, -3.5);
+    } else if (isSideLeft) {
+      synCam.position.set(3.5, targetY, 0);
+    } else if (isSideRight) {
+      synCam.position.set(-3.5, targetY, 0);
+    } else {
+      synCam.position.set(0, targetY, 3.5);
+    }
+    synCam.lookAt(0, targetY, 0);
+    synCam.updateMatrixWorld(true);
+    synCam.updateProjectionMatrix();
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), synCam);
+
+    const meshesToRaycast = targetDecalMeshes.length > 0 ? targetDecalMeshes : shirtMeshes;
+    const hits = raycaster.intersectObjects(meshesToRaycast, true);
+
+    if (hits.length > 0) {
+      const hit = hits[0];
+      px = hit.point.x;
+      py = hit.point.y;
+      pz = hit.point.z + (isBack ? -0.008 : 0.008);
+      const worldNormal = hit.face.normal.clone()
+        .transformDirection(hit.object.matrixWorld)
+        .normalize();
+      const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), worldNormal);
+      ori.setFromQuaternion(q);
+      if (isBack) ori.y += Math.PI;
+    } else {
+      px = cx + ndcX * boxSize.x * 0.5;
+      py = cy + ndcY * boxSize.y * 0.5;
+      pz = isBack ? box.min.z + boxSize.z * 0.05 : box.max.z - boxSize.z * 0.05;
+      if (isBack) ori.y = Math.PI;
     }
 
   } else if (IS_HOODIES) {
@@ -968,7 +1002,7 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     } else if (IS_HOODIES && zoneId === 'front') {
       depth = boxSize.z * 0.35;
     } else if (IS_JEANS) {
-      depth = boxSize.z * 0.55;
+      depth = boxSize.z * 0.25;
     } else {
       depth = boxSize.z * 0.85;
     }
