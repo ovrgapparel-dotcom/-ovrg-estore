@@ -3009,7 +3009,9 @@ function loadAdminSettingsUI() {
     pendingColorMockups = globalSettings.global_colors.map(c => ({
       hex: c,
       jacket_front: null, jacket_side: null, jacket_back: null,
-      hoodie_front: null, hoodie_side: null, hoodie_back: null
+      hoodie_front: null, hoodie_side: null, hoodie_back: null,
+      shorts_front: null, shorts_side: null, shorts_back: null,
+      baggy_front:  null, baggy_side:  null, baggy_back:  null
     }));
   }
   renderSettingsColorMockups();
@@ -3022,7 +3024,14 @@ function renderSettingsColorMockups() {
     container.innerHTML = '<p style="color:#666">Aucune couleur définie.</p>';
     return;
   }
-  
+
+  const sections = [
+    { key: 'jacket', label: 'Veste' },
+    { key: 'hoodie', label: 'Hoodie' },
+    { key: 'shorts', label: 'Short' },
+    { key: 'baggy',  label: 'Baggy' }
+  ];
+
   container.innerHTML = pendingColorMockups.map((m, i) => `
     <div style="background:#111; border:1px solid #333; padding:1rem; border-radius:8px; margin-bottom:1rem;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
@@ -3032,50 +3041,25 @@ function renderSettingsColorMockups() {
         </div>
         <button class="btn-cancel-login" style="padding:0.3rem 0.6rem; font-size:0.8rem;" onclick="removeColorMockup(${i})">Supprimer</button>
       </div>
-      
-      <h4 style="margin-bottom:0.5rem; color:#888; font-size:0.9rem;">Veste</h4>
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem; margin-bottom:1.5rem">
-        <div>
-          <label style="font-size:0.8rem">Devant</label>
-          <div class="upload-slot" id="slot_jacket_front_${i}" style="height:80px; min-height:80px;">
-            ${m.jacket_front ? '<img src="' + m.jacket_front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_jacket_front_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_front\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_jacket_front_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_front\')">'}
-          </div>
-        </div>
-        <div>
-          <label style="font-size:0.8rem">Côté</label>
-          <div class="upload-slot" id="slot_jacket_side_${i}" style="height:80px; min-height:80px;">
-            ${m.jacket_side ? '<img src="' + m.jacket_side + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_jacket_side_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_side\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_jacket_side_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_side\')">'}
-          </div>
-        </div>
-        <div>
-          <label style="font-size:0.8rem">Dos</label>
-          <div class="upload-slot" id="slot_jacket_back_${i}" style="height:80px; min-height:80px;">
-            ${m.jacket_back ? '<img src="' + m.jacket_back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_jacket_back_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_back\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_jacket_back_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'jacket_back\')">'}
-          </div>
-        </div>
-      </div>
 
-      <h4 style="margin-bottom:0.5rem; color:#888; font-size:0.9rem;">Hoodie</h4>
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem;">
-        <div>
-          <label style="font-size:0.8rem">Devant</label>
-          <div class="upload-slot" id="slot_hoodie_front_${i}" style="height:80px; min-height:80px;">
-            ${m.hoodie_front ? '<img src="' + m.hoodie_front + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_hoodie_front_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_front\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_hoodie_front_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_front\')">'}
-          </div>
+      ${sections.map(sec => `
+        <h4 style="margin-bottom:0.5rem; color:#888; font-size:0.9rem;">${sec.label}</h4>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem; margin-bottom:1rem">
+          ${['front','side','back'].map(sideKey => {
+            const field = `${sec.key}_${sideKey}`;
+            const url = m[field];
+            const sideName = sideKey === 'front' ? 'Devant' : sideKey === 'side' ? 'Côté' : 'Dos';
+            return `
+            <div>
+              <label style="font-size:0.8rem">${sideName}</label>
+              <div class="upload-slot" id="slot_${field}_${i}" style="height:80px; min-height:80px;">
+                ${url ? `<img src="${url}" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_${field}_${i}"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ${i}, '${field}')">`
+                      : `<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_${field}_${i}">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ${i}, '${field}')">`}
+              </div>
+            </div>`;
+          }).join('')}
         </div>
-        <div>
-          <label style="font-size:0.8rem">Côté</label>
-          <div class="upload-slot" id="slot_hoodie_side_${i}" style="height:80px; min-height:80px;">
-            ${m.hoodie_side ? '<img src="' + m.hoodie_side + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_hoodie_side_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_side\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_hoodie_side_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_side\')">'}
-          </div>
-        </div>
-        <div>
-          <label style="font-size:0.8rem">Dos</label>
-          <div class="upload-slot" id="slot_hoodie_back_${i}" style="height:80px; min-height:80px;">
-            ${m.hoodie_back ? '<img src="' + m.hoodie_back + '" style="height:100%; width:100%; object-fit:contain"><div class="upload-progress" id="prog_hoodie_back_' + i + '"></div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_back\')">' : '<div class="upload-slot-icon" style="font-size:1.2rem">📷</div><div class="upload-progress" id="prog_hoodie_back_' + i + '">⟳ Upload...</div><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="uploadHeadwearMockup(event, ' + i + ', \'hoodie_back\')">'}
-          </div>
-        </div>
-      </div>
+      `).join('')}
     </div>
   `).join('');
 }
@@ -3085,7 +3069,7 @@ function addColorMockup() {
   if (pendingColorMockups.find(m => m.hex.toLowerCase() === hex.toLowerCase())) {
     showToast('Erreur', 'Cette couleur existe déjà.', '#ef4444'); return;
   }
-  pendingColorMockups.push({ hex: hex, jacket_front: null, jacket_side: null, jacket_back: null, hoodie_front: null, hoodie_side: null, hoodie_back: null });
+  pendingColorMockups.push({ hex: hex, jacket_front: null, jacket_side: null, jacket_back: null, hoodie_front: null, hoodie_side: null, hoodie_back: null, shorts_front: null, shorts_side: null, shorts_back: null, baggy_front: null, baggy_side: null, baggy_back: null });
   renderSettingsColorMockups();
 }
 
@@ -3163,17 +3147,14 @@ function updateShirtImagesForColor(hex) {
               || globalSettings.color_mockups[0];
   if (!match) { paintFallbackCanvas('front'); paintFallbackCanvas('sleeve-left'); paintFallbackCanvas('sleeve-right'); paintFallbackCanvas('back'); return; }
 
-  if (productType === 'jacket') {
-    SHIRT_IMAGES.front = match.jacket_front || null;
-    SHIRT_IMAGES['sleeve-left']  = match.jacket_side  || null;
-    SHIRT_IMAGES['sleeve-right'] = match.jacket_side  || null;
-    SHIRT_IMAGES.back  = match.jacket_back  || null;
-  } else {
-    SHIRT_IMAGES.front = match.hoodie_front || null;
-    SHIRT_IMAGES['sleeve-left']  = match.hoodie_side  || null;
-    SHIRT_IMAGES['sleeve-right'] = match.hoodie_side  || null;
-    SHIRT_IMAGES.back  = match.hoodie_back  || null;
-  }
+  const pfx = productType === 'jacket' ? 'jacket'
+             : productType === 'shorts' ? 'shorts'
+             : productType === 'baggy'  ? 'baggy'
+             : 'hoodie'; // hoodie and fallback
+  SHIRT_IMAGES.front          = match[pfx + '_front'] || null;
+  SHIRT_IMAGES['sleeve-left'] = match[pfx + '_side']  || null;
+  SHIRT_IMAGES['sleeve-right']= match[pfx + '_side']  || null;
+  SHIRT_IMAGES.back           = match[pfx + '_back']  || null;
   loadShirtImages();
 }
 
