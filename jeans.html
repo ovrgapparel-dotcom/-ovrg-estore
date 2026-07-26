@@ -1854,6 +1854,38 @@ const PRODUCT_META = {
   baggy:  { label: 'Baggy',         hero: 'Baggy Jean',   tag: 'Custom Bottoms',   glb: '/baggy.glb',   prices: { standard: 18000, highend: 28000, premium: 42000 }, sizes: ['XS (34)','S (36)','M (38)','L (40)','XL (42)','XXL (44)'] },
 };
 
+function updatePlacementTooltips(type) {
+  const isBottom = ['jeans','shorts','baggy'].includes(type);
+  const leg = type === 'shorts' ? 'Cuisse' : 'Jambe';
+  
+  const tooltips = isBottom ? {
+    'top-left': 'Poche Gauche',
+    'top-center': 'Ceinture Avant',
+    'top-right': 'Poche Droite',
+    'mid-left': `${leg} Gauche`,
+    'center': 'Devant Centre',
+    'mid-right': `${leg} Droite`,
+    'bottom-left': `Bas ${leg} G.`,
+    'bottom-center': 'Bas Ourlet',
+    'bottom-right': `Bas ${leg} D.`
+  } : {
+    'top-left': 'Poitrine Gauche',
+    'top-center': 'Haut Centre',
+    'top-right': 'Poitrine Droite',
+    'mid-left': 'Milieu Gauche',
+    'center': 'Centre',
+    'mid-right': 'Milieu Droit',
+    'bottom-left': 'Bas Gauche',
+    'bottom-center': 'Bas Centre',
+    'bottom-right': 'Bas Droit'
+  };
+
+  document.querySelectorAll('#placementGrid .placement-btn').forEach(btn => {
+    const preset = btn.dataset.preset;
+    if (tooltips[preset]) btn.title = tooltips[preset];
+  });
+}
+
 function setProductType(type) {
   productType = type;
   activeZoneId = 'front';
