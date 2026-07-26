@@ -1314,6 +1314,7 @@ const EMBROIDERY_ZONES = {
     { id: 'front-center-low',  label: 'Jambe D. Full',        cx: 395, cy: 370, w: 110, h: 200 },
     { id: 'front-hem-left',    label: 'Bas Jambe G.',         cx: 195, cy: 500, w: 110, h:  80 },
     { id: 'front-hem',         label: 'Bas des Jambes',       cx: 300, cy: 500, w: 240, h:  80 },
+    { id: 'front-hem-right',   label: 'Bas Jambe D.',         cx: 405, cy: 500, w: 110, h:  80 },
     { id: 'back-center',       label: 'Fesses Complet',       cx: 300, cy: 250, w: 220, h: 200 },
     { id: 'back-left',         label: 'Poche Arrière G.',     cx: 210, cy: 230, w: 120, h: 100 },
     { id: 'back-right',        label: 'Poche Arrière D.',     cx: 390, cy: 230, w: 120, h: 100 },
@@ -1331,6 +1332,7 @@ const EMBROIDERY_ZONES = {
     { id: 'front-center-low',  label: 'Cuisse D. Full',           cx: 400, cy: 265, w: 210, h: 270 },
     { id: 'front-hem-left',    label: 'Bas Ourlet G.',            cx: 195, cy: 380, w: 200, h:  80 },
     { id: 'front-hem',         label: 'Bas Ourlet',               cx: 300, cy: 380, w: 390, h:  80 },
+    { id: 'front-hem-right',   label: 'Bas Ourlet D.',            cx: 405, cy: 380, w: 200, h:  80 },
     { id: 'back-center',       label: 'Fesses Complet',           cx: 300, cy: 265, w: 400, h: 360 },
     { id: 'back-left',         label: 'Poche Arrière G.',         cx: 200, cy: 210, w: 160, h: 140 },
     { id: 'back-right',        label: 'Poche Arrière D.',         cx: 400, cy: 210, w: 160, h: 140 },
@@ -1348,6 +1350,7 @@ const EMBROIDERY_ZONES = {
     { id: 'front-center-low',  label: 'Jambe D. Full',             cx: 405, cy: 340, w: 230, h: 440 },
     { id: 'front-hem-left',    label: 'Bas Jambe G.',              cx: 185, cy: 545, w: 180, h:  90 },
     { id: 'front-hem',         label: 'Bas des Jambes',            cx: 300, cy: 545, w: 380, h:  90 },
+    { id: 'front-hem-right',   label: 'Bas Jambe D.',              cx: 415, cy: 545, w: 180, h:  90 },
     { id: 'back-center',       label: 'Dos Complet',              cx: 300, cy: 330, w: 420, h: 480 },
     { id: 'back-left',         label: 'Poche Arrière G.',         cx: 200, cy: 250, w: 170, h: 140 },
     { id: 'back-right',        label: 'Poche Arrière D.',         cx: 400, cy: 250, w: 170, h: 140 },
@@ -2103,7 +2106,7 @@ function getZoneIdForSideAndPreset(side, preset) {
 
   if (side === 'front') {
     if (isBottom) {
-      // Lower-body front zones — each maps to a distinct EMBROIDERY_ZONES entry
+      // Lower-body front zones — all 9 presets map to FRONT zones
       if (preset === 'top-left')      return 'front-left';        // Poche Gauche
       if (preset === 'top-center')    return 'front-center-high'; // Ceinture Avant
       if (preset === 'top-right')     return 'front-right';       // Poche Droite
@@ -2112,7 +2115,7 @@ function getZoneIdForSideAndPreset(side, preset) {
       if (preset === 'mid-right')     return 'front-center-low';  // Jambe/Cuisse D. Full
       if (preset === 'bottom-left')   return 'front-hem-left';    // Bas Jambe G. / Bas Ourlet G.
       if (preset === 'bottom-center') return 'front-hem';         // Bas des Jambes / Bas Ourlet
-      if (preset === 'bottom-right')  return 'back-left';         // Jacron / Poche Arrière — back zone
+      if (preset === 'bottom-right')  return 'front-hem-right';   // Bas Jambe D. / Bas Ourlet D.
       return 'front';
     } else {
       // Upper-body (jacket/hoodie)
@@ -2209,17 +2212,8 @@ function setPrintPlacement(preset, render = true) {
       ds.wPct = zWpx / 600 * 100;
       ds.hPct = zHpx / 600 * 100;
 
-      // For Jacron / Poche Arrière (bottom-right lower-body), auto-switch to back view
-      // so the 2D mockup shows the correct surface
-      const pt2 = (typeof productType === 'string') ? productType : 'jacket';
-      const isBottom2 = ['jeans','shorts','baggy'].includes(pt2);
-      if (isBottom2 && preset === 'bottom-right' && activeZoneId === 'front') {
-        // Switch view to back without triggering a zone change loop
-        switchView('back');
-      }
-
       // Use zone cx/cy directly — no manual overrides needed since EMBROIDERY_ZONES
-      // now has distinct entries for every placement (front-hem-left, front-hem, etc.)
+      // now has distinct entries for every placement
       const cx = zone.cx;
       const cy = zone.cy;
 

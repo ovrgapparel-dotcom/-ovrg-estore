@@ -756,13 +756,8 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     const pType = (typeof window.productType === 'string') ? window.productType : 'baggy';
     const isShorts = (pType === 'shorts');
 
-    // Jacron (Dos) / Poche Arrière sit on the BACK of the garment — force back camera
-    // even though activeZoneId may still be 'front'
-    const isJacron = ['baggy','jeans','shorts'].includes(pType) && preset === 'bottom-right';
-    // front-hem / front-hem-left are front zones (bottom of front) — NOT back
-    const isFrontHem = zoneId === 'front-hem' || zoneId === 'front-hem-left';
-
-    const isBack     = (!isFrontHem) && (zoneId.startsWith('back') || isJacron);
+    // zoneId is the source of truth for surface side (front vs back vs sleeve)
+    const isBack     = zoneId.startsWith('back');
     const isSideLeft = zoneId === 'sleeve-left'  || zoneId === 'side-left';
     const isSideRight= zoneId === 'sleeve-right' || zoneId === 'side-right';
 
@@ -778,9 +773,8 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     } else {
       // ── Per-product preset NDC lookup ────────────────────────────────────────
       // NDC Y: +1 = top of viewport, -1 = bottom. Camera at ~3.5m.
-      // Shorts: waistband ≈ y 0.32, pocket ≈ y 0.16, cuisse mid ≈ y -0.02, hem ≈ y -0.22
+      // Shorts: waistband ≈ y 0.32, pocket ≈ y 0.16, cuisse mid ≈ y -0.02, hem ≈ y -0.24
       // Baggy:  waistband ≈ y 0.40, pocket ≈ y 0.26, thigh mid ≈ y 0.02, ankle ≈ y -0.36
-      // Jacron: back camera, waistband centre ≈ y 0.38
       const NDC_SHORTS = {
         'top-left':       { x: -0.18, y:  0.16 }, // Poche Gauche
         'top-center':     { x:  0.00, y:  0.33 }, // Ceinture Avant — waistband
@@ -790,7 +784,7 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
         'mid-right':      { x:  0.20, y: -0.02 }, // Cuisse D. Full — right thigh
         'bottom-left':    { x: -0.20, y: -0.24 }, // Bas Ourlet G. — left hem
         'bottom-center':  { x:  0.00, y: -0.24 }, // Bas Ourlet — full hem
-        'bottom-right':   { x:  0.00, y:  0.34 }, // Poche Arrière (back cam waistband)
+        'bottom-right':   { x:  0.20, y: -0.24 }, // Bas Ourlet D. — right hem
       };
       const NDC_BAGGY = {
         'top-left':       { x: -0.18, y:  0.26 }, // Poche Gauche
@@ -801,7 +795,7 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
         'mid-right':      { x:  0.20, y:  0.02 }, // Jambe D. Full — right leg
         'bottom-left':    { x: -0.20, y: -0.36 }, // Bas Jambe G. — left ankle
         'bottom-center':  { x:  0.00, y: -0.38 }, // Bas des Jambes — both ankles
-        'bottom-right':   { x:  0.00, y:  0.38 }, // Jacron — back cam, centre waistband
+        'bottom-right':   { x:  0.20, y: -0.36 }, // Bas Jambe D. — right ankle
       };
       const NDC_TABLE = isShorts ? NDC_SHORTS : NDC_BAGGY;
       const baseNDC = NDC_TABLE[preset] || NDC_TABLE['center'];
@@ -843,7 +837,6 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
         .normalize();
       const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), worldNormal);
       ori.setFromQuaternion(q);
-      if (isBack) ori.y += Math.PI;
     } else {
       px = cx + ndcX * boxSize.x * 0.5;
       py = cy + ndcY * boxSize.y * 0.5;
