@@ -2375,30 +2375,76 @@ function paintFallbackCanvas(side) {
 
   const col = (typeof selectedColor !== 'undefined' && selectedColor) ? selectedColor : '#ffffff';
 
-  // Generic outerwear silhouette
   ctx.save();
-  ctx.beginPath();
-  // Simple shirt shape (for fallback only)
-  ctx.moveTo(150, 150); // Left shoulder
-  ctx.lineTo(250, 100); // Neck left
-  ctx.lineTo(350, 100); // Neck right
-  ctx.lineTo(450, 150); // Right shoulder
-  ctx.lineTo(550, 300); // Right sleeve end
-  ctx.lineTo(450, 350); // Right armpit
-  ctx.lineTo(450, 550); // Right bottom
-  ctx.lineTo(150, 550); // Left bottom
-  ctx.lineTo(150, 350); // Left armpit
-  ctx.lineTo(50, 300);  // Left sleeve end
-  ctx.closePath();
   ctx.fillStyle = col;
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,0.20)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
   ctx.lineWidth = 3;
-  ctx.stroke();
+
+  if (productType === 'shorts') {
+    // ── 2D SHORTS SILHOUETTE ──
+    ctx.beginPath();
+    ctx.moveTo(170, 130); // Top left waistband
+    ctx.lineTo(430, 130); // Top right waistband
+    ctx.lineTo(470, 390); // Right leg outer
+    ctx.lineTo(330, 390); // Right leg inner hem
+    ctx.lineTo(300, 270); // Crotch / inseam top
+    ctx.lineTo(270, 390); // Left leg inner hem
+    ctx.lineTo(130, 390); // Left leg outer
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Waistband line & detailing
+    ctx.beginPath();
+    ctx.moveTo(170, 160);
+    ctx.lineTo(430, 160);
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Pocket lines
+    ctx.beginPath();
+    ctx.moveTo(170, 160); ctx.lineTo(230, 240);
+    ctx.moveTo(430, 160); ctx.lineTo(370, 240);
+    ctx.stroke();
+
+  } else {
+    // ── 2D BAGGY PANTS SILHOUETTE ──
+    ctx.beginPath();
+    ctx.moveTo(180, 110); // Top left waistband
+    ctx.lineTo(420, 110); // Top right waistband
+    ctx.lineTo(480, 550); // Right leg outer (wide relaxed cut)
+    ctx.lineTo(330, 550); // Right leg inner hem
+    ctx.lineTo(300, 260); // Crotch / inseam
+    ctx.lineTo(270, 550); // Left leg inner hem
+    ctx.lineTo(120, 550); // Left leg outer (wide relaxed cut)
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Waistband line
+    ctx.beginPath();
+    ctx.moveTo(180, 145);
+    ctx.lineTo(420, 145);
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Front fly & side seam details
+    ctx.beginPath();
+    ctx.moveTo(300, 145); ctx.lineTo(300, 240); // Fly seam
+    ctx.moveTo(180, 145); ctx.lineTo(235, 230); // Left pocket
+    ctx.moveTo(420, 145); ctx.lineTo(365, 230); // Right pocket
+    ctx.stroke();
+  }
+
   ctx.restore();
 
   // Side label if no mockup
-  const label = side === 'front' ? 'Devant' : side === 'back' ? 'Dos' : side === 'sleeve-left' ? 'Manche Gauche' : 'Manche Droite';
+  const isBottom = ['shorts','baggy'].includes(productType);
+  const legLabel = productType === 'shorts' ? 'Cuisse' : 'Jambe';
+  const label = side === 'front' ? 'Devant' : side === 'back' ? 'Dos' : side === 'sleeve-left' ? `${legLabel} Gauche` : `${legLabel} Droite`;
+
   ctx.fillStyle = 'rgba(0,0,0,0.30)';
   ctx.font = 'bold 18px DM Sans, sans-serif';
   ctx.textAlign = 'center';
