@@ -1230,15 +1230,15 @@ const EMBROIDERY_ZONES = {
     { id: 'front-left',   label: 'Poche Gauche',    cx: 185, cy: 170, w: 120, h: 100 },
     { id: 'front-right',  label: 'Poche Droite',    cx: 415, cy: 170, w: 120, h: 100 },
     { id: 'front-center-high', label: 'Ceinture Avant', cx: 300, cy: 100, w: 180, h: 60 },
-    { id: 'front-center-mid',  label: 'Centre',         cx: 300, cy: 220, w: 140, h: 100 },
-    { id: 'front-center-low',  label: 'Ourlet',         cx: 300, cy: 330, w: 200, h: 50 },
+    { id: 'front-center-mid',  label: 'Cuisse G.',      cx: 210, cy: 250, w: 120, h: 140 },
+    { id: 'front-center-low',  label: 'Cuisse D.',      cx: 390, cy: 250, w: 120, h: 140 },
     { id: 'back-center',  label: 'Fesses Complet',  cx: 300, cy: 220, w: 220, h: 200 },
     { id: 'back-left',    label: 'Poche Arrière G.', cx: 210, cy: 210, w: 120, h: 100 },
     { id: 'back-right',   label: 'Poche Arrière D.', cx: 390, cy: 210, w: 120, h: 100 },
-    { id: 'back-center-high', label: 'Ceinture Arrière', cx: 300, cy: 110, w: 180, h: 60 },
+    { id: 'back-center-high', label: 'Ceinture Arrière (Jacron)', cx: 300, cy: 110, w: 180, h: 60 },
     { id: 'back-center-low',  label: 'Bas (Ourlet)',     cx: 300, cy: 340, w: 200, h: 50 },
-    { id: 'sleeve-left',  label: 'Cuisse Gauche',   cx: 300, cy: 250, w: 110, h: 180 },
-    { id: 'sleeve-right', label: 'Cuisse Droite',   cx: 300, cy: 250, w: 110, h: 180 }
+    { id: 'sleeve-left',  label: 'Cuisse G. Côté',  cx: 300, cy: 250, w: 110, h: 180 },
+    { id: 'sleeve-right', label: 'Cuisse D. Côté',  cx: 300, cy: 250, w: 110, h: 180 }
   ],
   baggy: [
     { id: 'front',        label: 'Devant Complet',  cx: 300, cy: 270, w: 230, h: 320 },
@@ -1250,10 +1250,10 @@ const EMBROIDERY_ZONES = {
     { id: 'back-center',  label: 'Dos Complet',     cx: 300, cy: 270, w: 240, h: 300 },
     { id: 'back-left',    label: 'Poche Arrière G.', cx: 200, cy: 250, w: 130, h: 110 },
     { id: 'back-right',   label: 'Poche Arrière D.', cx: 400, cy: 250, w: 130, h: 110 },
-    { id: 'back-center-high', label: 'Ceinture Arrière', cx: 300, cy: 120, w: 200, h: 65 },
+    { id: 'back-center-high', label: 'Ceinture Arrière (Jacron)', cx: 300, cy: 120, w: 200, h: 65 },
     { id: 'back-center-low',  label: 'Bas des Jambes',   cx: 300, cy: 500, w: 210, h: 80 },
-    { id: 'sleeve-left',  label: 'Jambe G. Large',   cx: 300, cy: 380, w: 120, h: 340 },
-    { id: 'sleeve-right', label: 'Jambe D. Large',   cx: 300, cy: 380, w: 120, h: 340 }
+    { id: 'sleeve-left',  label: 'Jambe G. Extérieur', cx: 300, cy: 380, w: 120, h: 340 },
+    { id: 'sleeve-right', label: 'Jambe D. Extérieur', cx: 300, cy: 380, w: 120, h: 340 }
   ]
 };
 
@@ -1893,7 +1893,7 @@ function setProductType(type) {
 
   // Update zone zone-selector label (sleeve buttons -> leg/side etc)
   const isBottom = ['jeans','shorts','baggy'].includes(type);
-  const legLabel  = type === 'shorts' ? 'Cuisse' : type === 'baggy' ? 'Jambe' : 'Manche';
+  const legLabel  = type === 'shorts' ? 'Cuisse' : type === 'baggy' ? 'Jambe' : 'Jambe';
   const sleeveLeft  = document.getElementById('zoneSleeveLeftBtn');
   const sleeveRight = document.getElementById('zoneSleeveRightBtn');
   if (sleeveLeft)  sleeveLeft.textContent  = `${legLabel} G`;
@@ -1902,8 +1902,8 @@ function setProductType(type) {
   // Also relabel the view-tab buttons
   const sideBtn  = document.getElementById('side-btn');
   const rightBtn = document.getElementById('right-btn');
-  if (sideBtn)  sideBtn.textContent  = isBottom ? `${legLabel} G` : 'Côté';
-  if (rightBtn) rightBtn.textContent = isBottom ? `${legLabel} D` : 'Côté droit';
+  if (sideBtn)  sideBtn.textContent  = isBottom ? (type === 'shorts' ? 'Cuisse G' : 'Jambe G') : 'Côté';
+  if (rightBtn) rightBtn.textContent = isBottom ? (type === 'shorts' ? 'Cuisse D' : 'Jambe D') : 'Côté droit';
 
   if (globalSettings.global_colors) {
     renderColorOptions(globalSettings.global_colors);
