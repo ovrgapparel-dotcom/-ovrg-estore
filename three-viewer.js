@@ -716,7 +716,15 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
   if (IS_OUTERWEAR) {
     const preset = config.placement || config.preset || 'center';
     let baseScale;
-    if (zoneId === 'back' && !preset.endsWith('left') && !preset.endsWith('right')) {
+    if (IS_JEANS) {
+      if (zoneId === 'back' && !preset.endsWith('left') && !preset.endsWith('right')) {
+        baseScale = 0.65;
+      } else if (preset.endsWith('left') || preset.endsWith('right')) {
+        baseScale = 0.45;
+      } else {
+        baseScale = 0.52;
+      }
+    } else if (zoneId === 'back' && !preset.endsWith('left') && !preset.endsWith('right')) {
       baseScale = 0.58;
     } else if (preset.endsWith('left') || preset.endsWith('right')) {
       baseScale = 0.30;
