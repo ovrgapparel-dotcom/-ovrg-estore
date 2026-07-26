@@ -718,11 +718,11 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     let baseScale;
     if (IS_JEANS) {
       if (zoneId === 'back' && !preset.endsWith('left') && !preset.endsWith('right')) {
-        baseScale = 0.65;
+        baseScale = 0.75;
       } else if (preset.endsWith('left') || preset.endsWith('right')) {
-        baseScale = 0.45;
+        baseScale = 0.60;
       } else {
-        baseScale = 0.52;
+        baseScale = 0.68;
       }
     } else if (zoneId === 'back' && !preset.endsWith('left') && !preset.endsWith('right')) {
       baseScale = 0.58;
