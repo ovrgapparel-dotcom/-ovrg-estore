@@ -1941,9 +1941,8 @@ function setProductType(type) {
 
   if (globalSettings.global_colors) {
     renderColorOptions(globalSettings.global_colors);
-  } else {
-    updateShirtImagesForColor(selectedColor);
   }
+  updateShirtImagesForColor(selectedColor);
 
   // Load 3D model
   if (window.load3DModel) {
@@ -2441,7 +2440,10 @@ function paintFallbackCanvas(side) {
   // Background — transparent so the dark stage shows through
   ctx.clearRect(0, 0, W, H);
 
-  const col = (typeof selectedColor !== 'undefined' && selectedColor) ? selectedColor : '#ffffff';
+  let col = (typeof selectedColor !== 'undefined' && selectedColor) ? selectedColor : '#ffffff';
+  if (col === '#ffffff' && ['shorts','baggy','jeans'].includes(productType)) {
+    col = '#3b6998'; // Rich denim blue for default denim fallback mockups
+  }
 
   ctx.save();
   ctx.fillStyle = col;
@@ -2547,10 +2549,14 @@ function renderColorOptions(colors) {
   let availableColors = colors;
   if (globalSettings.color_mockups) {
     availableColors = colors.filter(c => {
-      const m = globalSettings.color_mockups.find(mock => mock.hex.toLowerCase() === c.toLowerCase());
-      if (!m) return false;
-      if (productType === 'jacket') return m.jacket_front || m.jacket_side || m.jacket_back;
-      return m.hoodie_front || m.hoodie_side || m.hoodie_back;
+      const m = globalSettings.color_mockups.find(mock => mock.hex && mock.hex.toLowerCase() === c.toLowerCase());
+      if (!m) return true;
+      const pfx = productType === 'jacket' ? 'jacket'
+                : productType === 'shorts' ? 'shorts'
+                : productType === 'baggy'  ? 'baggy'
+                : productType === 'jeans'  ? 'baggy'
+                : 'hoodie';
+      return m[pfx + '_front'] || m[pfx + '_side'] || m[pfx + '_back'] || true;
     });
   }
   if (availableColors.length === 0) availableColors = colors; // fallback if none match
