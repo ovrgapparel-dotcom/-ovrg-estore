@@ -672,6 +672,7 @@ function _renderDecalForZoneAndType(zoneId, config, decalType, box, boxSize, cx,
 function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, scaleOverride, box, boxSize, cx, cy, cz) {
   // Strip _print/_label suffix for zone identity lookups
   const zoneId = effectiveZoneId.replace(/_print$|_label$/, '');
+  let hitMesh = null;
 
   if (posNormX === undefined) posNormX = config.posNormX;
   if (posNormY === undefined) posNormY = config.posNormY;
@@ -833,6 +834,7 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
 
     if (hits.length > 0) {
       const hit = hits[0];
+      hitMesh = hit.object; // Capture exact intersected mesh surface
       px = hit.point.x;
       py = hit.point.y;
       pz = hit.point.z + (isBack ? -0.008 : 0.008);
@@ -1041,7 +1043,7 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
     } else if (IS_HOODIES && zoneId === 'front') {
       depth = boxSize.z * 0.35;
     } else if (IS_JEANS) {
-      depth = boxSize.z * 0.25;
+      depth = Math.min(boxSize.z * 0.05, 0.05);
     } else {
       depth = boxSize.z * 0.85;
     }
@@ -1052,15 +1054,17 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
   const planeH = planeW / aspect;
   const size = new THREE.Vector3(planeW, planeH, depth);
 
-  // For headwear the raycasting block above already picked mainMesh;
-  // for other garments use full targetDecalMeshes list.
-  const meshesToTarget = IS_HEADWEAR
-    ? (targetDecalMeshes.length > 0 ? [targetDecalMeshes.reduce((prev, curr) => {
-        const pS = new THREE.Box3().setFromObject(prev).getSize(new THREE.Vector3());
-        const cS = new THREE.Box3().setFromObject(curr).getSize(new THREE.Vector3());
-        return (cS.x + cS.y + cS.z) > (pS.x + pS.y + pS.z) ? curr : prev;
-      }, targetDecalMeshes[0])] : [])
-    : targetDecalMeshes;
+  // For headwear/jeans, if a raycast hit a specific surface mesh, target ONLY that mesh.
+  // Otherwise fall back to targetDecalMeshes.
+  const meshesToTarget = hitMesh
+    ? [hitMesh]
+    : (IS_HEADWEAR
+        ? (targetDecalMeshes.length > 0 ? [targetDecalMeshes.reduce((prev, curr) => {
+            const pS = new THREE.Box3().setFromObject(prev).getSize(new THREE.Vector3());
+            const cS = new THREE.Box3().setFromObject(curr).getSize(new THREE.Vector3());
+            return (cS.x + cS.y + cS.z) > (pS.x + pS.y + pS.z) ? curr : prev;
+          }, targetDecalMeshes[0])] : [])
+        : targetDecalMeshes);
 
   meshesToTarget.forEach(mesh => {
     try {
