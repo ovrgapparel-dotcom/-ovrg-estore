@@ -178,18 +178,39 @@
     y += rowH + 2;
 
     const lines = [];
-    const tierLabel = TIER_LABELS[orderData.customization && orderData.customization.tier] || 'Standard';
-    const basePrice = orderData.price - _calcSurcharge(orderData);
-    lines.push({ item:'T-Shirt OVRG — '+tierLabel, zone:'—', qty:1, unit:basePrice });
+    if (Array.isArray(orderData.items) && orderData.items.length > 0) {
+      orderData.items.forEach(function(item) {
+        const qty = item.qty || 1;
+        const basePrice = item.price - _calcSurcharge(item);
+        const tierLabel = TIER_LABELS[item.customization && item.customization.tier] || 'Standard';
+        const colorLabel = COLOR_NAMES[item.color] || item.color || '';
+        const sizeLabel = item.size ? (' (' + item.size + (colorLabel ? ', ' + colorLabel : '') + ')') : '';
+        lines.push({ item: (item.name || 'Article OVRG') + sizeLabel + ' — ' + tierLabel, zone: '—', qty: qty, unit: basePrice });
 
-    const zones = (orderData.customization && orderData.customization.zones) || {};
-    for (const zoneId in zones) {
-      const cfg = zones[zoneId];
-      if (!cfg || !cfg.print) continue;
-      const zLabel  = zoneId === 'back' ? 'Dos' : 'Devant';
-      const tLabel  = cfg.type === 'embroidery' ? 'Broderie' : 'Imprimé';
-      const unitP   = cfg.type === 'embroidery' ? 9000 : (cfg.print.price || 16000);
-      lines.push({ item: tLabel + ' — ' + cfg.print.name, zone: zLabel, qty:1, unit:unitP });
+        const zones = (item.customization && item.customization.zones) || {};
+        for (const zoneId in zones) {
+          const cfg = zones[zoneId];
+          if (!cfg || !cfg.print) continue;
+          const zLabel  = zoneId === 'back' ? 'Dos' : 'Devant';
+          const tLabel  = cfg.type === 'embroidery' ? 'Broderie' : 'Imprimé';
+          const unitP   = cfg.type === 'embroidery' ? 9000 : (cfg.print.price || 16000);
+          lines.push({ item: tLabel + ' — ' + cfg.print.name, zone: zLabel, qty: qty, unit: unitP });
+        }
+      });
+    } else {
+      const tierLabel = TIER_LABELS[orderData.customization && orderData.customization.tier] || 'Standard';
+      const basePrice = orderData.price - _calcSurcharge(orderData);
+      lines.push({ item: (orderData.name || 'T-Shirt OVRG') + ' — ' + tierLabel, zone: '—', qty: 1, unit: basePrice });
+
+      const zones = (orderData.customization && orderData.customization.zones) || {};
+      for (const zoneId in zones) {
+        const cfg = zones[zoneId];
+        if (!cfg || !cfg.print) continue;
+        const zLabel  = zoneId === 'back' ? 'Dos' : 'Devant';
+        const tLabel  = cfg.type === 'embroidery' ? 'Broderie' : 'Imprimé';
+        const unitP   = cfg.type === 'embroidery' ? 9000 : (cfg.print.price || 16000);
+        lines.push({ item: tLabel + ' — ' + cfg.print.name, zone: zLabel, qty: 1, unit: unitP });
+      }
     }
 
     let stripe = false;
