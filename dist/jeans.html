@@ -835,7 +835,7 @@ footer .footer-admin {
     }
   }
 </script>
-  <script type="module" crossorigin src="/assets/three-viewer-D5_dKu1o.js"></script>
+  <script type="module" crossorigin src="/assets/three-viewer-COG_ra59.js"></script>
 </head>
 <body>
 
@@ -2093,31 +2093,49 @@ function setProductType(type) {
 // ── ZONE SYSTEM ───────────────────────────────────────────────────────────────
 
 function getZoneIdForSideAndPreset(side, preset) {
+  const pt = (typeof productType === 'string') ? productType : 'jacket';
+  const isBottom = ['jeans','shorts','baggy'].includes(pt);
+
   if (side === 'front') {
-    if (preset === 'top-left') return 'front-left';
-    if (preset === 'top-center') return 'front-center-high';
-    if (preset === 'top-right') return 'front-right';
-    if (preset === 'mid-left') return 'front-center-mid';
-    if (preset === 'center') return 'front';
-    if (preset === 'mid-right') return 'front-center-low';
-    if (preset === 'bottom-left') return 'front-center-mid';
-    if (preset === 'bottom-center') return 'front-center-low';
-    if (preset === 'bottom-right') return 'front-center-low';
-    return 'front';
+    if (isBottom) {
+      // Lower-body: front zone mapping
+      if (preset === 'top-left')     return 'front-left';           // Poche Gauche
+      if (preset === 'top-center')   return 'front-center-high';    // Ceinture Avant
+      if (preset === 'top-right')    return 'front-right';          // Poche Droite
+      if (preset === 'mid-left')     return 'front-center-mid';     // Jambe/Cuisse G. Full
+      if (preset === 'center')       return 'front';                // Devant Complet / Centre
+      if (preset === 'mid-right')    return 'front-center-low';     // Jambe/Cuisse D. Full
+      if (preset === 'bottom-left')  return 'back-center-low';      // Bas Jambe G. / Bas Ourlet G. (hem = bottom of front)
+      if (preset === 'bottom-center')return 'back-center-low';      // Bas des Jambes / Bas Ourlet
+      if (preset === 'bottom-right') return 'back-left';            // Jacron / Poche Arrière — back zone
+      return 'front';
+    } else {
+      // Upper-body (jacket/hoodie): front zone mapping
+      if (preset === 'top-left')     return 'front-left';
+      if (preset === 'top-center')   return 'front-center-high';
+      if (preset === 'top-right')    return 'front-right';
+      if (preset === 'mid-left')     return 'sleeve-left';
+      if (preset === 'center')       return 'front';
+      if (preset === 'mid-right')    return 'sleeve-right';
+      if (preset === 'bottom-left')  return 'front-center-low';
+      if (preset === 'bottom-center')return 'back-center';
+      if (preset === 'bottom-right') return 'front-center-low';
+      return 'front';
+    }
   }
   if (side === 'back') {
-    if (preset === 'top-left') return 'back-left';
-    if (preset === 'top-center') return 'back-center-high';
-    if (preset === 'top-right') return 'back-right';
-    if (preset === 'mid-left') return 'back-left';
-    if (preset === 'center') return 'back-center';
-    if (preset === 'mid-right') return 'back-right';
-    if (preset === 'bottom-left') return 'back-center-low';
-    if (preset === 'bottom-center') return 'back-center-low';
+    if (preset === 'top-left')     return 'back-left';
+    if (preset === 'top-center')   return 'back-center-high';
+    if (preset === 'top-right')    return 'back-right';
+    if (preset === 'mid-left')     return 'back-left';
+    if (preset === 'center')       return 'back-center';
+    if (preset === 'mid-right')    return 'back-right';
+    if (preset === 'bottom-left')  return 'back-center-low';
+    if (preset === 'bottom-center')return 'back-center-low';
     if (preset === 'bottom-right') return 'back-center-low';
     return 'back-center';
   }
-  if (side === 'sleeve-left') return 'sleeve-left';
+  if (side === 'sleeve-left')  return 'sleeve-left';
   if (side === 'sleeve-right') return 'sleeve-right';
   return 'front';
 }

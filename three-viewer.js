@@ -756,24 +756,46 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
 
     let ndcX = 0, ndcY = 0;
     const preset = config.placement || config.preset || 'center';
+    // Read current product type from page global (set by jeans.html's setProductType)
+    const pType = (typeof window.productType === 'string') ? window.productType : 'baggy';
+    const isShorts = (pType === 'shorts');
 
     if (posNormX !== undefined && posNormY !== undefined) {
+      // Dragged position — remap normalised canvas coords to NDC
       ndcX = (posNormX - 0.5) * 0.75;
-      ndcY = 0.45 - posNormY * 0.85;
+      ndcY = isShorts
+        ? 0.35 - posNormY * 0.70          // shorts: shorter vertical span
+        : 0.42 - posNormY * 1.05;         // baggy/jeans: full-length span
       if (isBack) ndcX = -ndcX;
     } else {
-      const JEANS_NDC = {
-        'top-left':      { x: -0.20, y:  0.35 },
-        'top-center':    { x:  0.00, y:  0.45 },
-        'top-right':     { x:  0.20, y:  0.35 },
-        'mid-left':      { x: -0.22, y:  0.05 },
-        'center':        { x:  0.00, y:  0.10 },
-        'mid-right':     { x:  0.22, y:  0.05 },
-        'bottom-left':   { x: -0.24, y: -0.32 },
-        'bottom-center': { x:  0.00, y: -0.35 },
-        'bottom-right':  { x:  0.24, y: -0.32 },
+      // ── Per-product preset NDC lookup ────────────────────────────────────────
+      // NDC Y: +1 = top of viewport, -1 = bottom. Camera sits at ~targetY, 3.5m away.
+      // Shorts: waistband ≈ y 0.32, pocket ≈ y 0.18, cuisse mid ≈ y 0.00, hem ≈ y -0.22
+      // Baggy:  waistband ≈ y 0.40, pocket ≈ y 0.28, thigh ≈ y 0.05, knee ≈ y -0.20, ankle ≈ y -0.42
+      const NDC_SHORTS = {
+        'top-left':       { x: -0.18, y:  0.16 }, // Poche Gauche — left pocket area
+        'top-center':     { x:  0.00, y:  0.33 }, // Ceinture Avant — waistband centre
+        'top-right':      { x:  0.18, y:  0.16 }, // Poche Droite — right pocket area
+        'mid-left':       { x: -0.20, y: -0.02 }, // Cuisse G. Full — left thigh centre
+        'center':         { x:  0.00, y:  0.06 }, // Centre — full front centre
+        'mid-right':      { x:  0.20, y: -0.02 }, // Cuisse D. Full — right thigh centre
+        'bottom-left':    { x: -0.18, y: -0.22 }, // Bas Ourlet G. — left hem
+        'bottom-center':  { x:  0.00, y: -0.22 }, // Bas Ourlet — full hem
+        'bottom-right':   { x:  0.16, y:  0.14 }, // Poche Arrière G. — back pocket (back view)
       };
-      const baseNDC = JEANS_NDC[preset] || JEANS_NDC['center'];
+      const NDC_BAGGY = {
+        'top-left':       { x: -0.17, y:  0.26 }, // Poche Gauche — left pocket
+        'top-center':     { x:  0.00, y:  0.40 }, // Ceinture Avant — waistband
+        'top-right':      { x:  0.17, y:  0.26 }, // Poche Droite — right pocket
+        'mid-left':       { x: -0.20, y:  0.02 }, // Jambe G. Full — left leg mid
+        'center':         { x:  0.00, y:  0.12 }, // Devant Complet — front centre
+        'mid-right':      { x:  0.20, y:  0.02 }, // Jambe D. Full — right leg mid
+        'bottom-left':    { x: -0.18, y: -0.36 }, // Bas Jambe G. — left ankle/hem
+        'bottom-center':  { x:  0.00, y: -0.38 }, // Bas des Jambes — both hems
+        'bottom-right':   { x:  0.16, y:  0.38 }, // Jacron (Dos) — back waistband patch
+      };
+      const NDC_TABLE = isShorts ? NDC_SHORTS : NDC_BAGGY;
+      const baseNDC = NDC_TABLE[preset] || NDC_TABLE['center'];
       ndcX = baseNDC.x;
       ndcY = baseNDC.y;
     }
