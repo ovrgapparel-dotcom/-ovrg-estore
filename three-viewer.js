@@ -59,7 +59,11 @@ window.load3DModel = function (modelUrl) {
     window.clearAllZones();
   }
 
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+
   const gltfLoader = new GLTFLoader();
+  gltfLoader.setDRACOLoader(dracoLoader);
   gltfLoader.setMeshoptDecoder(MeshoptDecoder);
   gltfLoader.register(parser => new DummySpecularGlossinessExtension(parser));
 
