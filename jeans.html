@@ -1949,35 +1949,71 @@ const PRODUCT_META = {
   baggy:  { label: 'Baggy',         hero: 'Baggy Jean',   tag: 'Custom Bottoms',   glb: '/baggy.glb',   prices: { standard: 18000, highend: 28000, premium: 42000 }, sizes: ['XS (34)','S (36)','M (38)','L (40)','XL (42)','XXL (44)'] },
 };
 
-function updatePlacementTooltips(type) {
-  const isBottom = ['jeans','shorts','baggy'].includes(type);
-  const leg = type === 'shorts' ? 'Cuisse' : 'Jambe';
-  
-  const tooltips = isBottom ? {
-    'top-left': 'Poche Gauche',
-    'top-center': 'Ceinture Avant',
-    'top-right': 'Poche Droite',
-    'mid-left': `${leg} Gauche`,
-    'center': 'Devant Centre',
-    'mid-right': `${leg} Droite`,
-    'bottom-left': `Bas ${leg} G.`,
+// Grid preset order: top-left, top-center, top-right, mid-left, center, mid-right, bottom-left, bottom-center, bottom-right
+// Labels here MUST match the zone labels in ZONE_GUIDE_DATA so the info modal mirrors the grid 1-to-1.
+const PLACEMENT_LABELS = {
+  shorts: {
+    'top-left':    'Poche Gauche',
+    'top-center':  'Ceinture Avant',
+    'top-right':   'Poche Droite',
+    'mid-left':    'Cuisse G. Full',
+    'center':      'Centre',
+    'mid-right':   'Cuisse D. Full',
+    'bottom-left': 'Bas Ourlet G.',
     'bottom-center': 'Bas Ourlet',
-    'bottom-right': `Bas ${leg} D.`
-  } : {
-    'top-left': 'Poitrine Gauche',
-    'top-center': 'Haut Centre',
-    'top-right': 'Poitrine Droite',
-    'mid-left': 'Milieu Gauche',
-    'center': 'Centre',
-    'mid-right': 'Milieu Droit',
+    'bottom-right':  'Poche Arrière G.'
+  },
+  baggy: {
+    'top-left':    'Poche Gauche',
+    'top-center':  'Ceinture Avant',
+    'top-right':   'Poche Droite',
+    'mid-left':    'Jambe G. Full',
+    'center':      'Devant Complet',
+    'mid-right':   'Jambe D. Full',
+    'bottom-left': 'Bas Jambe G.',
+    'bottom-center': 'Bas des Jambes',
+    'bottom-right':  'Jacron (Dos)'
+  },
+  jeans: {
+    'top-left':    'Poche Gauche',
+    'top-center':  'Ceinture Avant',
+    'top-right':   'Poche Droite',
+    'mid-left':    'Jambe G. Full',
+    'center':      'Devant Complet',
+    'mid-right':   'Jambe D. Full',
+    'bottom-left': 'Bas Jambe G.',
+    'bottom-center': 'Bas des Jambes',
+    'bottom-right':  'Jacron (Dos)'
+  },
+  jacket: {
+    'top-left':    'Poitrine Gauche',
+    'top-center':  'Haut Centre',
+    'top-right':   'Poitrine Droite',
+    'mid-left':    'Manche Gauche',
+    'center':      'Centre Avant',
+    'mid-right':   'Manche Droite',
     'bottom-left': 'Bas Gauche',
-    'bottom-center': 'Bas Centre',
-    'bottom-right': 'Bas Droit'
-  };
+    'bottom-center': 'Dos Complet',
+    'bottom-right':  'Bas Droit'
+  },
+  hoodie: {
+    'top-left':    'Poitrine Gauche',
+    'top-center':  'Centre Avant',
+    'top-right':   'Poitrine Droite',
+    'mid-left':    'Manche Gauche',
+    'center':      'Centre Avant',
+    'mid-right':   'Manche Droite',
+    'bottom-left': 'Bas Avant',
+    'bottom-center': 'Dos Complet',
+    'bottom-right':  'Bas Droit'
+  }
+};
 
+function updatePlacementTooltips(type) {
+  const map = PLACEMENT_LABELS[type] || PLACEMENT_LABELS.jacket;
   document.querySelectorAll('#placementGrid .placement-btn').forEach(btn => {
     const preset = btn.dataset.preset;
-    if (tooltips[preset]) btn.title = tooltips[preset];
+    if (map[preset]) btn.title = map[preset];
   });
 }
 
@@ -3947,110 +3983,169 @@ const _JACKET_SVG = (highlight) => `
   ${highlight}
 </svg>`;
 
-// Zone definitions per product type
+// ── ZONE GUIDE DATA ──────────────────────────────────────────────────────────
+// Array order MUST match the 9-grid left→right, top→bottom:
+//   [0]=top-left  [1]=top-center  [2]=top-right
+//   [3]=mid-left  [4]=center      [5]=mid-right
+//   [6]=bottom-left [7]=bottom-center [8]=bottom-right
+// Each zone has a `preset` key matching PLACEMENT_LABELS so clicking a card
+// fires setPrintPlacement(preset) and closes the modal.
 const ZONE_GUIDE_DATA = {
   shorts: {
     label: 'Short',
-    intro: 'Zones d\'impression disponibles pour le Short — de la ceinture aux ourlets de jambe.',
+    intro: 'Zones d\'impression disponibles pour le Short — de la ceinture aux ourlets de jambe. Cliquez sur une zone pour la sélectionner.',
     zones: [
-      { label: 'Ceinture Avant',    size: '24×8cm', desc: 'Haut de la ceinture, face avant',
-        svg: _SHORTS_SVG('<rect class="zone-highlight" x="22" y="5" width="56" height="10" rx="2"/>') },
-      { label: 'Poche Gauche',      size: '16×14cm', desc: 'Poche avant gauche',
+      // Row 1
+      { preset:'top-left',    label:'Poche Gauche',    size:'16×14cm', desc:'Poche avant gauche',
         svg: _SHORTS_SVG('<rect class="zone-highlight" x="10" y="18" width="28" height="20" rx="3"/>') },
-      { label: 'Poche Droite',      size: '16×14cm', desc: 'Poche avant droite',
+      { preset:'top-center',  label:'Ceinture Avant',  size:'24×8cm',  desc:'Haut de la ceinture, face avant',
+        svg: _SHORTS_SVG('<rect class="zone-highlight" x="22" y="5" width="56" height="10" rx="2"/>') },
+      { preset:'top-right',   label:'Poche Droite',    size:'16×14cm', desc:'Poche avant droite',
         svg: _SHORTS_SVG('<rect class="zone-highlight" x="62" y="18" width="28" height="20" rx="3"/>') },
-      { label: 'Cuisse G. Full',    size: '21×27cm', desc: 'Cuisse gauche complète',
+      // Row 2
+      { preset:'mid-left',    label:'Cuisse G. Full',  size:'21×27cm', desc:'Cuisse gauche complète',
         svg: _SHORTS_SVG('<path class="zone-highlight" d="M11 18 L38 18 L34 68 L8 68 Z"/>') },
-      { label: 'Centre',            size: '40×36cm', desc: 'Devant complet centré',
+      { preset:'center',      label:'Centre',          size:'40×36cm', desc:'Devant complet centré',
         svg: _SHORTS_SVG('<rect class="zone-highlight" x="16" y="14" width="68" height="52" rx="3"/>') },
-      { label: 'Cuisse D. Full',    size: '21×27cm', desc: 'Cuisse droite complète',
+      { preset:'mid-right',   label:'Cuisse D. Full',  size:'21×27cm', desc:'Cuisse droite complète',
         svg: _SHORTS_SVG('<path class="zone-highlight" d="M62 18 L89 18 L94 68 L66 68 Z"/>') },
-      { label: 'Bas Ourlet G.',     size: '28×10cm', desc: 'Bord bas de jambe gauche',
+      // Row 3
+      { preset:'bottom-left', label:'Bas Ourlet G.',   size:'28×10cm', desc:'Bord bas de jambe gauche',
         svg: _SHORTS_SVG('<rect class="zone-highlight" x="11" y="58" width="28" height="12" rx="2"/>') },
-      { label: 'Bas Ourlet',        size: '28×10cm', desc: 'Ourlet bas, largeur totale',
+      { preset:'bottom-center',label:'Bas Ourlet',     size:'28×10cm', desc:'Ourlet bas, largeur totale',
         svg: _SHORTS_SVG('<rect class="zone-highlight" x="11" y="58" width="78" height="12" rx="2"/>') },
-      { label: 'Poche Arrière G.',  size: '16×14cm', desc: 'Dos — poche arrière gauche',
+      { preset:'bottom-right', label:'Poche Arrière G.',size:'16×14cm',desc:'Dos — poche arrière gauche',
         svg: _SHORTS_SVG('<rect class="zone-highlight" x="13" y="20" width="26" height="18" rx="3"/>') },
     ]
   },
   baggy: {
     label: 'Baggy Jean',
-    intro: 'Zones d\'impression disponibles pour le Baggy — de la ceinture jusqu\'au bas des jambes.',
+    intro: 'Zones d\'impression disponibles pour le Baggy — de la ceinture jusqu\'au bas des jambes. Cliquez sur une zone pour la sélectionner.',
     zones: [
-      { label: 'Ceinture Avant',    size: '26×8cm', desc: 'Bandeau de ceinture avant',
-        svg: _PANTS_SVG('<rect class="zone-highlight" x="18" y="8" width="64" height="10" rx="2"/>') },
-      { label: 'Poche Gauche',      size: '17×14cm', desc: 'Poche avant gauche',
+      // Row 1
+      { preset:'top-left',    label:'Poche Gauche',    size:'17×14cm', desc:'Poche avant gauche',
         svg: _PANTS_SVG('<rect class="zone-highlight" x="10" y="22" width="24" height="22" rx="3"/>') },
-      { label: 'Poche Droite',      size: '17×14cm', desc: 'Poche avant droite',
+      { preset:'top-center',  label:'Ceinture Avant',  size:'26×8cm',  desc:'Bandeau de ceinture avant',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="18" y="8" width="64" height="10" rx="2"/>') },
+      { preset:'top-right',   label:'Poche Droite',    size:'17×14cm', desc:'Poche avant droite',
         svg: _PANTS_SVG('<rect class="zone-highlight" x="66" y="22" width="24" height="22" rx="3"/>') },
-      { label: 'Jambe G. Full',     size: '23×44cm', desc: 'Jambe gauche complète',
+      // Row 2
+      { preset:'mid-left',    label:'Jambe G. Full',   size:'23×44cm', desc:'Jambe gauche complète',
         svg: _PANTS_SVG('<path class="zone-highlight" d="M10 22 L38 22 L36 118 L8 118 Z"/>') },
-      { label: 'Devant Complet',    size: '42×48cm', desc: 'Toute la face avant',
+      { preset:'center',      label:'Devant Complet',  size:'42×48cm', desc:'Toute la face avant',
         svg: _PANTS_SVG('<rect class="zone-highlight" x="10" y="18" width="80" height="102" rx="3"/>') },
-      { label: 'Jambe D. Full',     size: '23×44cm', desc: 'Jambe droite complète',
+      { preset:'mid-right',   label:'Jambe D. Full',   size:'23×44cm', desc:'Jambe droite complète',
         svg: _PANTS_SVG('<path class="zone-highlight" d="M62 22 L90 22 L92 118 L64 118 Z"/>') },
-      { label: 'Bas Jambe G.',      size: '30×12cm', desc: 'Ourlet bas — jambe gauche',
+      // Row 3
+      { preset:'bottom-left', label:'Bas Jambe G.',    size:'30×12cm', desc:'Ourlet bas — jambe gauche',
         svg: _PANTS_SVG('<rect class="zone-highlight" x="9" y="106" width="28" height="14" rx="2"/>') },
-      { label: 'Bas des Jambes',    size: '30×12cm', desc: 'Ourlet bas des deux jambes',
+      { preset:'bottom-center',label:'Bas des Jambes', size:'30×12cm', desc:'Ourlet bas des deux jambes',
         svg: _PANTS_SVG('<rect class="zone-highlight" x="9" y="106" width="82" height="14" rx="2"/>') },
-      { label: 'Jacron (Dos)',       size: '8×4cm',   desc: 'Patch cuir ceinture arrière',
+      { preset:'bottom-right', label:'Jacron (Dos)',   size:'8×4cm',   desc:'Patch cuir ceinture arrière',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="56" y="8" width="18" height="10" rx="1"/>') },
+    ]
+  },
+  jeans: {
+    label: 'Jeans',
+    intro: 'Zones d\'impression disponibles pour le Jean — de la ceinture jusqu\'au bas des jambes. Cliquez sur une zone pour la sélectionner.',
+    zones: [
+      { preset:'top-left',    label:'Poche Gauche',    size:'17×14cm', desc:'Poche avant gauche',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="10" y="22" width="24" height="22" rx="3"/>') },
+      { preset:'top-center',  label:'Ceinture Avant',  size:'26×8cm',  desc:'Bandeau de ceinture avant',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="18" y="8" width="64" height="10" rx="2"/>') },
+      { preset:'top-right',   label:'Poche Droite',    size:'17×14cm', desc:'Poche avant droite',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="66" y="22" width="24" height="22" rx="3"/>') },
+      { preset:'mid-left',    label:'Jambe G. Full',   size:'23×44cm', desc:'Jambe gauche complète',
+        svg: _PANTS_SVG('<path class="zone-highlight" d="M10 22 L38 22 L36 118 L8 118 Z"/>') },
+      { preset:'center',      label:'Devant Complet',  size:'42×48cm', desc:'Toute la face avant',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="10" y="18" width="80" height="102" rx="3"/>') },
+      { preset:'mid-right',   label:'Jambe D. Full',   size:'23×44cm', desc:'Jambe droite complète',
+        svg: _PANTS_SVG('<path class="zone-highlight" d="M62 22 L90 22 L92 118 L64 118 Z"/>') },
+      { preset:'bottom-left', label:'Bas Jambe G.',    size:'30×12cm', desc:'Ourlet bas — jambe gauche',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="9" y="106" width="28" height="14" rx="2"/>') },
+      { preset:'bottom-center',label:'Bas des Jambes', size:'30×12cm', desc:'Ourlet bas des deux jambes',
+        svg: _PANTS_SVG('<rect class="zone-highlight" x="9" y="106" width="82" height="14" rx="2"/>') },
+      { preset:'bottom-right', label:'Jacron (Dos)',   size:'8×4cm',   desc:'Patch cuir ceinture arrière',
         svg: _PANTS_SVG('<rect class="zone-highlight" x="56" y="8" width="18" height="10" rx="1"/>') },
     ]
   },
   jacket: {
     label: 'Veste en Jean',
-    intro: 'Zones d\'impression disponibles pour la Veste — poitrine, dos, manches.',
+    intro: 'Zones d\'impression disponibles pour la Veste — poitrine, dos, manches. Cliquez sur une zone pour la sélectionner.',
     zones: [
-      { label: 'Poitrine Gauche',   size: '12×12cm', desc: 'Côté gauche — hauteur poitrine',
+      { preset:'top-left',    label:'Poitrine Gauche', size:'12×12cm', desc:'Côté gauche — hauteur poitrine',
         svg: _JACKET_SVG('<rect class="zone-highlight" x="32" y="38" width="24" height="24" rx="3"/>') },
-      { label: 'Haut Centre',       size: '30×12cm', desc: 'Centre avant — haut du buste',
+      { preset:'top-center',  label:'Haut Centre',     size:'30×12cm', desc:'Centre avant — haut du buste',
         svg: _JACKET_SVG('<rect class="zone-highlight" x="32" y="32" width="56" height="18" rx="3"/>') },
-      { label: 'Poitrine Droite',   size: '12×12cm', desc: 'Côté droit — hauteur poitrine',
+      { preset:'top-right',   label:'Poitrine Droite', size:'12×12cm', desc:'Côté droit — hauteur poitrine',
         svg: _JACKET_SVG('<rect class="zone-highlight" x="64" y="38" width="24" height="24" rx="3"/>') },
-      { label: 'Dos Complet',       size: '36×42cm', desc: 'Toute la surface du dos',
-        svg: _JACKET_SVG('<rect class="zone-highlight" x="30" y="30" width="60" height="80" rx="3"/>') },
-      { label: 'Manche Gauche',     size: '10×20cm', desc: 'Extérieur manche gauche',
+      { preset:'mid-left',    label:'Manche Gauche',   size:'10×20cm', desc:'Extérieur manche gauche',
         svg: _JACKET_SVG('<rect class="zone-highlight" x="9" y="34" width="20" height="52" rx="3"/>') },
-      { label: 'Manche Droite',     size: '10×20cm', desc: 'Extérieur manche droite',
+      { preset:'center',      label:'Centre Avant',    size:'28×18cm', desc:'Devant centré complet',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="32" y="40" width="56" height="38" rx="3"/>') },
+      { preset:'mid-right',   label:'Manche Droite',   size:'10×20cm', desc:'Extérieur manche droite',
         svg: _JACKET_SVG('<rect class="zone-highlight" x="91" y="34" width="20" height="52" rx="3"/>') },
+      { preset:'bottom-left', label:'Bas Gauche',      size:'14×10cm', desc:'Bas devant — côté gauche',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="32" y="90" width="28" height="18" rx="3"/>') },
+      { preset:'bottom-center',label:'Dos Complet',    size:'36×42cm', desc:'Toute la surface du dos',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="30" y="30" width="60" height="80" rx="3"/>') },
+      { preset:'bottom-right', label:'Bas Droit',      size:'14×10cm', desc:'Bas devant — côté droit',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="60" y="90" width="28" height="18" rx="3"/>') },
     ]
   },
   hoodie: {
     label: 'Hoodie',
-    intro: 'Zones d\'impression disponibles pour le Hoodie — avant, dos, manches.',
+    intro: 'Zones d\'impression disponibles pour le Hoodie — avant, dos, manches. Cliquez sur une zone pour la sélectionner.',
     zones: [
-      { label: 'Poitrine Gauche',   size: '12×12cm', desc: 'Côté gauche — poitrine',
+      { preset:'top-left',    label:'Poitrine Gauche', size:'12×12cm', desc:'Côté gauche — poitrine',
         svg: _JACKET_SVG('<rect class="zone-highlight" x="32" y="40" width="24" height="22" rx="3"/>') },
-      { label: 'Centre Avant',      size: '28×18cm', desc: 'Devant centré',
+      { preset:'top-center',  label:'Centre Avant',    size:'28×18cm', desc:'Devant centré haut',
         svg: _JACKET_SVG('<rect class="zone-highlight" x="33" y="38" width="54" height="30" rx="3"/>') },
-      { label: 'Bas Avant',         size: '28×10cm', desc: 'Bas avant — avant ourlet',
-        svg: _JACKET_SVG('<rect class="zone-highlight" x="32" y="90" width="56" height="18" rx="3"/>') },
-      { label: 'Dos Complet',       size: '36×40cm', desc: 'Toute la surface du dos',
-        svg: _JACKET_SVG('<rect class="zone-highlight" x="30" y="30" width="60" height="80" rx="3"/>') },
-      { label: 'Manche Gauche',     size: '10×20cm', desc: 'Extérieur manche gauche',
+      { preset:'top-right',   label:'Poitrine Droite', size:'12×12cm', desc:'Côté droit — poitrine',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="64" y="40" width="24" height="22" rx="3"/>') },
+      { preset:'mid-left',    label:'Manche Gauche',   size:'10×20cm', desc:'Extérieur manche gauche',
         svg: _JACKET_SVG('<rect class="zone-highlight" x="9" y="34" width="20" height="52" rx="3"/>') },
-      { label: 'Manche Droite',     size: '10×20cm', desc: 'Extérieur manche droite',
+      { preset:'center',      label:'Centre Avant',    size:'28×20cm', desc:'Devant centré complet',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="33" y="36" width="54" height="52" rx="3"/>') },
+      { preset:'mid-right',   label:'Manche Droite',   size:'10×20cm', desc:'Extérieur manche droite',
         svg: _JACKET_SVG('<rect class="zone-highlight" x="91" y="34" width="20" height="52" rx="3"/>') },
+      { preset:'bottom-left', label:'Bas Avant',       size:'28×10cm', desc:'Bas avant gauche — ourlet',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="32" y="90" width="28" height="18" rx="3"/>') },
+      { preset:'bottom-center',label:'Dos Complet',    size:'36×40cm', desc:'Toute la surface du dos',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="30" y="30" width="60" height="80" rx="3"/>') },
+      { preset:'bottom-right', label:'Bas Droit',      size:'28×10cm', desc:'Bas avant droit — ourlet',
+        svg: _JACKET_SVG('<rect class="zone-highlight" x="60" y="90" width="28" height="18" rx="3"/>') },
     ]
   }
 };
+
+// Arrow icons for each grid position (top-left … bottom-right)
+const _PRESET_ARROWS = [
+  '↖','⬆','↗',
+  '⬅','⬤','➡',
+  '↙','⬇','↘'
+];
 
 function openZoneInfoModal() {
   const type = (typeof productType !== 'undefined' && ZONE_GUIDE_DATA[productType])
     ? productType : 'baggy';
   const data = ZONE_GUIDE_DATA[type];
 
-  // Update badge label
+  // Update badge and intro
   document.getElementById('zoneModalBadge').textContent = data.label;
-
-  // Update intro
   document.querySelector('#zoneInfoModal .modal-intro').textContent = data.intro;
 
-  // Build zone cards
+  // Build zone cards — in grid order, each card is clickable and selects the preset
   const grid = document.getElementById('zoneInfoGrid');
-  grid.innerHTML = data.zones.map(z => `
-    <div class="zone-card">
-      <div class="zone-card-img">${z.svg}</div>
+  grid.innerHTML = data.zones.map((z, i) => `
+    <div class="zone-card" role="button" tabindex="0"
+         title="Sélectionner : ${z.label}"
+         onclick="setPrintPlacement('${z.preset}');closeZoneInfoModal()"
+         onkeydown="if(event.key==='Enter'||event.key===' '){setPrintPlacement('${z.preset}');closeZoneInfoModal()}">
+      <div class="zone-card-img">
+        ${z.svg}
+        <span style="position:absolute;top:6px;right:8px;font-size:1rem;color:rgba(255,255,255,0.55)">${_PRESET_ARROWS[i]||''}</span>
+      </div>
       <div class="zone-card-info">
         <div class="zone-card-label">${z.label}</div>
         <div class="zone-card-size">⬜ ${z.size}</div>
