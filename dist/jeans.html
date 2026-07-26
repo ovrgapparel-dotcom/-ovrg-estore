@@ -835,7 +835,7 @@ footer .footer-admin {
     }
   }
 </script>
-  <script type="module" crossorigin src="/assets/three-viewer-COG_ra59.js"></script>
+  <script type="module" crossorigin src="/assets/three-viewer-B_x59KgP.js"></script>
 </head>
 <body>
 
@@ -1307,49 +1307,55 @@ const EMBROIDERY_ZONES = {
     { id: 'sleeve-right', label: 'Manche Droite',  cx: 300, cy: 260, w: 100, h: 220 }
   ],
   jeans: [
-    { id: 'front',        label: 'Devant Complet',  cx: 300, cy: 240, w: 200, h: 280 },
-    { id: 'front-left',   label: 'Poche Gauche',    cx: 185, cy: 190, w: 120, h: 100 },
-    { id: 'front-right',  label: 'Poche Droite',    cx: 415, cy: 190, w: 120, h: 100 },
-    { id: 'front-center-high', label: 'Ceinture Avant', cx: 300, cy: 110, w: 180, h: 60 },
-    { id: 'front-center-mid',  label: 'Jambe Gauche',  cx: 205, cy: 370, w: 110, h: 200 },
-    { id: 'front-center-low',  label: 'Jambe Droite',  cx: 395, cy: 370, w: 110, h: 200 },
-    { id: 'back-center',  label: 'Fesses Complet',  cx: 300, cy: 250, w: 220, h: 200 },
-    { id: 'back-left',    label: 'Poche Arrière G.', cx: 210, cy: 230, w: 120, h: 100 },
-    { id: 'back-right',   label: 'Poche Arrière D.', cx: 390, cy: 230, w: 120, h: 100 },
-    { id: 'back-center-high', label: 'Ceinture Arrière', cx: 300, cy: 120, w: 180, h: 60 },
-    { id: 'back-center-low',  label: 'Bas des Jambes', cx: 300, cy: 460, w: 200, h: 80 },
-    { id: 'sleeve-left',  label: 'Jambe G. Extérieur', cx: 300, cy: 350, w: 100, h: 300 },
-    { id: 'sleeve-right', label: 'Jambe D. Extérieur', cx: 300, cy: 350, w: 100, h: 300 }
+    { id: 'front',             label: 'Devant Complet',      cx: 300, cy: 240, w: 200, h: 280 },
+    { id: 'front-left',        label: 'Poche Gauche',         cx: 185, cy: 190, w: 120, h: 100 },
+    { id: 'front-right',       label: 'Poche Droite',         cx: 415, cy: 190, w: 120, h: 100 },
+    { id: 'front-center-high', label: 'Ceinture Avant',       cx: 300, cy: 110, w: 180, h:  60 },
+    { id: 'front-center-mid',  label: 'Jambe G. Full',        cx: 205, cy: 370, w: 110, h: 200 },
+    { id: 'front-center-low',  label: 'Jambe D. Full',        cx: 395, cy: 370, w: 110, h: 200 },
+    { id: 'front-hem-left',    label: 'Bas Jambe G.',         cx: 195, cy: 500, w: 110, h:  80 },
+    { id: 'front-hem',         label: 'Bas des Jambes',       cx: 300, cy: 500, w: 240, h:  80 },
+    { id: 'back-center',       label: 'Fesses Complet',       cx: 300, cy: 250, w: 220, h: 200 },
+    { id: 'back-left',         label: 'Poche Arrière G.',     cx: 210, cy: 230, w: 120, h: 100 },
+    { id: 'back-right',        label: 'Poche Arrière D.',     cx: 390, cy: 230, w: 120, h: 100 },
+    { id: 'back-center-high',  label: 'Ceinture Arrière',     cx: 300, cy: 120, w: 180, h:  60 },
+    { id: 'back-center-low',   label: 'Bas des Jambes (dos)', cx: 300, cy: 460, w: 200, h:  80 },
+    { id: 'sleeve-left',       label: 'Jambe G. Extérieur',   cx: 300, cy: 350, w: 100, h: 300 },
+    { id: 'sleeve-right',      label: 'Jambe D. Extérieur',   cx: 300, cy: 350, w: 100, h: 300 }
   ],
   shorts: [
-    { id: 'front',        label: 'Devant Complet',  cx: 300, cy: 265, w: 400, h: 360 },
-    { id: 'front-left',   label: 'Poche Gauche',    cx: 185, cy: 170, w: 160, h: 140 },
-    { id: 'front-right',  label: 'Poche Droite',    cx: 415, cy: 170, w: 160, h: 140 },
-    { id: 'front-center-high', label: 'Ceinture Avant', cx: 300, cy: 100, w: 240, h: 80 },
-    { id: 'front-center-mid',  label: 'Cuisse G. Full', cx: 200, cy: 265, w: 210, h: 270 },
-    { id: 'front-center-low',  label: 'Cuisse D. Full', cx: 400, cy: 265, w: 210, h: 270 },
-    { id: 'back-center',  label: 'Fesses Complet',  cx: 300, cy: 265, w: 400, h: 360 },
-    { id: 'back-left',    label: 'Poche Arrière G.', cx: 200, cy: 210, w: 160, h: 140 },
-    { id: 'back-right',   label: 'Poche Arrière D.', cx: 400, cy: 210, w: 160, h: 140 },
-    { id: 'back-center-high', label: 'Ceinture Arrière (Jacron)', cx: 300, cy: 110, w: 240, h: 80 },
-    { id: 'back-center-low',  label: 'Bas (Ourlet)',     cx: 300, cy: 350, w: 280, h: 100 },
-    { id: 'sleeve-left',  label: 'Cuisse G. Côté',  cx: 300, cy: 265, w: 210, h: 270 },
-    { id: 'sleeve-right', label: 'Cuisse D. Côté',  cx: 300, cy: 265, w: 210, h: 270 }
+    { id: 'front',             label: 'Devant Complet',          cx: 300, cy: 265, w: 400, h: 360 },
+    { id: 'front-left',        label: 'Poche Gauche',             cx: 185, cy: 170, w: 160, h: 140 },
+    { id: 'front-right',       label: 'Poche Droite',             cx: 415, cy: 170, w: 160, h: 140 },
+    { id: 'front-center-high', label: 'Ceinture Avant',           cx: 300, cy: 100, w: 240, h:  80 },
+    { id: 'front-center-mid',  label: 'Cuisse G. Full',           cx: 200, cy: 265, w: 210, h: 270 },
+    { id: 'front-center-low',  label: 'Cuisse D. Full',           cx: 400, cy: 265, w: 210, h: 270 },
+    { id: 'front-hem-left',    label: 'Bas Ourlet G.',            cx: 195, cy: 380, w: 200, h:  80 },
+    { id: 'front-hem',         label: 'Bas Ourlet',               cx: 300, cy: 380, w: 390, h:  80 },
+    { id: 'back-center',       label: 'Fesses Complet',           cx: 300, cy: 265, w: 400, h: 360 },
+    { id: 'back-left',         label: 'Poche Arrière G.',         cx: 200, cy: 210, w: 160, h: 140 },
+    { id: 'back-right',        label: 'Poche Arrière D.',         cx: 400, cy: 210, w: 160, h: 140 },
+    { id: 'back-center-high',  label: 'Ceinture Arrière (Jacron)',cx: 300, cy: 110, w: 240, h:  80 },
+    { id: 'back-center-low',   label: 'Bas (Ourlet)',             cx: 300, cy: 350, w: 280, h: 100 },
+    { id: 'sleeve-left',       label: 'Cuisse G. Côté',          cx: 300, cy: 265, w: 210, h: 270 },
+    { id: 'sleeve-right',      label: 'Cuisse D. Côté',          cx: 300, cy: 265, w: 210, h: 270 }
   ],
   baggy: [
-    { id: 'front',        label: 'Devant Complet',  cx: 300, cy: 330, w: 420, h: 480 },
-    { id: 'front-left',   label: 'Poche Gauche',    cx: 170, cy: 200, w: 170, h: 140 },
-    { id: 'front-right',  label: 'Poche Droite',    cx: 430, cy: 200, w: 170, h: 140 },
-    { id: 'front-center-high', label: 'Ceinture Avant', cx: 300, cy: 115, w: 260, h: 80 },
-    { id: 'front-center-mid',  label: 'Jambe G. Full',  cx: 195, cy: 340, w: 230, h: 440 },
-    { id: 'front-center-low',  label: 'Jambe D. Full',  cx: 405, cy: 340, w: 230, h: 440 },
-    { id: 'back-center',  label: 'Dos Complet',     cx: 300, cy: 330, w: 420, h: 480 },
-    { id: 'back-left',    label: 'Poche Arrière G.', cx: 200, cy: 250, w: 170, h: 140 },
-    { id: 'back-right',   label: 'Poche Arrière D.', cx: 400, cy: 250, w: 170, h: 140 },
-    { id: 'back-center-high', label: 'Ceinture Arrière (Jacron)', cx: 300, cy: 120, w: 260, h: 80 },
-    { id: 'back-center-low',  label: 'Bas des Jambes',   cx: 300, cy: 500, w: 300, h: 120 },
-    { id: 'sleeve-left',  label: 'Jambe G. Extérieur', cx: 300, cy: 340, w: 240, h: 440 },
-    { id: 'sleeve-right', label: 'Jambe D. Extérieur', cx: 300, cy: 340, w: 240, h: 440 }
+    { id: 'front',             label: 'Devant Complet',           cx: 300, cy: 330, w: 420, h: 480 },
+    { id: 'front-left',        label: 'Poche Gauche',              cx: 170, cy: 200, w: 170, h: 140 },
+    { id: 'front-right',       label: 'Poche Droite',              cx: 430, cy: 200, w: 170, h: 140 },
+    { id: 'front-center-high', label: 'Ceinture Avant',            cx: 300, cy: 115, w: 260, h:  80 },
+    { id: 'front-center-mid',  label: 'Jambe G. Full',             cx: 195, cy: 340, w: 230, h: 440 },
+    { id: 'front-center-low',  label: 'Jambe D. Full',             cx: 405, cy: 340, w: 230, h: 440 },
+    { id: 'front-hem-left',    label: 'Bas Jambe G.',              cx: 185, cy: 545, w: 180, h:  90 },
+    { id: 'front-hem',         label: 'Bas des Jambes',            cx: 300, cy: 545, w: 380, h:  90 },
+    { id: 'back-center',       label: 'Dos Complet',              cx: 300, cy: 330, w: 420, h: 480 },
+    { id: 'back-left',         label: 'Poche Arrière G.',         cx: 200, cy: 250, w: 170, h: 140 },
+    { id: 'back-right',        label: 'Poche Arrière D.',         cx: 400, cy: 250, w: 170, h: 140 },
+    { id: 'back-center-high',  label: 'Ceinture Arrière (Jacron)',cx: 300, cy: 120, w: 260, h:  80 },
+    { id: 'back-center-low',   label: 'Bas des Jambes (dos)',      cx: 300, cy: 500, w: 300, h: 120 },
+    { id: 'sleeve-left',       label: 'Jambe G. Extérieur',       cx: 300, cy: 340, w: 240, h: 440 },
+    { id: 'sleeve-right',      label: 'Jambe D. Extérieur',       cx: 300, cy: 340, w: 240, h: 440 }
   ]
 };
 
@@ -2098,41 +2104,41 @@ function getZoneIdForSideAndPreset(side, preset) {
 
   if (side === 'front') {
     if (isBottom) {
-      // Lower-body: front zone mapping
-      if (preset === 'top-left')     return 'front-left';           // Poche Gauche
-      if (preset === 'top-center')   return 'front-center-high';    // Ceinture Avant
-      if (preset === 'top-right')    return 'front-right';          // Poche Droite
-      if (preset === 'mid-left')     return 'front-center-mid';     // Jambe/Cuisse G. Full
-      if (preset === 'center')       return 'front';                // Devant Complet / Centre
-      if (preset === 'mid-right')    return 'front-center-low';     // Jambe/Cuisse D. Full
-      if (preset === 'bottom-left')  return 'back-center-low';      // Bas Jambe G. / Bas Ourlet G. (hem = bottom of front)
-      if (preset === 'bottom-center')return 'back-center-low';      // Bas des Jambes / Bas Ourlet
-      if (preset === 'bottom-right') return 'back-left';            // Jacron / Poche Arrière — back zone
+      // Lower-body front zones — each maps to a distinct EMBROIDERY_ZONES entry
+      if (preset === 'top-left')      return 'front-left';        // Poche Gauche
+      if (preset === 'top-center')    return 'front-center-high'; // Ceinture Avant
+      if (preset === 'top-right')     return 'front-right';       // Poche Droite
+      if (preset === 'mid-left')      return 'front-center-mid';  // Jambe/Cuisse G. Full
+      if (preset === 'center')        return 'front';             // Devant Complet / Centre
+      if (preset === 'mid-right')     return 'front-center-low';  // Jambe/Cuisse D. Full
+      if (preset === 'bottom-left')   return 'front-hem-left';    // Bas Jambe G. / Bas Ourlet G.
+      if (preset === 'bottom-center') return 'front-hem';         // Bas des Jambes / Bas Ourlet
+      if (preset === 'bottom-right')  return 'back-left';         // Jacron / Poche Arrière — back zone
       return 'front';
     } else {
-      // Upper-body (jacket/hoodie): front zone mapping
-      if (preset === 'top-left')     return 'front-left';
-      if (preset === 'top-center')   return 'front-center-high';
-      if (preset === 'top-right')    return 'front-right';
-      if (preset === 'mid-left')     return 'sleeve-left';
-      if (preset === 'center')       return 'front';
-      if (preset === 'mid-right')    return 'sleeve-right';
-      if (preset === 'bottom-left')  return 'front-center-low';
-      if (preset === 'bottom-center')return 'back-center';
-      if (preset === 'bottom-right') return 'front-center-low';
+      // Upper-body (jacket/hoodie)
+      if (preset === 'top-left')      return 'front-left';
+      if (preset === 'top-center')    return 'front-center-high';
+      if (preset === 'top-right')     return 'front-right';
+      if (preset === 'mid-left')      return 'sleeve-left';
+      if (preset === 'center')        return 'front';
+      if (preset === 'mid-right')     return 'sleeve-right';
+      if (preset === 'bottom-left')   return 'front-center-low';
+      if (preset === 'bottom-center') return 'back-center';
+      if (preset === 'bottom-right')  return 'front-center-low';
       return 'front';
     }
   }
   if (side === 'back') {
-    if (preset === 'top-left')     return 'back-left';
-    if (preset === 'top-center')   return 'back-center-high';
-    if (preset === 'top-right')    return 'back-right';
-    if (preset === 'mid-left')     return 'back-left';
-    if (preset === 'center')       return 'back-center';
-    if (preset === 'mid-right')    return 'back-right';
-    if (preset === 'bottom-left')  return 'back-center-low';
-    if (preset === 'bottom-center')return 'back-center-low';
-    if (preset === 'bottom-right') return 'back-center-low';
+    if (preset === 'top-left')      return 'back-left';
+    if (preset === 'top-center')    return 'back-center-high';
+    if (preset === 'top-right')     return 'back-right';
+    if (preset === 'mid-left')      return 'back-left';
+    if (preset === 'center')        return 'back-center';
+    if (preset === 'mid-right')     return 'back-right';
+    if (preset === 'bottom-left')   return 'back-center-low';
+    if (preset === 'bottom-center') return 'back-center-low';
+    if (preset === 'bottom-right')  return 'back-center-low';
     return 'back-center';
   }
   if (side === 'sleeve-left')  return 'sleeve-left';
