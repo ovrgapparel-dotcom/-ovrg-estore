@@ -2209,18 +2209,19 @@ function setPrintPlacement(preset, render = true) {
       ds.wPct = zWpx / 600 * 100;
       ds.hPct = zHpx / 600 * 100;
 
-      // Compute precise placement coordinates for 9-grid presets
-      let cx = zone.cx;
-      let cy = zone.cy;
-      if (activeZoneId === 'front' || activeZoneId === 'back') {
-        const isFront = activeZoneId === 'front';
-        if (preset === 'bottom-left')  { cx = 210; cy = productType === 'baggy' ? 440 : 340; }
-        if (preset === 'bottom-right') { cx = 390; cy = productType === 'baggy' ? 440 : 340; }
-        if (preset === 'mid-left')     { cx = 210; cy = productType === 'baggy' ? 320 : 250; }
-        if (preset === 'mid-right')    { cx = 390; cy = productType === 'baggy' ? 320 : 250; }
-        if (preset === 'center')       { cx = 300; cy = productType === 'baggy' ? 270 : 220; }
-        if (preset === 'bottom-center'){ cx = 300; cy = productType === 'baggy' ? 480 : 340; }
+      // For Jacron / Poche Arrière (bottom-right lower-body), auto-switch to back view
+      // so the 2D mockup shows the correct surface
+      const pt2 = (typeof productType === 'string') ? productType : 'jacket';
+      const isBottom2 = ['jeans','shorts','baggy'].includes(pt2);
+      if (isBottom2 && preset === 'bottom-right' && activeZoneId === 'front') {
+        // Switch view to back without triggering a zone change loop
+        switchView('back');
       }
+
+      // Use zone cx/cy directly — no manual overrides needed since EMBROIDERY_ZONES
+      // now has distinct entries for every placement (front-hem-left, front-hem, etc.)
+      const cx = zone.cx;
+      const cy = zone.cy;
 
       ds.xPct = (cx - zWpx / 2) / 600 * 100;
       ds.yPct = (cy - zHpx / 2) / 600 * 100;
