@@ -315,7 +315,9 @@ footer{background:var(--dark);padding:2rem 1.5rem;text-align:center;color:#555;f
                 <option value="bobble">🧣 Bonnet</option>
                 <option value="jacket">🧥 Veste en Jean</option>
                 <option value="hoodie">🫡 Hoodie</option>
+                <option value="jeans">👖 Jeans</option>
                 <option value="shorts">🩳 Short</option>
+                <option value="baggy">👖 Baggy</option>
                 <option value="socks">🧦 Chaussettes</option>
               </select>
             </div>
@@ -361,7 +363,9 @@ footer{background:var(--dark);padding:2rem 1.5rem;text-align:center;color:#555;f
               <option value="bobble">🧣 Bonnet</option>
               <option value="jacket">🧥 Veste en Jean</option>
               <option value="hoodie">🫡 Hoodie</option>
+              <option value="jeans">👖 Jeans</option>
               <option value="shorts">🩳 Short</option>
+              <option value="baggy">👖 Baggy</option>
               <option value="socks">🧦 Chaussettes</option>
             </select>
           </div>
@@ -432,14 +436,17 @@ function buildDefaultInventory(){
     premium:{price:p,stock:15,description:'Coton supima 220g/m², Made in Portugal'}
   };}
   return{
-    tshirt:  {name:'T-Shirt',        icon:'👕', customizer:'showcase.html',               image:null,...tiers( 9000, 14000, 22000)},
-    cap:     {name:'Casquette',      icon:'🧢', customizer:'headwear.html?type=cap',       image:null,...tiers( 7500, 12000, 18000)},
-    bucket:  {name:'Bob / Bucket Hat',icon:'🪣', customizer:'headwear.html?type=bucket',   image:null,...tiers( 7500, 12000, 18000)},
-    bobble:  {name:'Bonnet',         icon:'🧣', customizer:'headwear.html?type=bobble',    image:null,...tiers( 6000, 10000, 16000)},
-    jacket:  {name:'Veste en Jean',  icon:'🧥', customizer:'jeans.html',                   image:null,...tiers(25000, 38000, 55000)},
-    hoodie:  {name:'Hoodie',         icon:'🫡', customizer:'hoodies.html',                  image:null,...tiers(18000, 27000, 42000)},
-    shorts:  {name:'Short',          icon:'🩳', customizer:'#',                            image:null,...tiers( 8000, 13000, 20000)},
-    socks:   {name:'Chaussettes',    icon:'🧦', customizer:'#',                            image:null,...tiers( 3500,  6000,  9000)},
+    tshirt:  {name:'T-Shirt',        icon:'👕', customizer:'showcase.html',                   image:null,...tiers( 9000, 14000, 22000)},
+    cap:     {name:'Casquette',      icon:'🧢', customizer:'headwear.html?type=cap',           image:null,...tiers( 7500, 12000, 18000)},
+    bucket:  {name:'Bob / Bucket Hat',icon:'🪣', customizer:'headwear.html?type=bucket',       image:null,...tiers( 7500, 12000, 18000)},
+    bobble:  {name:'Bonnet',         icon:'🧣', customizer:'headwear.html?type=bobble',        image:null,...tiers( 6000, 10000, 16000)},
+    jacket:  {name:'Veste en Jean',  icon:'🧥', customizer:'jeans.html?type=jacket',           image:null,...tiers(25000, 38000, 55000)},
+    hoodie:  {name:'Hoodie',         icon:'🫡', customizer:'hoodies.html',                      image:null,...tiers(18000, 27000, 42000)},
+    jeans:   {name:'Jeans',          icon:'👖', customizer:'jeans.html?type=jeans',            image:null,...tiers(15000, 24000, 36000)},
+    pants:   {name:'Pantalons',      icon:'👖', customizer:'jeans.html?type=jeans',            image:null,...tiers(14000, 22000, 34000)},
+    shorts:  {name:'Short',          icon:'🩳', customizer:'jeans.html?type=shorts',           image:null,...tiers( 8000, 13000, 20000)},
+    baggy:   {name:'Baggy',          icon:'👖', customizer:'jeans.html?type=baggy',            image:null,...tiers(18000, 28000, 42000)},
+    socks:   {name:'Chaussettes',    icon:'🧦', customizer:'#',                                image:null,...tiers( 3500,  6000,  9000)},
   };
 }
 
@@ -564,7 +571,10 @@ const PRODUCT_EXTRA = {
   bobble:  { brand: 'OVRG Headwear',   fits: 'Taille unique', wash: '30°C délicat' },
   jacket:  { brand: 'OVRG Denim',      fits: 'XS → XXL',   wash: '30°C à l\'envers' },
   hoodie:  { brand: 'OVRG Streetwear', fits: 'XS → 3XL',   wash: '30°C retourné' },
+  jeans:   { brand: 'OVRG Denim',      fits: '34 → 44 (XS–XXL)', wash: '30°C à l\'envers' },
+  pants:   { brand: 'OVRG Bottoms',    fits: '34 → 44 (XS–XXL)', wash: '30°C à l\'envers' },
   shorts:  { brand: 'OVRG Bottoms',    fits: 'XS → XXL',   wash: '30°C normal' },
+  baggy:   { brand: 'OVRG Denim',      fits: '34 → 44 (XS–XXL)', wash: '30°C délicat' },
   socks:   { brand: 'OVRG Essentials', fits: 'S (36-40) / L (41-46)', wash: '30°C normal' },
 };
 
