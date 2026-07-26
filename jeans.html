@@ -1305,17 +1305,23 @@ function analyzeFabric(side) {
     ctx.drawImage(img, 0, 0, w, h);
     const imageData = ctx.getImageData(0, 0, w, h);
     const data = imageData.data;
+    // Detect if image uses alpha channel for transparency
+    let hasAlpha = false;
+    for (let i = 0; i < w * h * 4; i += 4) {
+      if (data[i + 3] < 250) { hasAlpha = true; break; }
+    }
 
-    const LUM_THRESHOLD = 0.30;
     const lum = new Float32Array(w * h);
     const mask = new Uint8Array(w * h);
     let lumSum = 0, fabricCount = 0;
 
     for (let i = 0; i < w * h; i++) {
-      const r = data[i*4] / 255, g = data[i*4+1] / 255, b = data[i*4+2] / 255;
+      const r = data[i*4] / 255, g = data[i*4+1] / 255, b = data[i*4+2] / 255, a = data[i*4+3];
       const l = 0.2126*r + 0.7152*g + 0.0722*b;
       lum[i] = l;
-      if (l > LUM_THRESHOLD) {
+
+      const isFabric = hasAlpha ? (a > 20) : (l > 0.04 || r > 0.04 || g > 0.04 || b > 0.04);
+      if (isFabric) {
         mask[i] = 1;
         lumSum += l;
         fabricCount++;
