@@ -3572,16 +3572,25 @@ function pgHandleLeave() {
   pgDraw();
 }
 
-// ── URL PARAM: auto-select product type on load ───────────────────────────────
+// ── URL PARAM: auto-select product type & tier on load ───────────────────────────
 (function() {
   const params = new URLSearchParams(window.location.search);
   const typeParam = params.get('type');
+  const tierParam = params.get('tier');
   const validTypes = ['shorts', 'baggy'];
   const targetType = (typeParam && validTypes.includes(typeParam)) ? typeParam : 'shorts';
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setProductType(targetType));
-  } else {
+
+  const applyParams = () => {
     setProductType(targetType);
+    if (tierParam && ['standard','highend','premium'].includes(tierParam) && typeof selectTier === 'function') {
+      selectTier(tierParam);
+    }
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyParams);
+  } else {
+    applyParams();
   }
 })();
 </script>
@@ -3601,8 +3610,8 @@ function pgHandleLeave() {
 
     <!-- Product type toggle inside popup -->
     <div class="pg-type-row">
-      <button class="pg-type-btn active" id="pgTypeJacket" onclick="setPgType('jacket')">Veste</button>
-      <button class="pg-type-btn" id="pgTypeHoodie" onclick="setPgType('hoodie')">Hoodie</button>
+      <button class="pg-type-btn active" id="pgTypeShorts" onclick="setPgType('shorts')">Short</button>
+      <button class="pg-type-btn" id="pgTypeBaggy" onclick="setPgType('baggy')">Baggy</button>
     </div>
 
     <div class="pg-body">
