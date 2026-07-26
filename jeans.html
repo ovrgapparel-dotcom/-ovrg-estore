@@ -777,8 +777,8 @@ footer .footer-admin {
   <div class="mockup-card">
     <div class="view-tabs">
       <button class="view-btn active" id="front-btn" onclick="switchView('front')">Devant</button>
-      <button class="view-btn" id="side-btn" onclick="switchView('sleeve-left')">Côté</button>
-      <button class="view-btn" id="right-btn" onclick="switchView('sleeve-right')">Côté droit</button>
+      <button class="view-btn" id="side-btn" onclick="switchView('sleeve-left')" id="sideViewBtn">Côté G</button>
+      <button class="view-btn" id="right-btn" onclick="switchView('sleeve-right')" id="rightViewBtn">Côté D</button>
       <button class="view-btn" id="back-btn" onclick="switchView('back')">Dos</button>
       <button class="view-btn" id="btn-3d" onclick="switchView('3d')" style="background: linear-gradient(135deg, var(--primary), #d94d1a); color: white; border: none; box-shadow: 0 4px 10px rgba(255,107,53,0.3);">✨ Vue 3D</button>
     </div>
@@ -1887,10 +1887,17 @@ function setProductType(type) {
 
   // Update zone zone-selector label (sleeve buttons -> leg/side etc)
   const isBottom = ['jeans','shorts','baggy'].includes(type);
+  const legLabel  = type === 'shorts' ? 'Cuisse' : type === 'baggy' ? 'Jambe' : 'Manche';
   const sleeveLeft  = document.getElementById('zoneSleeveLeftBtn');
   const sleeveRight = document.getElementById('zoneSleeveRightBtn');
-  if (sleeveLeft)  sleeveLeft.textContent  = isBottom ? (type === 'shorts' ? 'Cuisse G' : 'Jambe G') : 'Manche G';
-  if (sleeveRight) sleeveRight.textContent = isBottom ? (type === 'shorts' ? 'Cuisse D' : 'Jambe D') : 'Manche D';
+  if (sleeveLeft)  sleeveLeft.textContent  = `${legLabel} G`;
+  if (sleeveRight) sleeveRight.textContent = `${legLabel} D`;
+
+  // Also relabel the view-tab buttons
+  const sideBtn  = document.getElementById('side-btn');
+  const rightBtn = document.getElementById('right-btn');
+  if (sideBtn)  sideBtn.textContent  = isBottom ? `${legLabel} G` : 'Côté';
+  if (rightBtn) rightBtn.textContent = isBottom ? `${legLabel} D` : 'Côté droit';
 
   if (globalSettings.global_colors) {
     renderColorOptions(globalSettings.global_colors);
