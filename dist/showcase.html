@@ -2076,7 +2076,8 @@ function buildOrderItem() {
   const price = calculateTotalPrice();
   const printId = firstPrint ? firstPrint.id : 'custom';
   const printName = firstPrint ? firstPrint.name : 'Texte personnalisé';
-  const imgUrl = printImages.length > 0 ? printImages[0] : (SHIRT_IMAGES.front || '');
+  const snapshotData = typeof captureGarmentSnapshot === 'function' ? captureGarmentSnapshot('all') : null;
+  const imgUrl = snapshotData || (printImages.length > 0 ? printImages[0] : (SHIRT_IMAGES.front || ''));
 
   const zoneSummary = customizedZones.length > 0 ? ` (${customizedZones.join(', ')})` : '';
 
@@ -2142,51 +2143,104 @@ function addToCartShowcase() {
   showToast('Ajouté au panier! 🛍', `${item.name} (${item.size}) ajouté. Accédez au panier pour finaliser.`);
 }
 
-function captureGarmentSnapshot(side) {
-  side = side || currentView || 'front';
-  if (side === '3d') side = 'front';
+function captureGarmentSnapshot(sidesToCapture) {
+  const ids = { front: 'tshirt-front', back: 'tshirt-back' };
+  
+  let targetSides = [];
+  if (Array.isArray(sidesToCapture)) {
+    targetSides = sidesToCapture;
+  } else if (typeof sidesToCapture === 'string' && sidesToCapture !== 'all' && sidesToCapture !== '3d') {
+    targetSides = [sidesToCapture];
+  } else {
+    // Detect all sides that exist in DOM
+    targetSides = ['front', 'back'].filter(s => document.getElementById(ids[s]));
+  }
 
-  const baseCanvas = document.getElementById(side === 'front' ? 'tshirt-front' : 'tshirt-back');
-  const printWrap = document.getElementById(side === 'front' ? 'canvas-front' : 'canvas-back');
-  const printCanvas = printWrap ? printWrap.querySelector('canvas') : null;
+  // Filter only sides with valid base canvas
+  const validSides = targetSides.filter(s => {
+    const bc = document.getElementById(ids[s]);
+    return bc && bc.width > 0;
+  });
 
-  if (!baseCanvas || !baseCanvas.width) return null;
+  if (validSides.length === 0) return null;
 
-  const comp = document.createElement('canvas');
-  comp.width = baseCanvas.width;
-  comp.height = baseCanvas.height;
-  const ctx = comp.getContext('2d');
+  // Determine which sides actually have custom prints or active overlay
+  const customizedSides = validSides.filter(side => {
+    const printWrap = document.getElementById('canvas-' + side);
+    const printCanvas = printWrap ? printWrap.querySelector('canvas') : null;
+    if (printCanvas && printCanvas.width > 0 && printWrap.style.display !== 'none') {
+      return true;
+    }
+    if (window.zoneCustomizations) {
+      return Object.entries(window.zoneCustomizations).some(([zId, cfg]) => {
+        if (!cfg || !cfg.print) return false;
+        if (side === 'front' && zId !== 'back') return true;
+        if (side === 'back' && zId === 'back') return true;
+        return false;
+      });
+    }
+    return false;
+  });
 
-  // 1. Draw base shirt canvas
-  ctx.drawImage(baseCanvas, 0, 0);
+  // If specific customized sides detected, use those; otherwise use active view or front
+  const renderList = customizedSides.length > 0 ? customizedSides : (currentView && currentView !== '3d' ? [currentView] : ['front']);
 
-  // 2. Draw print overlay canvas
-  if (printCanvas && printWrap && printWrap.style.display !== 'none' && printCanvas.width) {
-    const parentRect = baseCanvas.getBoundingClientRect();
-    const wrapRect = printWrap.getBoundingClientRect();
+  const panels = [];
+  renderList.forEach(side => {
+    const baseCanvas = document.getElementById(ids[side]);
+    const printWrap = document.getElementById('canvas-' + side);
+    const printCanvas = printWrap ? printWrap.querySelector('canvas') : null;
 
-    if (parentRect.width > 0 && parentRect.height > 0) {
-      const scaleX = baseCanvas.width / parentRect.width;
-      const scaleY = baseCanvas.height / parentRect.height;
+    if (!baseCanvas || !baseCanvas.width) return;
 
-      const x = (wrapRect.left - parentRect.left) * scaleX;
-      const y = (wrapRect.top - parentRect.top) * scaleY;
-      const w = wrapRect.width * scaleX;
-      const h = wrapRect.height * scaleY;
+    const comp = document.createElement('canvas');
+    comp.width = baseCanvas.width;
+    comp.height = baseCanvas.height;
+    const ctx = comp.getContext('2d');
 
-      try {
-        ctx.drawImage(printCanvas, x, y, w, h);
-      } catch (e) {
-        console.warn('Overlay composite error:', e);
+    // 1. Draw base shirt canvas
+    ctx.drawImage(baseCanvas, 0, 0);
+
+    // 2. Draw print overlay canvas
+    if (printCanvas && printWrap && printWrap.style.display !== 'none' && printCanvas.width) {
+      const parentRect = baseCanvas.getBoundingClientRect();
+      const wrapRect = printWrap.getBoundingClientRect();
+
+      if (parentRect.width > 0 && parentRect.height > 0) {
+        const scaleX = baseCanvas.width / parentRect.width;
+        const scaleY = baseCanvas.height / parentRect.height;
+        const x = (wrapRect.left - parentRect.left) * scaleX;
+        const y = (wrapRect.top - parentRect.top) * scaleY;
+        const w = wrapRect.width * scaleX;
+        const h = wrapRect.height * scaleY;
+
+        try { ctx.drawImage(printCanvas, x, y, w, h); } catch(e) { console.warn(e); }
       }
     }
+    panels.push({ side, canvas: comp });
+  });
+
+  if (panels.length === 0) return null;
+
+  if (panels.length === 1) {
+    try { return panels[0].canvas.toDataURL('image/jpeg', 0.9); } catch(e) { return null; }
   }
 
-  try {
-    return comp.toDataURL('image/jpeg', 0.9);
-  } catch (e) {
-    return baseCanvas.toDataURL('image/jpeg', 0.85);
-  }
+  // Combine multiple sides (e.g. Front & Back) side-by-side!
+  const pW = panels[0].canvas.width;
+  const pH = panels[0].canvas.height;
+  const comboCanvas = document.createElement('canvas');
+  comboCanvas.width = pW * panels.length;
+  comboCanvas.height = pH;
+  const cCtx = comboCanvas.getContext('2d');
+  cCtx.fillStyle = '#1a1a1a';
+  cCtx.fillRect(0, 0, comboCanvas.width, comboCanvas.height);
+
+  panels.forEach((p, i) => {
+    cCtx.drawImage(p.canvas, i * pW, 0);
+  });
+
+  try { return comboCanvas.toDataURL('image/jpeg', 0.9); } catch(e) { return null; }
 }
 
 function orderViaWhatsApp() {
@@ -2216,8 +2270,8 @@ function orderViaWhatsApp() {
 
   window.open(`https://wa.me/2250799108108?text=${encodeURIComponent(msg)}`, '_blank');
 
-  // Also generate invoice
-  const snapshot = captureGarmentSnapshot(currentView);
+  // Also generate invoice modal & PDF
+  const snapshot = captureGarmentSnapshot('all');
   if (window.OVRGInvoice) {
     window.OVRGInvoice.showInvoiceModal(
       Object.assign({}, item),
@@ -2232,8 +2286,8 @@ function goToCheckout() {
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé dans la bibliothèque.", '#f59e0b'); return; }
   addToCartShowcase();
 
-  // Capture composite garment snapshot (base shirt + print overlay)
-  const snapshot = captureGarmentSnapshot(currentView);
+  // Capture composite garment snapshot of all customized sides (front, back, etc.)
+  const snapshot = captureGarmentSnapshot('all');
 
   // Show invoice modal — only navigate to cart when modal is closed/dismissed
   if (window.OVRGInvoice) {

@@ -2850,7 +2850,8 @@ function buildOrderItem() {
   const price = calculateTotalPrice();
   const printName = selectedPrint ? selectedPrint.name : ('Label: ' + labelText);
   const printId   = selectedPrint ? selectedPrint.id   : 'label';
-  const imgUrl    = selectedPrint ? (selectedPrint.image_url || '') : '';
+  const snapshotData = typeof captureGarmentSnapshot === 'function' ? captureGarmentSnapshot('all') : null;
+  const imgUrl    = snapshotData || (selectedPrint ? (selectedPrint.image_url || '') : '');
   const sizeLabel = typeof embroiderySize !== 'undefined' ? embroiderySize : 'M';
   const zone = getActiveZone();
 
@@ -2870,9 +2871,104 @@ function buildOrderItem() {
       scale: sizeLabel,
       blend: 100,
       tier: selectedTier,
-      label: hasLabel ? labelText : null
+      label: hasLabel ? labelText : null,
+      zones: JSON.parse(JSON.stringify(window.zoneCustomizations || {}))
     }
   };
+}
+
+function captureGarmentSnapshot(sidesToCapture) {
+  const ids = { front: 'tshirt-front', side: 'tshirt-side', back: 'tshirt-back' };
+  
+  let targetSides = [];
+  if (Array.isArray(sidesToCapture)) {
+    targetSides = sidesToCapture;
+  } else if (typeof sidesToCapture === 'string' && sidesToCapture !== 'all' && sidesToCapture !== '3d') {
+    targetSides = [sidesToCapture];
+  } else {
+    targetSides = ['front', 'side', 'back'].filter(s => document.getElementById(ids[s]));
+  }
+
+  const validSides = targetSides.filter(s => {
+    const bc = document.getElementById(ids[s]);
+    return bc && bc.width > 0;
+  });
+
+  if (validSides.length === 0) return null;
+
+  const customizedSides = validSides.filter(side => {
+    const printWrap = document.getElementById('canvas-' + side);
+    const printCanvas = printWrap ? printWrap.querySelector('canvas') : null;
+    if (printCanvas && printCanvas.width > 0 && printWrap.style.display !== 'none') {
+      return true;
+    }
+    if (window.zoneCustomizations) {
+      return Object.entries(window.zoneCustomizations).some(([zId, cfg]) => {
+        if (!cfg || !cfg.print) return false;
+        if (side === 'front' && zId !== 'back' && zId !== 'side') return true;
+        if (side === 'back' && zId === 'back') return true;
+        if (side === 'side' && zId === 'side') return true;
+        return false;
+      });
+    }
+    return false;
+  });
+
+  const renderList = customizedSides.length > 0 ? customizedSides : (currentView && currentView !== '3d' ? [currentView] : ['front']);
+
+  const panels = [];
+  renderList.forEach(side => {
+    const baseCanvas = document.getElementById(ids[side]);
+    const printWrap = document.getElementById('canvas-' + side);
+    const printCanvas = printWrap ? printWrap.querySelector('canvas') : null;
+
+    if (!baseCanvas || !baseCanvas.width) return;
+
+    const comp = document.createElement('canvas');
+    comp.width = baseCanvas.width;
+    comp.height = baseCanvas.height;
+    const ctx = comp.getContext('2d');
+
+    ctx.drawImage(baseCanvas, 0, 0);
+
+    if (printCanvas && printWrap && printWrap.style.display !== 'none' && printCanvas.width) {
+      const parentRect = baseCanvas.getBoundingClientRect();
+      const wrapRect = printWrap.getBoundingClientRect();
+
+      if (parentRect.width > 0 && parentRect.height > 0) {
+        const scaleX = baseCanvas.width / parentRect.width;
+        const scaleY = baseCanvas.height / parentRect.height;
+        const x = (wrapRect.left - parentRect.left) * scaleX;
+        const y = (wrapRect.top - parentRect.top) * scaleY;
+        const w = wrapRect.width * scaleX;
+        const h = wrapRect.height * scaleY;
+
+        try { ctx.drawImage(printCanvas, x, y, w, h); } catch(e) { console.warn(e); }
+      }
+    }
+    panels.push({ side, canvas: comp });
+  });
+
+  if (panels.length === 0) return null;
+
+  if (panels.length === 1) {
+    try { return panels[0].canvas.toDataURL('image/jpeg', 0.9); } catch(e) { return null; }
+  }
+
+  const pW = panels[0].canvas.width;
+  const pH = panels[0].canvas.height;
+  const comboCanvas = document.createElement('canvas');
+  comboCanvas.width = pW * panels.length;
+  comboCanvas.height = pH;
+  const cCtx = comboCanvas.getContext('2d');
+  cCtx.fillStyle = '#1a1a1a';
+  cCtx.fillRect(0, 0, comboCanvas.width, comboCanvas.height);
+
+  panels.forEach((p, i) => {
+    cCtx.drawImage(p.canvas, i * pW, 0);
+  });
+
+  try { return comboCanvas.toDataURL('image/jpeg', 0.9); } catch(e) { return null; }
 }
 
 function addToCartShowcase() {
@@ -2912,13 +3008,36 @@ function orderViaWhatsApp() {
               `📍 Position: ${c.placementLabel}\n`+
               `💰 Prix: ${fmt(item.price)}`;
   window.open(`https://wa.me/2250799108108?text=${encodeURIComponent(msg)}`, '_blank');
+
+  // Also pop up invoice modal
+  const snapshot = captureGarmentSnapshot('all');
+  if (window.OVRGInvoice) {
+    window.OVRGInvoice.showInvoiceModal(
+      Object.assign({}, item),
+      snapshot,
+      typeof sbClient !== 'undefined' ? sbClient : null
+    );
+  }
 }
 
 function goToCheckout() {
   const item = buildOrderItem();
   if (!item) { showToast('Choisissez un imprimé', "Sélectionnez d'abord un imprimé.", '#f59e0b'); return; }
   addToCartShowcase();
-  setTimeout(() => { window.location.href = 'index.html?cart=1'; }, 150);
+
+  const snapshot = captureGarmentSnapshot('all');
+  if (window.OVRGInvoice) {
+    window.OVRGInvoice.showInvoiceModal(
+      Object.assign({}, item),
+      snapshot,
+      typeof sbClient !== 'undefined' ? sbClient : null,
+      function onDone() {
+        window.location.href = 'index.html?cart=1';
+      }
+    );
+  } else {
+    window.location.href = 'index.html?cart=1';
+  }
 }
 
 

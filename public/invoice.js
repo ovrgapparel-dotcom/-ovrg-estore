@@ -235,14 +235,15 @@
     y += 16;
 
     /* MOCKUP IMAGE */
-    if (snapshotDataUrl && y < 240) {
+    const finalSnapshot = snapshotDataUrl || orderData.img || (orderData.items && orderData.items[0] && orderData.items[0].img) || null;
+    if (finalSnapshot && y < 235) {
       try {
-        const imgW=60, imgH=70, ix=(W-imgW)/2;
-        setFill(BRAND.lightGrey); doc.roundedRect(ix-2, y-2, imgW+4, imgH+4, 3, 3, 'F');
-        doc.addImage(snapshotDataUrl, 'JPEG', ix, y, imgW, imgH);
-        setTxt(BRAND.grey); doc.setFont('helvetica','italic'); doc.setFontSize(7.5);
-        txt('Aperçu du design personnalisé', W/2, y+imgH+6, {align:'center'});
-        y += imgH + 14;
+        const imgW = 85, imgH = 60, ix = (W - imgW) / 2;
+        setFill(BRAND.lightGrey); doc.roundedRect(ix - 2, y - 2, imgW + 4, imgH + 4, 3, 3, 'F');
+        doc.addImage(finalSnapshot, 'JPEG', ix, y, imgW, imgH);
+        setTxt(BRAND.grey); doc.setFont('helvetica', 'italic'); doc.setFontSize(7.5);
+        txt('Aperçu du design personnalisé', W / 2, y + imgH + 5, { align: 'center' });
+        y += imgH + 12;
       } catch(e) { console.warn('[OVRG Invoice] Image embed:', e); }
     }
 
@@ -491,9 +492,10 @@
     snapshotPromise.then(dataUrl => {
       const el = document.getElementById('ovrgInvMockup');
       if (!el) return;
-      overlay._snapshot = dataUrl;
-      if (dataUrl) {
-        el.innerHTML = `<img src="${dataUrl}" alt="Aperçu">`;
+      const finalImg = dataUrl || orderData.img || (orderData.items && orderData.items[0] && orderData.items[0].img);
+      overlay._snapshot = finalImg;
+      if (finalImg) {
+        el.innerHTML = `<img src="${finalImg}" alt="Aperçu du design personnalisé" style="width:100%;height:100%;object-fit:contain;">`;
       } else {
         el.innerHTML = `<div class="ovrg-inv-mockup-ph">👕<br><span style="font-size:.8rem;color:#888">Aperçu non disponible</span></div>`;
       }
