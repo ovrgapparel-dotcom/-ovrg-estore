@@ -1372,22 +1372,26 @@ function analyzeFabric(side) {
     const imageData = ctx.getImageData(0, 0, w, h);
     const data = imageData.data;
 
-    const LUM_THRESHOLD = 0.30; // below = background/mannequin
+    // Use alpha channel (>10) to detect fabric vs transparent background.
+    // This works correctly for ALL garment colors including black, navy, dark green etc.
+    // The old luminance threshold (0.30) was incorrectly masking dark fabric as background.
     const lum = new Float32Array(w * h);
     const mask = new Uint8Array(w * h); // 1 = fabric, 0 = background
     let lumSum = 0, fabricCount = 0;
 
     for (let i = 0; i < w * h; i++) {
       const r = data[i*4] / 255, g = data[i*4+1] / 255, b = data[i*4+2] / 255;
+      const a = data[i*4+3];
       const l = 0.2126*r + 0.7152*g + 0.0722*b;
       lum[i] = l;
-      if (l > LUM_THRESHOLD) {
+      // Fabric = any pixel with meaningful alpha (not transparent background)
+      if (a > 10) {
         mask[i] = 1;
         lumSum += l;
         fabricCount++;
       }
     }
-    const meanLum = fabricCount > 0 ? lumSum / fabricCount : 0.78;
+    const meanLum = fabricCount > 0 ? lumSum / fabricCount : 0.5;
 
     // Compute luminance gradients (Sobel-like, horizontal & vertical)
     const dx = new Float32Array(w * h);
@@ -1407,11 +1411,11 @@ function analyzeFabric(side) {
     const w = img ? img.naturalWidth : 600;
     const h = img ? img.naturalHeight : 600;
     fabricData[side] = {
-      lum: new Float32Array(w * h).fill(0.78),
+      lum: new Float32Array(w * h).fill(0.5),
       dx: new Float32Array(w * h),
       dy: new Float32Array(w * h),
       mask: new Uint8Array(w * h).fill(1),
-      meanLum: 0.78,
+      meanLum: 0.5,
       w,
       h
     };
@@ -1910,24 +1914,24 @@ function renderDesign(side) {
 
         if (pa < 1) { od[canvasIdx + 3] = 0; continue; }
 
-        // ── Highlight & shadow from fabric luminance ──
+        // ── Highlight & shadow from fabric luminance (relative to fabric mean) ──
         const fabLum = fd.lum[fabricIdx];
-        const lumDev = fabLum - fd.meanLum; // positive = highlight, negative = shadow
+        // Normalise luminance deviation relative to fabric mean to handle dark fabrics.
+        // On a black shirt meanLum≈0.05 — without normalisation every pixel is "dark".
+        const range = Math.max(fd.meanLum, 1 - fd.meanLum, 0.15);
+        const lumDev = (fabLum - fd.meanLum) / range; // -1..+1 relative
 
         // Soft-light style blend for highlights, darken for shadows
         let shadeMultiplier = 1.0;
         if (lumDev > 0) {
-          // Highlight: brighten by blending toward white proportionally
-          shadeMultiplier = 1.0 + lumDev * SHADE_INTENSITY * 2.5;
+          shadeMultiplier = 1.0 + lumDev * SHADE_INTENSITY * 1.5;
         } else {
-          // Shadow: darken proportionally
-          shadeMultiplier = 1.0 + lumDev * SHADE_INTENSITY * 3.0;
+          shadeMultiplier = 1.0 + lumDev * SHADE_INTENSITY * 1.8;
         }
-        shadeMultiplier = Math.max(0.5, Math.min(1.5, shadeMultiplier));
+        shadeMultiplier = Math.max(0.75, Math.min(1.35, shadeMultiplier));
 
         // ── Fabric texture modulation ──
-        // High-frequency: deviation from local average (approx: pixel lum vs mean)
-        const textureMod = 1.0 + (fabLum - fd.meanLum) * TEXTURE_STRENGTH * 2.0;
+        const textureMod = 1.0 + lumDev * TEXTURE_STRENGTH;
 
         // Apply combined shading + texture
         const combined = shadeMultiplier * textureMod;
@@ -1936,7 +1940,7 @@ function renderDesign(side) {
         pb = Math.max(0, Math.min(255, pb * combined));
 
         // Alpha: reduce slightly with blend for a more "absorbed" look
-        pa = pa * (1.0 - printBlend * 0.12);
+        pa = pa * (1.0 - printBlend * 0.10);
 
         // ── Silhouette edge feathering ── smooth edges near fabric boundary
         let edgeFade = 1.0;

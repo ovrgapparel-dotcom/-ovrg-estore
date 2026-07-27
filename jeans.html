@@ -1431,7 +1431,7 @@ function analyzeFabric(side) {
         fabricCount++;
       }
     }
-    const meanLum = fabricCount > 0 ? lumSum / fabricCount : 0.78;
+    const meanLum = fabricCount > 0 ? lumSum / fabricCount : 0.5;
 
     const dx = new Float32Array(w * h);
     const dy = new Float32Array(w * h);
@@ -1450,11 +1450,11 @@ function analyzeFabric(side) {
     const w = img ? img.naturalWidth : 600;
     const h = img ? img.naturalHeight : 600;
     fabricData[side] = {
-      lum: new Float32Array(w * h).fill(0.78),
+      lum: new Float32Array(w * h).fill(0.5),
       dx: new Float32Array(w * h),
       dy: new Float32Array(w * h),
       mask: new Uint8Array(w * h).fill(1),
-      meanLum: 0.78,
+      meanLum: 0.5,
       w,
       h
     };
@@ -2488,15 +2488,16 @@ function renderDesign(side) {
 
         if (pa < 1) { od[canvasIdx+3] = 0; continue; }
 
-        // Highlight & shadow
+        // Highlight & shadow — normalised relative to fabric mean for dark-shirt support
         const fabLum = fd.lum[fabricIdx];
-        const lumDev = fabLum - fd.meanLum;
+        const range = Math.max(fd.meanLum, 1 - fd.meanLum, 0.15);
+        const lumDev = (fabLum - fd.meanLum) / range;
         let shadeMultiplier = lumDev > 0
-          ? 1.0 + lumDev * SHADE_INTENSITY * 2.5
-          : 1.0 + lumDev * SHADE_INTENSITY * 3.0;
-        shadeMultiplier = Math.max(0.5, Math.min(1.5, shadeMultiplier));
+          ? 1.0 + lumDev * SHADE_INTENSITY * 1.5
+          : 1.0 + lumDev * SHADE_INTENSITY * 1.8;
+        shadeMultiplier = Math.max(0.75, Math.min(1.35, shadeMultiplier));
 
-        const textureMod = 1.0 + (fabLum - fd.meanLum) * TEXTURE_STRENGTH * 2.0;
+        const textureMod = 1.0 + lumDev * TEXTURE_STRENGTH;
         const combined   = shadeMultiplier * textureMod;
 
         pr = Math.max(0, Math.min(255, pr * combined));
