@@ -797,7 +797,18 @@ function _renderDecalCanvas(effectiveZoneId, config, cv, posNormX, posNormY, sca
         'bottom-center':  { x:  0.00, y: -0.38 }, // Bas des Jambes — both ankles
         'bottom-right':   { x:  0.20, y: -0.36 }, // Bas Jambe D. — right ankle
       };
-      const NDC_TABLE = isShorts ? NDC_SHORTS : NDC_BAGGY;
+      const NDC_JEANS = {
+        'top-left':       { x: -0.18, y:  0.22 }, // Poche Gauche
+        'top-center':     { x:  0.00, y:  0.38 }, // Ceinture Avant — waistband
+        'top-right':      { x:  0.18, y:  0.22 }, // Poche Droite
+        'mid-left':       { x: -0.18, y:  0.00 }, // Jambe G. Full
+        'center':         { x:  0.00, y:  0.08 }, // Devant Complet
+        'mid-right':      { x:  0.18, y:  0.00 }, // Jambe D. Full
+        'bottom-left':    { x: -0.18, y: -0.32 }, // Bas Jambe G.
+        'bottom-center':  { x:  0.00, y: -0.35 }, // Bas des Jambes
+        'bottom-right':   { x:  0.18, y: -0.32 }, // Bas Jambe D.
+      };
+      const NDC_TABLE = isShorts ? NDC_SHORTS : (pType === 'jeans' ? NDC_JEANS : NDC_BAGGY);
       const baseNDC = NDC_TABLE[preset] || NDC_TABLE['center'];
       ndcX = baseNDC.x;
       ndcY = baseNDC.y;
